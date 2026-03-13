@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Precios — True Partner Scout</title>
-  <script src="https://js.stripe.com/v3/"></script>
+  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -249,13 +249,9 @@
 </footer>
 
 <script>
-var STRIPE_KEY    = 'pk_live_51QkznVJvCxdQiHDT6TBYavzniq5SoufmNqM44SUnEAlvRFc6Km4F2TR88qZaz5RzaAVnbS4D2BO3WJgGNss6m48h00VduFrp4k';
-var PRICE_MONTHLY = 'price_1TAdukJvCxdQiHDTsgvQgRJY';
-var PRICE_ANNUAL  = 'price_1TAdwkJvCxdQiHDTUKkGugcY';
-
+var LINK_MONTHLY = 'https://buy.stripe.com/9B628s7Fu0n48gWdM4aZi01';
+var LINK_ANNUAL  = 'https://buy.stripe.com/6oU5kE8Jy2vc9l0dM4aZi02';
 var billing = 'monthly';
-var stripe  = null;
-try { stripe = Stripe(STRIPE_KEY); } catch(e) { console.warn('Stripe error', e); }
 
 window.tpToggle = function() {
   billing = billing === 'monthly' ? 'annual' : 'monthly';
@@ -282,22 +278,8 @@ window.tpToggle = function() {
 };
 
 window.tpCheckout = function() {
-  if (!stripe) { tpMsg('Error al cargar Stripe. Recarga la página.', 'err'); return; }
-  var btn = document.getElementById('btn-pro');
-  btn.disabled = true;
-  btn.textContent = 'Redirigiendo…';
-  stripe.redirectToCheckout({
-    lineItems: [{ price: billing === 'annual' ? PRICE_ANNUAL : PRICE_MONTHLY, quantity: 1 }],
-    mode: 'subscription',
-    successUrl: window.location.origin + '/dashboard.html?upgraded=1',
-    cancelUrl:  window.location.href,
-  }).then(function(r) {
-    if (r.error) {
-      tpMsg(r.error.message, 'err');
-      btn.disabled = false;
-      btn.textContent = 'Comenzar con Pro →';
-    }
-  });
+  var link = billing === 'annual' ? LINK_ANNUAL : LINK_MONTHLY;
+  window.location.href = link;
 };
 
 window.tpFaq = function(el) {

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True Partner Scout — Acceso</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070709;--s1:#0D0D12;--s2:#13131A;--s3:#1A1A24;--border:#1F1F2E;--border2:#2A2A3E;--text:#E8E8F0;--muted:#5A5A78;--green:#00E5A0;--red:#FF4567;--gold:#FFB547;--blue:#4A8FFF;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+body::before{content:'';position:fixed;top:-30%;left:50%;transform:translateX(-50%);width:700px;height:600px;background:radial-gradient(ellipse,rgba(0,229,160,.07) 0%,transparent 65%);pointer-events:none;}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.04) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+.wrap{position:relative;z-index:1;width:100%;max-width:440px;padding:24px;}
+.brand{text-align:center;margin-bottom:32px;}
+.brand-logo{font-family:'Clash Display',sans-serif;font-weight:800;font-size:22px;letter-spacing:.1em;color:var(--text);margin-bottom:6px;}
+.brand-logo span{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(0,229,160,.1);color:var(--green);border:1px solid rgba(0,229,160,.2);font-weight:700;letter-spacing:3px;margin-left:6px;vertical-align:middle;}
+.brand-sub{font-size:12px;color:var(--muted);}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:28px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,160,.3),transparent);}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:24px;}
+.tab{font-family:'Clash Display',sans-serif;font-size:12px;font-weight:600;letter-spacing:.06em;padding:9px;border-radius:8px;border:none;background:transparent;color:var(--muted);cursor:pointer;}
+.tab.on{background:var(--s3);color:var(--text);border:1px solid var(--border2);}
+.msg{border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:14px;display:none;line-height:1.5;}
+.msg.on{display:block;}
+.msg.err{background:rgba(255,69,103,.08);border:1px solid rgba(255,69,103,.2);color:#ff8fa3;}
+.msg.ok{background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.2);color:var(--green);}
+.grp{margin-bottom:14px;}
+.lbl{display:block;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.inp{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:'Cabinet Grotesk',sans-serif;font-size:14px;color:var(--text);outline:none;}
+.inp:focus{border-color:var(--green);}
+.pw-wrap{position:relative;}
+.pw-wrap .inp{padding-right:40px;}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:4px;}
+.forgot{font-size:11px;color:var(--muted);text-decoration:none;float:right;margin-top:2px;}
+.btn{width:100%;font-family:'Clash Display',sans-serif;font-size:13px;font-weight:600;letter-spacing:.06em;padding:13px;border-radius:12px;border:none;background:var(--green);color:#070709;cursor:pointer;margin-top:6px;}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.div{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--muted);font-size:11px;}
+.div::before,.div::after{content:'';flex:1;height:1px;background:var(--border);}
+.btn-g{width:100%;font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:600;padding:11px;border-radius:12px;border:1px solid var(--border2);background:var(--s2);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;}
+.pw-bar{margin-top:6px;display:none;}
+.pw-bar.on{display:block;}
+.pw-track{height:3px;border-radius:99px;background:var(--border);overflow:hidden;margin-bottom:3px;}
+.pw-fill{height:100%;border-radius:99px;transition:width .3s,background .3s;}
+.pw-txt{font-size:10px;}
+.success{display:none;text-align:center;padding:12px 0;}
+.success.on{display:block;}
+.success-ico{font-size:44px;margin-bottom:12px;}
+.success-ttl{font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;margin-bottom:8px;}
+.success-txt{font-size:12px;color:var(--muted);line-height:1.6;}
+.overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+.overlay.on{display:flex;}
+.spin{width:34px;height:34px;border:3px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
+.spin-txt{font-family:'Clash Display',sans-serif;font-size:13px;color:var(--muted);letter-spacing:.08em;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<div class="overlay" id="overlay">
+  <div class="spin"></div>
+  <div class="spin-txt">ACCEDIENDO…</div>
+</div>
+
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-logo">TRUE PARTNER<span>SCOUT</span></div>
+    <div class="brand-sub">Encuentra productos y creativos ganadores en TikTok Shop</div>
+  </div>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab on" id="t-login" onclick="tpTab('login')">Iniciar sesión</button>
+      <button class="tab" id="t-reg" onclick="tpTab('reg')">Crear cuenta</button>
+    </div>
+
+    <div id="msg" class="msg"></div>
+
+    <div id="f-login">
+      <div class="grp">
+        <label class="lbl">Email</label>
+        <input class="inp" type="email" id="l-email" placeholder="tu@email.com">
+      </div>
+      <div class="grp">
+        <label class="lbl">Contraseña <a href="#" class="forgot" onclick="tpForgot(event)">¿Olvidaste tu contraseña?</a></label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="l-pw" placeholder="••••••••">
+          <button class="pw-eye" onclick="tpEye('l-pw',this)" type="button">👁</button>
+        </div>
+      </div>
+      <button class="btn" id="btn-login" onclick="tpLogin()">Entrar al dashboard →</button>
+    </div>
+
+    <div id="f-reg" style="display:none">
+      <div class="grp">
+        <label class="lbl">Nombre</label>
+        <input class="inp" type="text" id="r-name" placeholder="Tu nombre">
+      </div>
+      <div class="grp">
+        <label class="lbl">Email</label>
+        <input class="inp" type="email" id="r-email" placeholder="tu@email.com">
+      </div>
+      <div class="grp">
+        <label class="lbl">Contraseña</label>
+        <div class="pw-wrap">
+          <input class="inp" type="password" id="r-pw" placeholder="Mínimo 8 caracteres" oninput="tpStrength(this.value)">
+          <button class="pw-eye" onclick="tpEye('r-pw',this)" type="button">👁</button>
+        </div>
+        <div class="pw-bar" id="pw-bar">
+          <div class="pw-track"><div class="pw-fill" id="pw-fill"></div></div>
+          <div class="pw-txt" id="pw-txt"></div>
+        </div>
+      </div>
+      <button class="btn" id="btn-reg" onclick="tpReg()">Crear cuenta →</button>
+    </div>
+
+    <div class="success" id="success">
+      <div class="success-ico">📬</div>
+      <div class="success-ttl">Revisa tu email</div>
+      <div class="success-txt">Te enviamos un enlace de confirmación.<br>Ábrelo y regresa aquí para ingresar.</div>
+    </div>
+
+    <div class="div">o continúa con</div>
+    <button class="btn-g" onclick="tpGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continuar con Google
+    </button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+var SB = supabase.createClient(
+  'https://npzkyhlvesqbshvtjafu.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik'
+);
+
+function goToDash(){
+  document.getElementById('overlay').className='overlay on';
+  setTimeout(function(){window.location.href=window.location.origin+'/dashboard.html';},700);
+}
+function showMsg(txt,type){
+  var el=document.getElementById('msg');
+  el.textContent=txt;
+  el.className='msg on '+(type||'err');
+}
+function clearMsg(){document.getElementById('msg').className='msg';}
+
+SB.auth.getSession().then(function(r){
+  if(r.data&&r.data.session) goToDash();
+});
+SB.auth.onAuthStateChange(function(ev,session){
+  if(session&&(ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED')) goToDash();
+});
+
+function tpTab(tab){
+  var isLogin=tab==='login';
+  document.getElementById('f-login').style.display=isLogin?'block':'none';
+  document.getElementById('f-reg').style.display=isLogin?'none':'block';
+  document.getElementById('success').className='success';
+  document.getElementById('t-login').className='tab'+(isLogin?' on':'');
+  document.getElementById('t-reg').className='tab'+(!isLogin?' on':'');
+  clearMsg();
+}
+
+function tpEye(id,btn){
+  var inp=document.getElementById(id);
+  var hide=inp.type==='password';
+  inp.type=hide?'text':'password';
+  btn.textContent=hide?'🙈':'👁';
+}
+
+function tpStrength(val){
+  var bar=document.getElementById('pw-bar');
+  var fill=document.getElementById('pw-fill');
+  var txt=document.getElementById('pw-txt');
+  if(!val){bar.className='pw-bar';return;}
+  bar.className='pw-bar on';
+  var s=0;
+  if(val.length>=8)s++;
+  if(val.length>=12)s++;
+  if(/[A-Z]/.test(val))s++;
+  if(/[0-9]/.test(val))s++;
+  if(/[^A-Za-z0-9]/.test(val))s++;
+  var lvl=[
+    {w:'20%',c:'#FF4567',t:'Muy débil'},
+    {w:'40%',c:'#FF7A3D',t:'Débil'},
+    {w:'60%',c:'#FFB547',t:'Regular'},
+    {w:'80%',c:'#4A8FFF',t:'Buena'},
+    {w:'100%',c:'#00E5A0',t:'Excelente'}
+  ][Math.min(s,4)];
+  fill.style.width=lvl.w;
+  fill.style.background=lvl.c;
+  txt.textContent=lvl.t;
+  txt.style.color=lvl.c;
+}
+
+function tpLogin(){
+  clearMsg();
+  var email=document.getElementById('l-email').value.trim();
+  var pw=document.getElementById('l-pw').value;
+  if(!email||!pw){showMsg('Completa todos los campos.');return;}
+  var btn=document.getElementById('btn-login');
+  btn.disabled=true;btn.textContent='Entrando…';
+  SB.auth.signInWithPassword({email:email,password:pw}).then(function(r){
+    if(r.error){
+      var m={'Invalid login credentials':'Email o contraseña incorrectos.','Email not confirmed':'Confirma tu email primero.'};
+      showMsg(m[r.error.message]||r.error.message);
+      btn.disabled=false;btn.textContent='Entrar al dashboard →';
+    } else {goToDash();}
+  }).catch(function(){
+    showMsg('Error de conexión. Intenta de nuevo.');
+    btn.disabled=false;btn.textContent='Entrar al dashboard →';
+  });
+}
+
+function tpReg(){
+  clearMsg();
+  var name=document.getElementById('r-name').value.trim();
+  var email=document.getElementById('r-email').value.trim();
+  var pw=document.getElementById('r-pw').value;
+  if(!name||!email||!pw){showMsg('Completa todos los campos.');return;}
+  if(pw.length<8){showMsg('La contraseña debe tener al menos 8 caracteres.');return;}
+  var btn=document.getElementById('btn-reg');
+  btn.disabled=true;btn.textContent='Creando cuenta…';
+  SB.auth.signUp({email:email,password:pw,options:{data:{full_name:name}}}).then(function(r){
+    if(r.error){
+      var m={'User already registered':'Este email ya está registrado.'};
+      showMsg(m[r.error.message]||r.error.message);
+      btn.disabled=false;btn.textContent='Crear cuenta →';
+    } else {
+      document.getElementById('f-reg').style.display='none';
+      document.getElementById('success').className='success on';
+    }
+  }).catch(function(){
+    showMsg('Error de conexión. Intenta de nuevo.');
+    btn.disabled=false;btn.textContent='Crear cuenta →';
+  });
+}
+
+function tpGoogle(){
+  SB.auth.signInWithOAuth({
+    provider:'google',
+    options:{redirectTo:window.location.origin+'/dashboard.html'}
+  });
+}
+
+function tpForgot(e){
+  e.preventDefault();
+  var email=document.getElementById('l-email').value.trim();
+  if(!email){showMsg('Escribe tu email primero.');return;}
+  SB.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/dashboard.html'}).then(function(r){
+    if(r.error)showMsg(r.error.message);
+    else showMsg('Te enviamos un link para restablecer tu contraseña.','ok');
+  });
+}
+</script>
+</body>
+</html>

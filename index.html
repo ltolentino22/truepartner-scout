@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True Partner Scout — Encuentra joyas escondidas en TikTok Shop</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070709;--s1:#0D0D12;--s2:#13131A;--s3:#1A1A24;
+  --border:#1F1F2E;--border2:#2A2A3E;
+  --text:#E8E8F0;--muted:#5A5A78;--dim:#8888A8;
+  --green:#00E5A0;--red:#FF4567;--gold:#FFB547;--blue:#4A8FFF;--purple:#9B6DFF;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* BG */
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.bg-glow::before{content:'';position:absolute;top:-15%;left:50%;transform:translateX(-50%);width:1000px;height:800px;background:radial-gradient(ellipse,rgba(0,229,160,.12) 0%,rgba(0,100,60,.06) 40%,transparent 70%);}
+.bg-glow::after{content:'';position:absolute;bottom:-20%;right:-10%;width:600px;height:600px;background:radial-gradient(ellipse,rgba(0,229,160,.04) 0%,transparent 60%);}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.06) 1px,transparent 1px);background-size:52px 52px;pointer-events:none;z-index:0;}
+.bg-grid::after{content:'';position:fixed;inset:0;background:linear-gradient(to bottom,rgba(7,7,9,0) 0%,rgba(7,7,9,.4) 40%,rgba(7,7,9,.85) 100%);pointer-events:none;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:16px 48px;background:rgba(7,7,9,0);backdrop-filter:blur(0px);border-bottom:1px solid transparent;transition:all .4s;}
+nav.scrolled{background:rgba(7,7,9,.92);backdrop-filter:blur(20px);border-bottom-color:var(--border);}
+.nav-logo img{height:36px;object-fit:contain;}
+.nav-links{display:flex;gap:6px;align-items:center;}
+.nav-link{font-size:12px;padding:7px 16px;border-radius:8px;text-decoration:none;color:var(--muted);transition:color .15s;font-weight:500;}
+.nav-link:hover{color:var(--text);}
+.nav-cta{font-family:'Clash Display',sans-serif;font-size:12px;font-weight:600;letter-spacing:.05em;padding:9px 20px;border-radius:10px;border:none;background:var(--green);color:#070709;cursor:pointer;text-decoration:none;transition:all .2s;}
+.nav-cta:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,229,160,.25);}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--green);background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:99px;padding:7px 18px;margin-bottom:32px;animation:fadeUp .6s ease both;}
+.hero-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hero-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(48px,8vw,100px);line-height:.93;letter-spacing:-.05em;margin-bottom:24px;animation:fadeUp .6s .1s ease both;}
+.hero-title .line1{display:block;color:var(--text);}
+.hero-title .line2{display:block;color:var(--green);}
+.hero-title .line3{display:block;color:var(--text);opacity:.4;font-size:.6em;font-weight:400;letter-spacing:-.01em;margin-top:8px;}
+.hero-sub{font-size:clamp(14px,2vw,18px);color:var(--muted);max-width:560px;line-height:1.75;margin-bottom:40px;animation:fadeUp .6s .2s ease both;}
+.hero-sub strong{color:var(--text);}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:64px;animation:fadeUp .6s .3s ease both;}
+.btn-primary{font-family:'Clash Display',sans-serif;font-size:14px;font-weight:600;letter-spacing:.05em;padding:16px 36px;border-radius:12px;border:none;background:var(--green);color:#070709;cursor:pointer;text-decoration:none;transition:all .25s;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 48px rgba(0,229,160,.3);}
+.btn-secondary{font-family:'Clash Display',sans-serif;font-size:14px;font-weight:600;letter-spacing:.05em;padding:16px 36px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;text-decoration:none;transition:all .25s;}
+.btn-secondary:hover{border-color:var(--green);color:var(--green);}
+.hero-trust{display:flex;align-items:center;gap:20px;justify-content:center;font-size:11px;color:var(--muted);animation:fadeUp .6s .4s ease both;flex-wrap:wrap;}
+.trust-sep{width:3px;height:3px;border-radius:50%;background:var(--border2);}
+
+/* DASHBOARD PREVIEW */
+.preview-wrap{position:relative;z-index:1;padding:0 24px 100px;max-width:1100px;margin:0 auto;}
+.preview-label{text-align:center;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
+.preview-frame{background:var(--s1);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03);}
+.preview-bar{display:flex;align-items:center;gap:8px;padding:14px 20px;background:var(--s2);border-bottom:1px solid var(--border);}
+.preview-dot{width:10px;height:10px;border-radius:50%;}
+.preview-url{flex:1;height:24px;background:var(--s3);border-radius:6px;margin:0 16px;display:flex;align-items:center;padding:0 12px;}
+.preview-url span{font-size:10px;color:var(--muted);}.preview-content{padding:24px;}
+.preview-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.pkpi{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.pkpi-lbl{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+.pkpi-val{font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px;}
+.pkpi-sub{font-size:9px;color:var(--muted);margin-top:3px;}
+.preview-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.pchart{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:16px;height:120px;position:relative;overflow:hidden;}
+.pchart-lbl{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.pchart-bars{display:flex;align-items:flex-end;gap:6px;height:72px;}
+.pchart-bar{flex:1;border-radius:4px 4px 0 0;opacity:.8;}
+.preview-table{background:var(--s2);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.ptbl-head{display:grid;grid-template-columns:40px 1fr 80px 80px 80px;gap:8px;padding:10px 16px;background:var(--s3);}
+.ptbl-th{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:.08em;text-transform:uppercase;}
+.ptbl-row{display:grid;grid-template-columns:40px 1fr 80px 80px 80px;gap:8px;padding:10px 16px;border-top:1px solid var(--border);align-items:center;}
+.ptbl-num{font-family:'Clash Display',sans-serif;font-size:12px;font-weight:700;}
+.ptbl-name{font-size:11px;font-weight:600;}
+.ptbl-sub{font-size:9px;color:var(--muted);}
+.badge-g{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;font-weight:700;background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.2);}
+.badge-b{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;font-weight:700;background:rgba(74,143,255,.12);color:var(--blue);border:1px solid rgba(74,143,255,.2);}
+.badge-gold{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;font-weight:700;background:rgba(255,181,71,.12);color:var(--gold);border:1px solid rgba(255,181,71,.2);}
+
+/* HOW IT WORKS */
+.section{position:relative;z-index:1;padding:80px 24px;max-width:1100px;margin:0 auto;}
+.section-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:16px;}
+.section-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(28px,4vw,48px);letter-spacing:-.03em;line-height:1.1;margin-bottom:16px;}
+.section-sub{font-size:15px;color:var(--muted);line-height:1.7;max-width:500px;}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px;}
+.step-card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:28px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s;}
+.step-card:hover{border-color:var(--border2);transform:translateY(-4px);}
+.step-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,229,160,.2),transparent);}
+.step-num{font-family:'Clash Display',sans-serif;font-weight:800;font-size:48px;color:rgba(0,229,160,.08);line-height:1;margin-bottom:16px;}
+.step-icon{font-size:28px;margin-bottom:14px;}
+.step-title{font-family:'Clash Display',sans-serif;font-weight:600;font-size:16px;margin-bottom:8px;}
+.step-text{font-size:12px;color:var(--muted);line-height:1.7;}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;}
+.feat-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;transition:all .2s;}
+.feat-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.feat-icon{font-size:24px;margin-bottom:12px;}
+.feat-title{font-family:'Clash Display',sans-serif;font-weight:600;font-size:14px;margin-bottom:8px;}
+.feat-text{font-size:12px;color:var(--muted);line-height:1.7;}
+
+/* TESTIMONIALS */
+.testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;}
+.testi-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.testi-stars{color:var(--gold);font-size:12px;margin-bottom:12px;letter-spacing:2px;}
+.testi-text{font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:16px;font-style:italic;}
+.testi-text::before{content:'"';color:var(--green);font-size:20px;font-style:normal;}
+.testi-author{display:flex;align-items:center;gap:10px;}
+.testi-avatar{width:36px;height:36px;border-radius:50%;background:var(--s3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.testi-name{font-size:12px;font-weight:700;}
+.testi-handle{font-size:10px;color:var(--muted);}
+
+/* CTA SECTION */
+.cta-section{position:relative;z-index:1;padding:80px 24px 100px;text-align:center;}
+.cta-card{background:linear-gradient(135deg,rgba(0,229,160,.06) 0%,rgba(74,143,255,.04) 100%);border:1px solid rgba(0,229,160,.15);border-radius:28px;padding:64px 40px;max-width:700px;margin:0 auto;position:relative;overflow:hidden;}
+.cta-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--green),transparent);}
+.cta-title{font-family:'Clash Display',sans-serif;font-weight:700;font-size:clamp(28px,4vw,48px);letter-spacing:-.03em;margin-bottom:16px;}
+.cta-sub{font-size:15px;color:var(--muted);margin-bottom:36px;line-height:1.7;}
+.cta-note{font-size:11px;color:var(--muted);margin-top:16px;}
+
+/* FOOTER */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:40px 48px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.footer-logo img{height:28px;object-fit:contain;opacity:.6;}
+.footer-links{display:flex;gap:20px;}
+.footer-link{font-size:11px;color:var(--muted);text-decoration:none;transition:color .15s;}
+.footer-link:hover{color:var(--green);}
+.footer-copy{font-size:11px;color:var(--muted);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:768px){
+  nav{padding:14px 20px;}
+  .steps-grid,.features-grid,.testi-grid{grid-template-columns:1fr;}
+  .preview-kpis{grid-template-columns:1fr 1fr;}
+  .preview-charts{grid-template-columns:1fr;}
+  footer{padding:24px 20px;flex-direction:column;text-align:center;}
+}
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2ODAgMzIwIj4KPHRleHQgeD0iODgiIHk9IjE3MiIgZm9udC1mYW1pbHk9IkNhYmluZXQgR3JvdGVzaywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSI1MiIgZmlsbD0iI0U4RThGMCIgbGV0dGVyLXNwYWNpbmc9IjgiPlRSVUU8L3RleHQ+Cjx0ZXh0IHg9Ijg2IiB5PSIyMjYiIGZvbnQtZmFtaWx5PSJDYWJpbmV0IEdyb3Rlc2ssIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI4MDAiIGZvbnQtc2l6ZT0iNTgiIGZpbGw9IiNFOEU4RjAiIGxldHRlci1zcGFjaW5nPSIyIj5QQVJUTkVSPC90ZXh0Pgo8cmVjdCB4PSI4OCIgeT0iMjM5IiB3aWR0aD0iMTA4IiBoZWlnaHQ9IjIyIiByeD0iNCIgZmlsbD0iIzAwRTVBMCIgZmlsbC1vcGFjaXR5PSIwLjEwIiBzdHJva2U9IiMwMEU1QTAiIHN0cm9rZS13aWR0aD0iMC44IiBzdHJva2Utb3BhY2l0eT0iMC4zNSIvPgo8dGV4dCB4PSIxNDIiIHk9IjI1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNhYmluZXQgR3JvdGVzaywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzAwRTVBMCIgbGV0dGVyLXNwYWNpbmc9IjMiPlNDT1VUPC90ZXh0Pgo8L3N2Zz4=" alt="True Partner Scout">
+  </div>
+  <div class="nav-links">
+    <a href="#features" class="nav-link">Funciones</a>
+    <a href="./precios.html" class="nav-link">Precios</a>
+    <a href="./login.html" class="nav-link">Iniciar sesión</a>
+    <a href="./login.html" class="nav-cta">Empezar gratis →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow"><span class="hero-dot"></span>Inteligencia para Dropshippers</div>
+  <h1 class="hero-title">
+    <span class="line1">Encuentra las joyas</span>
+    <span class="line2">antes que todos.</span>
+    <span class="line3">True Partner Scout</span>
+  </h1>
+  <p class="hero-sub">
+    La plataforma que <strong>dropshippers</strong> usan para descubrir productos ganadores, creativos (videos) con estructuras de alto rendimiento y creadores con potencial oculto en TikTok Shop — antes de que se vuelvan tendencia.
+  </p>
+  <div class="hero-actions">
+    <a href="./login.html" class="btn-primary">🚀 Empezar gratis</a>
+    <a href="./precios.html" class="btn-secondary">Ver planes →</a>
+  </div>
+  <div class="hero-trust">
+    <span>✓ Sin tarjeta de crédito</span>
+    <div class="trust-sep"></div>
+    <span>✓ Setup en 2 minutos</span>
+    <div class="trust-sep"></div>
+    <span>✓ Datos reales de FastMoss</span>
+    <div class="trust-sep"></div>
+    <span>✓ Cancela cuando quieras</span>
+  </div>
+</section>
+
+<!-- DASHBOARD PREVIEW -->
+<div class="preview-wrap">
+  <div class="preview-label">Vista previa del dashboard</div>
+  <div class="preview-frame">
+    <div class="preview-bar">
+      <div class="preview-dot" style="background:#FF4567"></div>
+      <div class="preview-dot" style="background:#FFB547"></div>
+      <div class="preview-dot" style="background:#00E5A0"></div>
+      <div class="preview-url"><span>truepartnerscout.app/dashboard · Scout</span></div>
+    </div>
+    <div class="preview-content">
+      <div class="preview-kpis">
+        <div class="pkpi"><div class="pkpi-lbl">Productos activos</div><div class="pkpi-val" style="color:var(--green)">60</div><div class="pkpi-sub">de 323 en catálogo</div></div>
+        <div class="pkpi"><div class="pkpi-lbl">Unidades vendidas</div><div class="pkpi-val" style="color:var(--gold)">4,821</div><div class="pkpi-sub">+23% vs mes anterior</div></div>
+        <div class="pkpi"><div class="pkpi-lbl">Facturación Total</div><div class="pkpi-val" style="color:var(--text)">$18.4K</div><div class="pkpi-sub">revenue estimado</div></div>
+        <div class="pkpi"><div class="pkpi-lbl">Conv. Rate</div><div class="pkpi-val" style="color:var(--blue)">0.31%</div><div class="pkpi-sub">top 15% industria</div></div>
+      </div>
+      <div class="preview-charts">
+        <div class="pchart">
+          <div class="pchart-lbl">Unidades por período</div>
+          <div class="pchart-bars">
+            <div class="pchart-bar" style="height:30%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:45%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:60%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:40%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:75%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:55%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:90%;background:var(--green)"></div>
+            <div class="pchart-bar" style="height:70%;background:var(--green)"></div>
+          </div>
+        </div>
+        <div class="pchart">
+          <div class="pchart-lbl">Facturación por período</div>
+          <div class="pchart-bars">
+            <div class="pchart-bar" style="height:25%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:50%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:35%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:65%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:80%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:60%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:95%;background:var(--gold)"></div>
+            <div class="pchart-bar" style="height:75%;background:var(--gold)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="preview-table">
+        <div class="ptbl-head"><span class="ptbl-th">#</span><span class="ptbl-th">Producto</span><span class="ptbl-th">Unidades</span><span class="ptbl-th">GMV</span><span class="ptbl-th">Conv.</span></div>
+        <div class="ptbl-row"><span style="font-size:14px">🥇</span><div><div class="ptbl-name">HALARA Legging Pro</div><div class="ptbl-sub">Ropa de mujer</div></div><div class="ptbl-num" style="color:var(--gold)">892</div><div class="ptbl-num" style="color:var(--green)">$4.2K</div><span class="badge-g">0.42%</span></div>
+        <div class="ptbl-row"><span style="font-size:14px">🥈</span><div><div class="ptbl-name">Saffron Collagen Serum</div><div class="ptbl-sub">Belleza / Skincare</div></div><div class="ptbl-num" style="color:var(--gold)">644</div><div class="ptbl-num" style="color:var(--green)">$3.1K</div><span class="badge-b">0.28%</span></div>
+        <div class="ptbl-row"><span style="font-size:14px">🥉</span><div><div class="ptbl-name">Cargo Pants Wide Leg</div><div class="ptbl-sub">Moda urbana</div></div><div class="ptbl-num" style="color:var(--gold)">421</div><div class="ptbl-num" style="color:var(--green)">$2.8K</div><span class="badge-gold">0.19%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="section" id="features">
+  <div class="section-label">Cómo funciona</div>
+  <div class="section-title">De datos a decisiones<br>en minutos.</div>
+  <div class="section-sub">Sin código, sin fórmulas complicadas. Solo sube tus archivos y Scout hace el trabajo.</div>
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-icon">📥</div>
+      <div class="step-title">Sube tus archivos FastMoss</div>
+      <div class="step-text">Exporta el Video List y el Goods for Sale List de cualquier creador en FastMoss y súbelos a Scout. Listo en 30 segundos.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-icon">🔍</div>
+      <div class="step-title">Scout analiza y correlaciona</div>
+      <div class="step-text">El algoritmo conecta videos con productos, calcula conversion rates reales y detecta patrones que el ojo humano no ve.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-icon">💎</div>
+      <div class="step-title">Descubre las joyas escondidas</div>
+      <div class="step-text">Identifica qué productos tienen alto potencial, qué estructuras de video funcionan mejor y en qué nichos hay oportunidades sin explotar.</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section">
+  <div class="section-label">Funciones clave</div>
+  <div class="section-title">Todo lo que necesitas<br>para escalar.</div>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">Conv. Rate por video</div>
+      <div class="feat-text">Calcula automáticamente unidades/vistas por cada video. Filtra por nicho, producto o período para encontrar los patrones ganadores.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎯</div>
+      <div class="feat-title">Análisis por nicho</div>
+      <div class="feat-text">Compara el rendimiento entre categorías. Descubre en qué nichos los creadores tienen mayor retorno y menor competencia.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📅</div>
+      <div class="feat-title">Rendimiento mensual</div>
+      <div class="feat-text">Ve exactamente qué meses fueron más fuertes para cada producto y qué videos los impulsaron. Anticipa tendencias estacionales.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔗</div>
+      <div class="feat-title">Video ↔ Producto</div>
+      <div class="feat-text">Scout conecta automáticamente cada video con el producto que promocionó. Ve el impacto directo de cada pieza de contenido en ventas.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Top performers</div>
+      <div class="feat-text">Identifica en segundos los videos y productos que están por encima del benchmark. Replica lo que funciona, descarta lo que no.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🏆</div>
+      <div class="feat-title">Benchmarks de industria</div>
+      <div class="feat-text">Compara las métricas del creador con los estándares reales de TikTok Shop por categoría. Sabe si estás por encima o debajo del mercado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div class="section">
+  <div class="section-label">Lo que dicen</div>
+  <div class="section-title">Resultados reales,<br>no promesas.</div>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">Encontré 3 productos con conv. rate arriba del 0.4% que nadie estaba promocionando. En 2 semanas ya tenía estructura ganadora."</div>
+      <div class="testi-author"><div class="testi-avatar">🎯</div><div><div class="testi-name">Carlos M.</div><div class="testi-handle">Dropshipper · TikTok Shop US</div></div></div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">Antes tardaba horas en Excel analizando datos. Con Scout lo hago en 5 minutos y veo cosas que antes me perdía completamente."</div>
+      <div class="testi-author"><div class="testi-avatar">📱</div><div><div class="testi-name">Ana R.</div><div class="testi-handle">Creadora · 180K seguidores</div></div></div>
+    </div>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <div class="testi-text">Gestiono 8 creadores y Scout me da una visión clara de cuál está funcionando y por qué. Indispensable para mi agencia."</div>
+      <div class="testi-author"><div class="testi-avatar">🚀</div><div><div class="testi-name">Diego P.</div><div class="testi-handle">Agencia de creadores · Colombia</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA FINAL -->
+<div class="cta-section">
+  <div class="cta-card">
+    <div class="cta-title">Empieza a encontrar<br>joyas hoy.</div>
+    <div class="cta-sub">Gratis para siempre en el plan Starter. Sin tarjeta, sin compromisos.<br>El único costo es el tiempo que pierdes sin Scout.</div>
+    <a href="./login.html" class="btn-primary" style="display:inline-flex;margin:0 auto;">🚀 Crear cuenta gratis</a>
+    <div class="cta-note">¿Ya tienes cuenta? <a href="./login.html" style="color:var(--green);text-decoration:none;">Inicia sesión →</a></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2ODAgMzIwIj4KPHRleHQgeD0iODgiIHk9IjE3MiIgZm9udC1mYW1pbHk9IkNhYmluZXQgR3JvdGVzaywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjgwMCIgZm9udC1zaXplPSI1MiIgZmlsbD0iI0U4RThGMCIgbGV0dGVyLXNwYWNpbmc9IjgiPlRSVUU8L3RleHQ+Cjx0ZXh0IHg9Ijg2IiB5PSIyMjYiIGZvbnQtZmFtaWx5PSJDYWJpbmV0IEdyb3Rlc2ssIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI4MDAiIGZvbnQtc2l6ZT0iNTgiIGZpbGw9IiNFOEU4RjAiIGxldHRlci1zcGFjaW5nPSIyIj5QQVJUTkVSPC90ZXh0Pgo8cmVjdCB4PSI4OCIgeT0iMjM5IiB3aWR0aD0iMTA4IiBoZWlnaHQ9IjIyIiByeD0iNCIgZmlsbD0iIzAwRTVBMCIgZmlsbC1vcGFjaXR5PSIwLjEwIiBzdHJva2U9IiMwMEU1QTAiIHN0cm9rZS13aWR0aD0iMC44IiBzdHJva2Utb3BhY2l0eT0iMC4zNSIvPgo8dGV4dCB4PSIxNDIiIHk9IjI1NSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkNhYmluZXQgR3JvdGVzaywgc2Fucy1zZXJpZiIgZm9udC13ZWlnaHQ9IjcwMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzAwRTVBMCIgbGV0dGVyLXNwYWNpbmc9IjMiPlNDT1VUPC90ZXh0Pgo8L3N2Zz4=" alt="True Partner Scout">
+  </div>
+  <div class="footer-links">
+    <a href="#features" class="footer-link">Funciones</a>
+    <a href="./precios.html" class="footer-link">Precios</a>
+    <a href="./login.html" class="footer-link">Iniciar sesión</a>
+    <a href="/cdn-cgi/l/email-protection#bccfd3ccd3cec8d9fcc8cec9d9ccddcec8d2d9cecfdfd3c9c892ddcccc" class="footer-link">Contacto</a>
+  </div>
+  <div class="footer-copy">© 2026 True Partner Scout. Todos los derechos reservados.</div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// Navbar scroll effect
+window.addEventListener('scroll', function() {
+  var nav = document.getElementById('nav');
+  if (window.scrollY > 40) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+});
+
+// Animate elements on scroll
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.step-card, .feat-card, .testi-card').forEach(function(el) {
+  el.style.opacity = '0';
+ 

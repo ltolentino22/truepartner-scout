@@ -1144,7 +1144,6 @@ function renderTimeline(){
 // ─── PLAN RESTRICTIONS ───────────────────────────────────────────────────────
 function applyPlanRestrictions(plan) {
   if (plan === 'pro') {
-    // Pro user — show upgrade banner if came from payment
     if (window.location.search.includes('upgraded=1')) {
       const banner = document.createElement('div');
       banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,229,160,.15);border:1px solid rgba(0,229,160,.4);color:#00E5A0;padding:10px 24px;border-radius:99px;font-size:13px;font-weight:700;';
@@ -1152,37 +1151,41 @@ function applyPlanRestrictions(plan) {
       document.body.appendChild(banner);
       setTimeout(() => banner.remove(), 5000);
     }
-    return; // Pro users see everything
+    return;
   }
 
-  // Free user — lock Pro tabs
-  const proTabs = ['videos', 'products', 'niches', 'timeline'];
-  proTabs.forEach(tabId => {
-    const btn = document.querySelector(`[onclick="showTab('${tabId}',this)"]`);
-    if (btn) {
-      btn.style.opacity = '0.45';
-      btn.style.cursor = 'default';
-      btn.title = 'Función Pro';
-      // Add lock icon
-      if (!btn.querySelector('.lock-icon')) {
-        const lock = document.createElement('span');
-        lock.className = 'lock-icon';
-        lock.textContent = ' 🔒';
-        lock.style.fontSize = '10px';
-        btn.appendChild(lock);
-      }
-      // Override click to show upgrade prompt
-      btn.setAttribute('onclick', `showUpgradePrompt(); return false;`);
+  // Free plan — find tabs by text content
+  const proLabels = ['Creativos', 'Productos', 'Nichos', 'Timeline'];
+  const allTabs = document.querySelectorAll('.nav-tab');
+  allTabs.forEach(btn => {
+    const txt = btn.textContent || '';
+    const isProTab = proLabels.some(lbl => txt.includes(lbl));
+    if (!isProTab) return;
+    btn.style.opacity = '0.45';
+    btn.style.cursor = 'default';
+    btn.title = 'Función Pro — Actualiza tu plan';
+    if (!btn.dataset.locked) {
+      btn.dataset.locked = '1';
+      btn.innerHTML = btn.innerHTML + ' 🔒';
+      btn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showUpgradePrompt();
+        return false;
+      };
     }
   });
 
-  // Show free plan badge in header
-  const acct = document.getElementById('hdr-account-name');
-  if (acct) {
-    const badge = document.createElement('span');
-    badge.style.cssText = 'font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(90,90,120,.2);color:#5A5A78;border:1px solid rgba(90,90,120,.3);margin-left:8px;font-weight:700;letter-spacing:.05em;';
-    badge.textContent = 'FREE';
-    acct.parentNode.insertBefore(badge, acct.nextSibling);
+  // Badge FREE en header
+  if (!document.getElementById('free-badge')) {
+    const acct = document.getElementById('hdr-account-name');
+    if (acct && acct.parentNode) {
+      const badge = document.createElement('span');
+      badge.id = 'free-badge';
+      badge.style.cssText = 'font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(90,90,120,.2);color:#5A5A78;border:1px solid rgba(90,90,120,.3);margin-left:8px;font-weight:700;letter-spacing:.05em;';
+      badge.textContent = 'FREE';
+      acct.parentNode.insertBefore(badge, acct.nextSibling);
+    }
   }
 }
 

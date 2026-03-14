@@ -394,7 +394,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ───────────────────────────────────────────────────────────────────────────
 
 (async () => {
-  // Prevent redirect loops
   if (window.location.pathname.includes('index')) return;
 
   const { createClient } = supabase;
@@ -405,27 +404,40 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const result = await _sb.auth.getSession();
     session = result.data.session;
   } catch(e) {
-    // Network error — don't redirect, let user retry
     return;
   }
 
   if (!session) {
-    // Use absolute path to avoid Netlify routing issues
     const base = window.location.origin;
     window.location.replace(base + '/login.html');
     return;
   }
 
-  // Store client globally for logout
   window._sb = _sb;
   window._session = session;
+  window._userPlan = 'free'; // default
 
-  // Show user email in header after DOM loads
+  // Check user plan from profiles table
+  try {
+    const { data: profile } = await _sb
+      .from('profiles')
+      .select('plan')
+      .eq('id', session.user.id)
+      .single();
+    if (profile && profile.plan) {
+      window._userPlan = profile.plan;
+    }
+  } catch(e) {
+    console.warn('Could not fetch plan, defaulting to free');
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('hdr-account-name');
     if (el && !el.textContent.trim()) {
       el.textContent = session.user.email;
     }
+    // Apply plan restrictions after DOM ready
+    applyPlanRestrictions(window._userPlan);
   });
 })();
 
@@ -436,7 +448,17 @@ const S = {
 };
 
 // ─── UTILS ───────────────────────────────────────────────────────────────────
-function parseGMV(v){if(!v)return 0;const s=String(v).replace('$','').replace(',','').trim();if(/mil/i.test(s))return parseFloat(s.replace(/mil/i,''))*1000;if(/mill/i.test(s))return parseFloat(s.replace(/mill[oó]n/i,''))*1e6;return parseFloat(s)||0;}
+function parseGMV(v){
+  if(!v)return 0;
+  var s=String(v).replace(/[$,]/g,'').trim();
+  if(/mill[oó]n/i.test(s))return parseFloat(s.replace(/mill[oó]n/i,'').trim())*1e6;
+  if(/millon/i.test(s))return parseFloat(s.replace(/millon/i,'').trim())*1e6;
+  if(/mill/i.test(s))return parseFloat(s.replace(/mill/i,'').trim())*1e6;
+  if(/mil/i.test(s))return parseFloat(s.replace(/mil/i,'').trim())*1000;
+  if(/k$/i.test(s))return parseFloat(s.replace(/k$/i,'').trim())*1000;
+  if(/m$/i.test(s))return parseFloat(s.replace(/m$/i,'').trim())*1e6;
+  return parseFloat(s)||0;
+}
 function parsePrice(v){if(!v)return 0;const s=String(v).replace('$','').replace(',','').trim();if(s.includes('-')){const p=s.split('-').map(x=>parseFloat(x.trim())).filter(Boolean);return p.length?p.reduce((a,b)=>a+b)/p.length:0;}return parseFloat(s)||0;}
 function parsePct(v){if(!v)return 0;return parseFloat(String(v).replace('%','').trim())||0;}
 function fmtNum(n){if(!n)return '$0';if(n>=1000000)return '$'+(n/1000000).toFixed(2)+'M';if(n>=1000)return '$'+(n/1000).toFixed(1)+'K';return '$'+n.toFixed(2);}
@@ -543,7 +565,7 @@ function processAll(){
     S.hasProducts=true;
     for(const r of rawProducts){
       const units=parseInt(r['Units Sold'])||0;
-      const gmv=parseGMV(r['Total Facturación']);
+      const gmv=parseGMV(r['Total GMV']||r['Total Facturación']||'0');
       const price=parsePrice(r['Price']);
       const launchDate=r['Launch Date']||'';
       S.products.push({
@@ -571,7 +593,7 @@ function processAll(){
     for(const r of rawVideos){
       const units=parseInt(r['Units Sold'])||0;
       const views=parseInt(r['Views'])||0;
-      const gmv=parseFloat(r['Video Facturación'])||0;
+      const gmv=parseGMV(r['Video GMV']||r['Video Facturación']||'0');
       const likes=parseInt(r['Likes'])||0;
       const convRate=views>0?(units/views*100):0;
       const title=r['Video Title']||'';
@@ -1111,6 +1133,71 @@ function renderTimeline(){
 }
 
 // ─── NAV ─────────────────────────────────────────────────────────────────────
+// ─── PLAN RESTRICTIONS ───────────────────────────────────────────────────────
+function applyPlanRestrictions(plan) {
+  if (plan === 'pro') {
+    // Pro user — show upgrade banner if came from payment
+    if (window.location.search.includes('upgraded=1')) {
+      const banner = document.createElement('div');
+      banner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;background:rgba(0,229,160,.15);border:1px solid rgba(0,229,160,.4);color:#00E5A0;padding:10px 24px;border-radius:99px;font-size:13px;font-weight:700;';
+      banner.textContent = '🎉 ¡Bienvenido a Pro! Todas las funciones desbloqueadas.';
+      document.body.appendChild(banner);
+      setTimeout(() => banner.remove(), 5000);
+    }
+    return; // Pro users see everything
+  }
+
+  // Free user — lock Pro tabs
+  const proTabs = ['videos', 'products', 'niches', 'timeline'];
+  proTabs.forEach(tabId => {
+    const btn = document.querySelector(`[onclick="showTab('${tabId}',this)"]`);
+    if (btn) {
+      btn.style.opacity = '0.45';
+      btn.style.cursor = 'default';
+      btn.title = 'Función Pro';
+      // Add lock icon
+      if (!btn.querySelector('.lock-icon')) {
+        const lock = document.createElement('span');
+        lock.className = 'lock-icon';
+        lock.textContent = ' 🔒';
+        lock.style.fontSize = '10px';
+        btn.appendChild(lock);
+      }
+      // Override click to show upgrade prompt
+      btn.setAttribute('onclick', `showUpgradePrompt(); return false;`);
+    }
+  });
+
+  // Show free plan badge in header
+  const acct = document.getElementById('hdr-account-name');
+  if (acct) {
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-size:9px;padding:2px 7px;border-radius:99px;background:rgba(90,90,120,.2);color:#5A5A78;border:1px solid rgba(90,90,120,.3);margin-left:8px;font-weight:700;letter-spacing:.05em;';
+    badge.textContent = 'FREE';
+    acct.parentNode.insertBefore(badge, acct.nextSibling);
+  }
+}
+
+function showUpgradePrompt() {
+  // Remove existing prompt if any
+  const existing = document.getElementById('upgrade-prompt');
+  if (existing) { existing.remove(); return; }
+
+  const prompt = document.createElement('div');
+  prompt.id = 'upgrade-prompt';
+  prompt.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(7,7,9,.85);backdrop-filter:blur(8px);';
+  prompt.innerHTML = `
+    <div style="background:#0D0D12;border:1px solid rgba(0,229,160,.3);border-radius:16px;padding:40px;max-width:420px;width:90%;text-align:center;">
+      <div style="font-size:36px;margin-bottom:16px;">🔒</div>
+      <div style="font-size:20px;font-weight:800;color:#E8E8F0;margin-bottom:10px;">Función exclusiva Pro</div>
+      <div style="font-size:14px;color:#5A5A78;margin-bottom:28px;line-height:1.6;">Desbloquea todos los tabs, analiza hasta 5 creadores y accede a reportes completos.</div>
+      <a href="./precios.html" style="display:block;background:#00E5A0;color:#070709;font-weight:700;font-size:14px;padding:13px;border-radius:10px;text-decoration:none;margin-bottom:12px;">Ver planes Pro →</a>
+      <button onclick="document.getElementById('upgrade-prompt').remove()" style="background:transparent;border:none;color:#5A5A78;font-size:13px;cursor:pointer;">Cerrar</button>
+    </div>
+  `;
+  document.body.appendChild(prompt);
+}
+
 function showTab(id,el){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));

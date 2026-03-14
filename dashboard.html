@@ -68,7 +68,7 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 .btn-compare:hover{opacity:.85;}
 
 /* NAV TABS */
-.nav-tabs{display:flex;gap:4px;padding:12px 24px;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:56px;z-index:90;}
+.nav-tabs{display:flex;gap:4px;padding:12px 24px;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:56px;z-index:90;}.content{padding:24px;max-width:1400px;margin:0 auto;scroll-margin-top:110px;}
 .nav-tab{font-family:'Clash Display',sans-serif;font-size:11px;font-weight:600;letter-spacing:.05em;padding:7px 16px;border-radius:8px;border:none;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;}
 .nav-tab:hover{color:var(--text);background:var(--s2);}
 .nav-tab.active{background:var(--s2);color:var(--green);border:1px solid var(--border2);}
@@ -100,7 +100,7 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 
 .charts-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 .charts-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;}
-.chart-box{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;}
+.chart-box{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;}.chart-box.clickable canvas{cursor:pointer;}
 .chart-ttl{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
 .chart-wrap{height:180px;position:relative;}
 
@@ -420,20 +420,45 @@ function showUpgradeModal() { document.getElementById('upgrade-modal').classList
 // ── STORAGE ───────────────────────────────────────────────────────────────
 // Creators stored in localStorage as array of {id, name, products, videos, analyzedAt}
 function saveCreatorsToStorage() {
-  try { localStorage.setItem('tps_creators', JSON.stringify(window._creators.map(c => ({id:c.id,name:c.name,analyzedAt:c.analyzedAt,score:c.score,gmv:c.gmv,units:c.units,convRate:c.convRate,prodCount:c.prodCount,vidCount:c.vidCount})))); } catch(e) {}
+  try {
+    // Save full data including products and videos
+    const data = window._creators.map(c => ({
+      id:c.id, name:c.name, analyzedAt:c.analyzedAt,
+      score:c.score, gmv:c.gmv, units:c.units, convRate:c.convRate,
+      prodCount:c.prodCount, vidCount:c.vidCount,
+      products:c.products||[], videos:c.videos||[]
+    }));
+    localStorage.setItem('tps_creators', JSON.stringify(data));
+  } catch(e) {
+    // If storage full, save metadata only
+    try {
+      const meta = window._creators.map(c => ({id:c.id,name:c.name,analyzedAt:c.analyzedAt,score:c.score,gmv:c.gmv,units:c.units,convRate:c.convRate,prodCount:c.prodCount,vidCount:c.vidCount,products:[],videos:[],_metaOnly:true}));
+      localStorage.setItem('tps_creators', JSON.stringify(meta));
+    } catch(e2) {}
+  }
 }
 function loadCreatorsFromStorage() {
   try {
     const raw = localStorage.getItem('tps_creators');
     if (raw) {
-      const meta = JSON.parse(raw);
-      // Only load metadata (full data needs re-upload), but show in sidebar
-      meta.forEach(m => {
-        if (!window._creators.find(c => c.id === m.id)) {
-          window._creators.push({...m, products:[], videos:[], _metaOnly:true});
+      const saved = JSON.parse(raw);
+      saved.forEach(s => {
+        if (!window._creators.find(c => c.id === s.id)) {
+          const hasData = s.products && s.products.length > 0;
+          // Restore _matchedProd references for videos
+          if (hasData && s.videos) {
+            s.videos.forEach(v => { v._matchedProd = null; });
+          }
+          window._creators.push({...s, _metaOnly: !hasData});
         }
       });
-      renderSidebar();
+      // Auto-load first creator with data
+      const first = window._creators.find(c => !c._metaOnly);
+      if (first) {
+        setTimeout(() => setActiveCreator(first.id), 100);
+      } else {
+        renderSidebar();
+      }
     }
   } catch(e) {}
 }
@@ -804,7 +829,7 @@ function runCompare() {
 // ── CHARTS ────────────────────────────────────────────────────────────────
 const CHT = {
   baseOpts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#13131A',borderColor:'#1F1F2E',borderWidth:1,titleColor:'#E8E8F0',bodyColor:'#5A5A78',titleFont:{family:'Clash Display',weight:'700',size:12},bodyFont:{family:'Cabinet Grotesk',size:11},padding:12,cornerRadius:8}},scales:{x:{grid:{color:'#1F1F2E'},ticks:{color:'#5A5A78',font:{family:'Cabinet Grotesk',size:10}}},y:{grid:{color:'#1F1F2E'},ticks:{color:'#5A5A78',font:{family:'Cabinet Grotesk',size:10}}}}};},
-  bar(id,labels,data,color,fmtFn){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();if(fmtFn)o.plugins.tooltip.callbacks={label:ctx=>fmtFn(ctx.parsed.y)};CHARTS[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data,backgroundColor:color+'33',borderColor:color,borderWidth:1.5,borderRadius:6}]},options:o});},
+  bar(id,labels,data,color,fmtFn,itemsData){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();if(fmtFn)o.plugins.tooltip.callbacks={label:ctx=>fmtFn(ctx.parsed.y)};if(itemsData&&window._userPlan==='pro'){o.onClick=(evt,els)=>{if(els.length&&itemsData[els[0].index]){const item=itemsData[els[0].index];const url=item.tiktokLink||item.fastmossLink;if(url)window.open(url,'_blank');}};o.plugins.tooltip.callbacks={label:ctx=>{const item=itemsData[ctx.dataIndex];if(item){const name=(item.title||item.name||'').substring(0,50);return[fmtFn?fmtFn(ctx.parsed.y):ctx.parsed.y,name];}return fmtFn?fmtFn(ctx.parsed.y):ctx.parsed.y;}};}CHARTS[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data,backgroundColor:color+'33',borderColor:color,borderWidth:1.5,borderRadius:6}]},options:o});},
   hbar(id,labels,data,colors){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();o.indexAxis='y';CHARTS[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors||data.map(()=>'#4A8FFF33'),borderColor:colors||data.map(()=>'#4A8FFF'),borderWidth:1.5,borderRadius:4}]},options:o});},
   scatter(id,points){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();o.scales.x.title={display:true,text:'Vistas',color:'#5A5A78',font:{size:10}};o.scales.y.title={display:true,text:'Unidades',color:'#5A5A78',font:{size:10}};o.plugins.tooltip.callbacks={label:ctx=>`${fmtInt(ctx.parsed.x)} vistas → ${ctx.parsed.y} uds`};CHARTS[id]=new Chart(document.getElementById(id),{type:'scatter',data:{datasets:[{data:points,backgroundColor:'rgba(0,229,160,0.35)',borderColor:'#00E5A0',borderWidth:1,pointRadius:5,pointHoverRadius:7}]},options:o});},
 };
@@ -882,8 +907,9 @@ function renderOverview(creator) {
     `<div class="sec-label">Top 10 Productos</div><div class="card"><div class="card-head"><div class="card-title">Top 10 Productos</div></div><div class="tbl-head" style="grid-template-columns:${cols}"><span class="th">#</span><span class="th"></span><span class="th">Producto</span><span class="th">Categoría</span><span class="th">Precio</span><span class="th">Unidades</span><span class="th">Facturación</span><span class="th">Comisión</span></div>${top10.map((p,i)=>`<div class="tbl-row" style="grid-template-columns:${cols}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div style="width:40px;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);">🛍️</div><div><div class="td-name">${p.name.substring(0,55)}${p.name.length>55?'…':''}</div><div class="td-sub">${p.store}</div></div><div><span class="chip chip-cat">${p.category.substring(0,18)}</span></div><div class="td td-blue">$${p.price.toFixed(2)}</div><div class="td td-gold td-num">${fmtInt(p.units)}</div><div class="td td-green">${fmtNum(p.gmv)}</div><div class="td"><span class="conv-badge ${p.commission>=20?'conv-great':p.commission>=15?'conv-good':p.commission>=10?'conv-avg':'conv-low'}">${p.commission}%</span></div></div>`).join('')}</div>`;
 
   setTimeout(() => {
-    CHT.bar('ch-units', quarters, quarters.map(q => creator.products.filter(p=>p.quarter===q).reduce((s,p)=>s+p.units,0)), '#00E5A0', v=>` ${fmtInt(v)} uds`);
-    CHT.bar('ch-gmv', quarters, quarters.map(q => creator.products.filter(p=>p.quarter===q).reduce((s,p)=>s+p.gmv,0)), '#FFB547', v=>` ${fmtNum(v)}`);
+    const quarterProds = quarters.map(q => {const qp=creator.products.filter(p=>p.quarter===q);const top=qp.sort((a,b)=>b.units-a.units)[0];return top||null;});
+    CHT.bar('ch-units', quarters, quarters.map(q => creator.products.filter(p=>p.quarter===q).reduce((s,p)=>s+p.units,0)), '#00E5A0', v=>` ${fmtInt(v)} uds`, quarterProds);
+    CHT.bar('ch-gmv', quarters, quarters.map(q => creator.products.filter(p=>p.quarter===q).reduce((s,p)=>s+p.gmv,0)), '#FFB547', v=>` ${fmtNum(v)}`, quarterProds);
   }, 50);
 }
 
@@ -918,6 +944,7 @@ function renderConversion(creator) {
     if(CHARTS['ch-conv-bar'])CHARTS['ch-conv-bar'].destroy();
     const cbOpts = CHT.baseOpts();
     cbOpts.plugins.tooltip.callbacks = {label:ctx=>{const v=top20[ctx.dataIndex];return `${fmtPct(v.convRate)} · ${v.units} uds`;}};
+    if(window._userPlan==='pro'){cbOpts.onClick=(evt,els)=>{if(els.length&&top20[els[0].index]){const v=top20[els[0].index];const url=v.tiktokLink||v.fastmossLink;if(url)window.open(url,'_blank');}};cbOpts.plugins.tooltip.callbacks={label:ctx=>{const v=top20[ctx.dataIndex];return[`Conv: ${fmtPct(v.convRate)}`,`${v.title.substring(0,45)}…`,`${fmtInt(v.views)} vistas · ${v.units} uds`];}};}
     CHARTS['ch-conv-bar'] = new Chart(document.getElementById('ch-conv-bar'),{type:'bar',data:{labels:top20.map((_,i)=>`V${i+1}`),datasets:[{data:top20.map(v=>v.convRate),backgroundColor:top20.map(v=>v.convRate>=0.30?'#00E5A050':v.convRate>=0.15?'#4A8FFF50':'#FFB54750'),borderColor:top20.map(v=>v.convRate>=0.30?'#00E5A0':v.convRate>=0.15?'#4A8FFF':'#FFB547'),borderWidth:1.5,borderRadius:4}]},options:cbOpts});
     CHT.scatter('ch-scatter', vids.map(v=>({x:v.views,y:v.units})));
   }, 50);

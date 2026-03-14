@@ -431,14 +431,20 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     console.warn('Could not fetch plan, defaulting to free');
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  // Apply plan after DOM is ready
+  const applyWhenReady = () => {
     const el = document.getElementById('hdr-account-name');
     if (el && !el.textContent.trim()) {
       el.textContent = session.user.email;
     }
-    // Apply plan restrictions after DOM ready
     applyPlanRestrictions(window._userPlan);
-  });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyWhenReady);
+  } else {
+    applyWhenReady();
+  }
 })();
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
@@ -554,6 +560,8 @@ function runAnalysis(){
     setTimeout(()=>{
       document.getElementById('upload-screen').classList.add('out');
       document.getElementById('app').classList.add('show');
+      // Re-apply plan restrictions when app becomes visible
+      if (window._userPlan) applyPlanRestrictions(window._userPlan);
     },400);
   },600);
 }

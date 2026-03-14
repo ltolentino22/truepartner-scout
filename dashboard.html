@@ -68,7 +68,7 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 .btn-compare:hover{opacity:.85;}
 
 /* NAV TABS */
-.nav-tabs{display:flex;gap:4px;padding:12px 24px;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:56px;z-index:90;}.content{padding:24px;max-width:1400px;margin:0 auto;scroll-margin-top:110px;}
+.nav-tabs{display:flex;gap:4px;padding:12px 24px;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;}.content{padding:24px;max-width:1400px;margin:0 auto;}
 .nav-tab{font-family:'Clash Display',sans-serif;font-size:11px;font-weight:600;letter-spacing:.05em;padding:7px 16px;border-radius:8px;border:none;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;}
 .nav-tab:hover{color:var(--text);background:var(--s2);}
 .nav-tab.active{background:var(--s2);color:var(--green);border:1px solid var(--border2);}
@@ -421,46 +421,61 @@ function showUpgradeModal() { document.getElementById('upgrade-modal').classList
 // Creators stored in localStorage as array of {id, name, products, videos, analyzedAt}
 function saveCreatorsToStorage() {
   try {
-    // Save full data including products and videos
-    const data = window._creators.map(c => ({
+    localStorage.removeItem('tps_creators');
+    const data = window._creators.filter(c=>!c._metaOnly).map(c => ({
       id:c.id, name:c.name, analyzedAt:c.analyzedAt,
       score:c.score, gmv:c.gmv, units:c.units, convRate:c.convRate,
       prodCount:c.prodCount, vidCount:c.vidCount,
-      products:c.products||[], videos:c.videos||[]
+      products: (c.products||[]).map(p=>({
+        name:p.name,category:p.category,store:p.store,price:p.price,
+        units:p.units,gmv:p.gmv,commission:p.commission,launchDate:p.launchDate,
+        quarter:p.quarter,monthKey:p.monthKey,month:p.month,
+        tiktokLink:p.tiktokLink,fastmossLink:p.fastmossLink,cover:p.cover
+      })),
+      videos: (c.videos||[]).map(v=>({
+        title:v.title,publishDate:v.publishDate,quarter:v.quarter,
+        duration:v.duration,type:v.type,units:v.units,views:v.views,
+        gmv:v.gmv,likes:v.likes,convRate:v.convRate,interRate:v.interRate,
+        fastmossLink:v.fastmossLink,tiktokLink:v.tiktokLink,cover:v.cover,niche:v.niche
+      }))
     }));
     localStorage.setItem('tps_creators', JSON.stringify(data));
   } catch(e) {
-    // If storage full, save metadata only
-    try {
-      const meta = window._creators.map(c => ({id:c.id,name:c.name,analyzedAt:c.analyzedAt,score:c.score,gmv:c.gmv,units:c.units,convRate:c.convRate,prodCount:c.prodCount,vidCount:c.vidCount,products:[],videos:[],_metaOnly:true}));
-      localStorage.setItem('tps_creators', JSON.stringify(meta));
-    } catch(e2) {}
+    console.warn('Storage error:', e);
   }
 }
 function loadCreatorsFromStorage() {
   try {
     const raw = localStorage.getItem('tps_creators');
-    if (raw) {
-      const saved = JSON.parse(raw);
-      saved.forEach(s => {
-        if (!window._creators.find(c => c.id === s.id)) {
-          const hasData = s.products && s.products.length > 0;
-          // Restore _matchedProd references for videos
-          if (hasData && s.videos) {
-            s.videos.forEach(v => { v._matchedProd = null; });
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    saved.forEach(s => {
+      if (window._creators.find(c => c.id === s.id)) return;
+      const hasData = s.products && s.products.length > 0;
+      if (hasData) {
+        // Restore _matchedProd for videos
+        s.videos = (s.videos||[]).map(v => ({...v, _matchedProd: null}));
+        // Re-match videos to products
+        s.videos.forEach(v => {
+          const titleLower = (v.title||'').toLowerCase();
+          const words = titleLower.split(/\s+/).filter(w=>w.length>4);
+          let best=null, bestScore=0;
+          for(const p of s.products.filter(x=>x.units>0)){
+            const pWords=p.name.toLowerCase().split(/[\s\-|,]+/);
+            let score=0;
+            for(const w of words){if(pWords.some(pw=>pw.length>3&&(pw.includes(w)||w.includes(pw))))score++;}
+            if(score>bestScore){bestScore=score;best=p;}
           }
-          window._creators.push({...s, _metaOnly: !hasData});
-        }
-      });
-      // Auto-load first creator with data
-      const first = window._creators.find(c => !c._metaOnly);
-      if (first) {
-        setTimeout(() => setActiveCreator(first.id), 100);
-      } else {
-        renderSidebar();
+          v._matchedProd = bestScore>=1?best:null;
+        });
       }
-    }
-  } catch(e) {}
+      window._creators.push({...s, _metaOnly: !hasData});
+    });
+    renderSidebar();
+    // Auto-load first creator with data
+    const first = window._creators.find(c => !c._metaOnly);
+    if (first) setActiveCreator(first.id);
+  } catch(e) { console.warn('Load error:', e); }
 }
 
 // ── STATE ─────────────────────────────────────────────────────────────────

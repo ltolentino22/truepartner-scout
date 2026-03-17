@@ -421,8 +421,9 @@ function showUpgradeModal() { document.getElementById('upgrade-modal').classList
 // Creators stored in localStorage as array of {id, name, products, videos, analyzedAt}
 function saveCreatorsToStorage() {
   try {
-    localStorage.removeItem('tps_creators');
-    const data = window._creators.filter(c=>!c._metaOnly).map(c => ({
+    var _uid = window._session?.user?.id || 'anonymous';
+    localStorage.removeItem('tps_' + _uid);
+    var data = window._creators.filter(c=>!c._metaOnly).map(c => ({
       id:c.id, name:c.name, analyzedAt:c.analyzedAt,
       score:c.score, gmv:c.gmv, units:c.units, convRate:c.convRate,
       prodCount:c.prodCount, vidCount:c.vidCount,
@@ -439,14 +440,15 @@ function saveCreatorsToStorage() {
         fastmossLink:v.fastmossLink,tiktokLink:v.tiktokLink,cover:v.cover,niche:v.niche
       }))
     }));
-    localStorage.setItem('tps_creators', JSON.stringify(data));
+    localStorage.setItem('tps_' + _uid, JSON.stringify(data));
   } catch(e) {
     console.warn('Storage error:', e);
   }
 }
 function loadCreatorsFromStorage() {
   try {
-    const raw = localStorage.getItem('tps_creators');
+    var _uid = window._session?.user?.id || 'anonymous';
+    var raw = localStorage.getItem('tps_' + _uid);
     if (!raw) return;
     const saved = JSON.parse(raw);
     saved.forEach(s => {
@@ -1220,6 +1222,11 @@ function showTab(id, el) {
 }
 
 async function handleLogout() {
+  // Clear all local data before logout so next user starts fresh
+  try { var _uid2 = window._session?.user?.id || 'anonymous';
+    localStorage.removeItem('tps_' + _uid2); } catch(e) {}
+  window._creators = [];
+  window._activeCreatorId = null;
   if(window._sb) await window._sb.auth.signOut();
   window.location.replace('./login.html');
 }

@@ -380,6 +380,14 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   let session = null;
   try { const r = await _sb.auth.getSession(); session = r.data.session; } catch(e) { return; }
   if (!session) { window.location.replace(window.location.origin + '/login.html'); return; }
+  // Store that user accessed dashboard directly — fine to stay here
+  // If user came directly to dashboard without passing through home, redirect them
+  if (!sessionStorage.getItem('from_home')) {
+    sessionStorage.setItem('from_home', '1');
+    window.location.replace('./home.html');
+    return;
+  }
+
   window._sb = _sb;
   window._session = session;
   window._userPlan = 'free';

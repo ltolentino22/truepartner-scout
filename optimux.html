@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPTIMUX — True Partner Scout</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070709;--s1:#0D0D12;--s2:#13131A;--s3:#1A1A24;--s4:#1E1E2A;--s5:#242430;
+  --border:#1F1F2E;--border2:#2A2A3E;
+  --text:#E8E8F0;--muted:#5A5A78;--dim:#8888A8;
+  --green:#00E5A0;--green2:#00B880;--gdim:rgba(0,229,160,.12);--gdim2:rgba(0,229,160,.06);
+  --red:#FF4567;--rdim:rgba(255,69,103,.1);
+  --gold:#FFB547;--adim:rgba(255,181,71,.1);
+  --blue:#4A8FFF;--bdim:rgba(74,143,255,.1);
+  --purple:#9B6DFF;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+
+/* Auth handled via home.html */
+.auth-msg.ok{background:var(--gdim);color:var(--green);border:1px solid rgba(0,229,160,.2);display:block;}
+.auth-access-denied{background:rgba(155,109,255,.08);border:1px solid rgba(155,109,255,.2);border-radius:12px;padding:20px;margin-top:16px;display:none;}
+.auth-access-denied.show{display:block;}
+
+/* ── HEADER ── */
+.hdr{background:var(--s1);border-bottom:1px solid var(--border);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:200;}
+.hdr-brand{display:flex;align-items:center;gap:10px;}
+.hdr-brand-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:#070709;letter-spacing:1px;}
+.hdr-brand-name{font-family:'Clash Display',sans-serif;font-size:14px;font-weight:700;color:var(--text);letter-spacing:2px;}
+.hdr-brand-sub{font-size:9px;color:var(--green);letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-top:1px;}
+.hdr-r{display:flex;align-items:center;gap:8px;}
+.hdr-pill{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green);border:1px solid rgba(0,229,160,.2);background:var(--gdim);padding:4px 10px;border-radius:20px;letter-spacing:.5px;}
+.hdr-user{font-size:11px;color:var(--muted);}
+.hdr-btn{font-size:11px;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Cabinet Grotesk',sans-serif;}
+.hdr-btn:hover{border-color:var(--red);color:#ff8fa3;}
+
+/* ── NAV ── */
+.nav{background:var(--s1);border-bottom:1px solid var(--border);display:flex;padding:0 24px;overflow-x:auto;scrollbar-width:none;}
+.nav::-webkit-scrollbar{display:none;}
+.ntab{padding:12px 16px;font-family:'Clash Display',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;user-select:none;}
+.ntab:hover{color:var(--dim);}
+.ntab.on{color:var(--green);border-bottom-color:var(--green);}
+
+/* ── PAGES ── */
+.page{display:none;padding:24px 28px 44px;max-width:1500px;margin:0 auto;position:relative;z-index:1;}
+.page.on{display:block;}
+.ph{margin-bottom:20px;}
+.ph-t{font-family:'Clash Display',sans-serif;font-size:24px;font-weight:700;letter-spacing:2px;line-height:1;}
+.ph-s{font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* ── KPI ROW ── */
+.krow{display:grid;gap:12px;margin-bottom:20px;}
+.k5{grid-template-columns:repeat(5,1fr);}
+.k4{grid-template-columns:repeat(4,1fr);}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
+.kpi.kr::before{background:var(--red);}
+.kpi.ka::before{background:var(--gold);}
+.kpi.kb::before{background:var(--blue);}
+.kpi-v{font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;line-height:1;color:var(--green);margin-bottom:4px;}
+.kpi.kr .kpi-v{color:var(--red);}
+.kpi.ka .kpi-v{color:var(--gold);}
+.kpi.kb .kpi-v{color:var(--blue);}
+.kpi-l{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);}
+.kpi-s{font-size:9px;color:var(--muted);margin-top:2px;}
+
+/* ── GRIDS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.gmain{display:grid;grid-template-columns:1fr 360px;gap:14px;}
+.col-l{display:flex;flex-direction:column;gap:14px;}
+.col-r{display:flex;flex-direction:column;gap:14px;}
+
+/* ── CARD ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.ch-l{display:flex;align-items:center;gap:8px;}
+.acc{width:3px;height:13px;background:var(--green);border-radius:2px;flex-shrink:0;}
+.acc.r{background:var(--red);}
+.acc.a{background:var(--gold);}
+.acc.b{background:var(--blue);}
+.ct{font-family:'Clash Display',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);}
+.ct.r{color:var(--red);}
+.ct.a{color:var(--gold);}
+.ct.b{color:var(--blue);}
+.cb{padding:14px 16px;}
+.cb.np{padding:0;}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;}
+.bg{background:var(--gdim);color:var(--green);border:1px solid rgba(0,229,160,.25);}
+.br{background:var(--rdim);color:var(--red);border:1px solid rgba(255,69,103,.25);}
+.ba{background:var(--adim);color:var(--gold);border:1px solid rgba(255,181,71,.25);}
+.bb{background:var(--bdim);color:var(--blue);border:1px solid rgba(74,143,255,.25);}
+
+/* ── INPUTS ── */
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.field label,.lbl{display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+input[type=number]{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;outline:none;transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--gdim);}
+input[type=date],input[type=month],input[type=text]{width:100%;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:12px;outline:none;transition:border-color .15s;color-scheme:dark;}
+input[type=date]:focus,input[type=month]:focus,input[type=text]:focus{border-color:var(--green);}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.5;cursor:pointer;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* ── COST ROWS ── */
+.crow{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+.crow:last-child{border-bottom:none;}
+.crow-n{flex:1;font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.crow input{width:130px;margin:0;padding:6px 10px;font-size:11px;}
+.crow-p{width:44px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+
+/* ── RESULT ROWS ── */
+.rr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.rr:last-child{border-bottom:none;}
+.rr-l{font-size:11px;color:var(--dim);}
+.rr-v{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--text);}
+.rr-v.g{color:var(--green);}
+.rr-v.r{color:var(--red);}
+.rr-v.a{color:var(--gold);}
+.rr.hl{background:var(--gdim2);margin:0 -16px;padding:8px 16px;border-radius:4px;border-bottom:none;}
+.rr.hl .rr-l{color:var(--text);font-weight:600;}
+
+/* ── DIVIDER ── */
+.dv{height:1px;background:linear-gradient(to right,var(--green),transparent);opacity:.15;margin:12px 0;}
+
+/* ── PROGRESS ── */
+.prog{height:4px;background:var(--s3);border-radius:3px;overflow:hidden;margin-top:4px;}
+.pf{height:100%;border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.pg{background:var(--green);}
+.pa{background:var(--gold);}
+.pr{background:var(--red);}
+.pb{background:var(--blue);}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{background:var(--s2);color:var(--green);padding:8px 13px;text-align:left;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;}
+.tbl th:not(:first-child){text-align:right;}
+.tbl td{padding:8px 13px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.tbl td:not(:first-child){text-align:right;}
+.tbl td:first-child{color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:11px;font-weight:500;}
+.tbl tr:hover td{background:var(--s2);}
+.tbl tr.ttotal td{background:var(--s2);color:var(--green);font-weight:700;}
+
+/* ── SLIDES ── */
+.slides-wrap{overflow:hidden;}
+.slides-track{display:flex;transition:transform .38s cubic-bezier(.4,0,.2,1);}
+.slide{min-width:100%;}
+.sdots{display:flex;justify-content:center;gap:5px;padding:12px 0 2px;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--s4);cursor:pointer;transition:background .2s,transform .2s;}
+.dot.on{background:var(--green);transform:scale(1.4);}
+.snav{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-top:1px solid var(--border);}
+.sbtn{background:var(--s2);border:1px solid var(--border2);color:var(--dim);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:13px;display:grid;place-items:center;transition:all .15s;}
+.sbtn:hover{background:var(--green);color:#070709;border-color:var(--green);}
+.sctr{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+/* ── DONUT ── */
+.donut-wrap{display:flex;align-items:center;gap:16px;padding:4px 0;}
+.d-legend{flex:1;}
+.d-li{display:flex;align-items:center;gap:7px;padding:5px 0;}
+.d-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.d-lbl{font-size:11px;color:var(--dim);flex:1;}
+.d-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);font-weight:600;}
+.d-pct{font-size:10px;color:var(--muted);margin-left:3px;}
+
+/* ── SECTION BAR ── */
+.sbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:14px;}
+.sbar:first-child{margin-top:0;}
+.sbar-line{flex:1;height:1px;background:var(--border);}
+.sbar-l{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+
+/* ── SIMULATOR ── */
+.sim-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.03);}
+.sim-row:last-child{border-bottom:none;}
+.sim-row.sh{background:var(--s2);padding:7px 16px;}
+.sim-row.sh span{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);font-family:'Clash Display',sans-serif;}
+.sl{font-size:11px;color:var(--dim);}
+.sn{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);text-align:right;min-width:55px;}
+.sv{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);text-align:right;min-width:105px;}
+.sim-row.stotal{background:var(--gdim2);}
+.sim-row.stotal .sl{color:var(--green);font-weight:700;}
+.sim-row.stotal .sv{color:var(--green);font-weight:700;}
+
+/* ── OFFERS ── */
+.ocard{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:13px;}
+.otitle{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+.oprice{font-family:'Clash Display',sans-serif;font-size:22px;color:var(--green);line-height:1;}
+.outil{font-size:10px;color:var(--dim);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+
+/* ── SLIDERS ── */
+.slider-field{margin-bottom:16px;}
+.slider-field:last-child{margin-bottom:0;}
+.slider-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.slider-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.slider-value{font-family:'Clash Display',sans-serif;font-size:20px;line-height:1;color:var(--green);min-width:64px;text-align:right;}
+.slider-value.sv-r{color:var(--red);}
+.slider-value.sv-a{color:var(--gold);}
+.slider-value.sv-b{color:var(--blue);}
+.slider-track{position:relative;height:5px;background:var(--s3);border-radius:3px;cursor:pointer;}
+.slider-fill{position:absolute;left:0;top:0;height:100%;border-radius:3px;background:var(--green);transition:width .05s;}
+.slider-fill.sf-r{background:var(--red);}
+.slider-fill.sf-a{background:var(--gold);}
+.slider-fill.sf-b{background:var(--blue);}
+.slider-thumb{position:absolute;top:50%;transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:var(--text);border:2.5px solid var(--green);cursor:grab;transition:transform .1s,box-shadow .1s;z-index:2;}
+.slider-thumb:active{cursor:grabbing;transform:translate(-50%,-50%) scale(1.2);box-shadow:0 0 0 5px var(--gdim);}
+.slider-thumb.st-r{border-color:var(--red);}
+.slider-thumb.st-a{border-color:var(--gold);}
+.slider-thumb.st-b{border-color:var(--blue);}
+.slider-limits{display:flex;justify-content:space-between;margin-top:5px;}
+.slider-limit{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+.slider-hint{font-size:9px;color:var(--muted);margin-top:3px;}
+
+/* ── FF ROWS ── */
+.ffr{display:grid;grid-template-columns:1fr 115px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.ffr:last-child{border-bottom:none;}
+.ffr-n{font-size:11px;color:var(--dim);}
+.ffr input{margin:0;padding:6px 9px;font-size:11px;}
+
+/* ── CURRENCY TOGGLE ── */
+.curr-toggle{display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:3px;gap:2px;}
+.curr-btn{padding:5px 14px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .15s;color:var(--muted);border:none;background:transparent;font-family:'Clash Display',sans-serif;}
+.curr-btn.on{background:var(--green);color:#070709;}
+
+/* ── ANTICIPADO ── */
+.result-big{text-align:center;padding:16px;}
+.result-big .val{font-family:'Clash Display',sans-serif;font-size:40px;color:var(--green);line-height:1;}
+.result-big .val.r{color:var(--red);}
+.result-big .lbl{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:4px;}
+.offer-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;}
+.otrio-card{background:var(--s2);border:1px solid var(--border2);border-radius:10px;padding:14px;}
+.otrio-head{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-family:'Clash Display',sans-serif;}
+.otrio-price{font-family:'Clash Display',sans-serif;font-size:24px;color:var(--text);line-height:1;margin-bottom:2px;}
+.otrio-sub{font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;}
+.roas-badge{display:inline-flex;align-items:center;gap:4px;background:var(--gdim);border:1px solid rgba(0,229,160,.25);color:var(--green);border-radius:5px;padding:3px 8px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;margin-top:6px;}
+
+/* ── TRACKING ── */
+.track-add-btn{background:var(--green);color:#070709;border:none;border-radius:8px;padding:9px 20px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif;}
+.track-add-btn:hover{background:var(--green2);}
+.export-btn{background:var(--s2);border:1px solid var(--border2);color:var(--dim);border-radius:8px;padding:9px 20px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all .15s;font-family:'Clash Display',sans-serif;}
+.export-btn:hover{border-color:var(--green);color:var(--green);}
+.pct-good{color:var(--green);}
+.pct-warn{color:var(--gold);}
+.pct-bad{color:var(--red);}
+.track-tbl{width:100%;border-collapse:collapse;min-width:900px;}
+.track-tbl th{background:var(--s2);color:var(--green);padding:9px 12px;text-align:center;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;border-bottom:1px solid var(--border2);white-space:nowrap;font-family:'Clash Display',sans-serif;}
+.track-tbl th:first-child{text-align:left;}
+.track-tbl td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--dim);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;}
+.track-tbl td:first-child{color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:11px;font-weight:600;text-align:left;}
+.track-tbl tr:hover td{background:var(--s2);}
+.track-tbl tr.track-total td{background:var(--s2);color:var(--green);font-weight:700;border-top:1px solid rgba(0,229,160,.2);}
+.track-del-btn{background:var(--rdim);border:1px solid rgba(255,69,103,.2);color:var(--red);border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:'JetBrains Mono',monospace;}
+.track-del-btn:hover{background:rgba(255,69,103,.2);}
+
+@media(max-width:1100px){.k5,.k4{grid-template-columns:repeat(2,1fr);}.gmain{grid-template-columns:1fr;}}
+@media(max-width:700px){.page{padding:14px;}.hdr,.nav{padding-left:14px;padding-right:14px;}.g2,.g3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+
+
+<!-- ── MAIN APP ── -->
+<div id="main-app" style="display:none;">
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-brand-icon">TP</div>
+    <div>
+      <div class="hdr-brand-name">TRUE PARTNER</div>
+      <div class="hdr-brand-sub">Optimux Calculator 2025</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <span class="hdr-pill" id="clock">—</span>
+    <span class="hdr-user" id="hdr-user">—</span>
+    <button class="hdr-btn" onclick="authLogout()">⎋ Salir</button>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="ntab on" onclick="goTab('admin')">📊 Costos Admin</div>
+  <div class="ntab" onclick="goTab('col')">🇨🇴 Colombia</div>
+  <div class="ntab" onclick="goTab('ant')">💳 Pago Anticipado</div>
+  <div class="ntab" onclick="goTab('track')">📈 Seguimiento Diario</div>
+</nav>
+
+<!-- ═══════════════ COSTOS ADMINISTRATIVOS ═══════════════ -->
+<div class="page on" id="page-admin">
+  <div class="ph"><div class="ph-t">Costos Administrativos</div><div class="ph-s">Gestión de costos fijos mensuales · Pesos Colombianos (COP)</div></div>
+  <div class="krow k5">
+    <div class="kpi"><div class="kpi-v" id="k-per">$0</div><div class="kpi-l">Personal</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="k-pla">$0</div><div class="kpi-l">Plataformas</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="k-adm">$0</div><div class="kpi-l">Administración</div></div>
+    <div class="kpi kr"><div class="kpi-v" id="k-tot">$0</div><div class="kpi-l">Total Costos</div></div>
+    <div class="kpi"><div class="kpi-v" id="k-dia">$0</div><div class="kpi-l">Costo × Día</div><div class="kpi-s">Base 30 días</div></div>
+  </div>
+  <div class="gmain">
+    <div class="col-l">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">👥 Personal</div></div><span class="badge bg" id="lb-per">$0</span></div>
+        <div class="cb">
+          <div class="crow"><span class="crow-n">Gerente Ecommerce</span><input type="number" id="per-gerente" value="0" onchange="cA()"><span class="crow-p" id="pct-gerente">0%</span></div>
+          <div class="crow"><span class="crow-n">Sub Gerente</span><input type="number" id="per-subger" value="0" onchange="cA()"><span class="crow-p" id="pct-subger">0%</span></div>
+          <div class="crow"><span class="crow-n">Coord. Marketing 1</span><input type="number" id="per-coord1" value="0" onchange="cA()"><span class="crow-p" id="pct-coord1">0%</span></div>
+          <div class="crow"><span class="crow-n">Coord. Marketing 2</span><input type="number" id="per-coord2" value="0" onchange="cA()"><span class="crow-p" id="pct-coord2">0%</span></div>
+          <div class="crow"><span class="crow-n">Diseñador</span><input type="number" id="per-diseno" value="0" onchange="cA()"><span class="crow-p" id="pct-diseno">0%</span></div>
+          <div class="crow"><span class="crow-n">Carrito Abandonados</span><input type="number" id="per-carrito" value="0" onchange="cA()"><span class="crow-p" id="pct-carrito">0%</span></div>
+          <div class="crow"><span class="crow-n">Confirmación Pedidos</span><input type="number" id="per-confirm" value="1925000" onchange="cA()"><span class="crow-p" id="pct-confirm">0%</span></div>
+          <div class="crow"><span class="crow-n">Community Manager</span><input type="number" id="per-cm" value="0" onchange="cA()"><span class="crow-p" id="pct-cm">0%</span></div>
+          <div class="crow"><span class="crow-n">Traffiker Junior</span><input type="number" id="per-traffiker" value="0" onchange="cA()"><span class="crow-p" id="pct-traffiker">0%</span></div>
+          <div class="crow"><span class="crow-n">Asesor Financiero</span><input type="number" id="per-asf" value="0" onchange="cA()"><span class="crow-p" id="pct-asf">0%</span></div>
+          <div class="crow"><span class="crow-n">Contabilidad</span><input type="number" id="per-cont" value="0" onchange="cA()"><span class="crow-p" id="pct-cont">0%</span></div>
+          <div class="crow"><span class="crow-n">Seguridad Social</span><input type="number" id="per-segsoc" value="0" onchange="cA()"><span class="crow-p" id="pct-segsoc">0%</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">💻 Plataformas</div></div><span class="badge ba" id="lb-pla">$0</span></div>
+        <div class="cb">
+          <div class="crow"><span class="crow-n">Shopify</span><input type="number" id="pla-shopify" value="500000" onchange="cA()"><span class="crow-p" id="pct-shopify">0%</span></div>
+          <div class="crow"><span class="crow-n">Canva</span><input type="number" id="pla-canva" value="0" onchange="cA()"><span class="crow-p" id="pct-canva">0%</span></div>
+          <div class="crow"><span class="crow-n">Chat GPT</span><input type="number" id="pla-chatgpt" value="0" onchange="cA()"><span class="crow-p" id="pct-chatgpt">0%</span></div>
+          <div class="crow"><span class="crow-n">Eleven Labs</span><input type="number" id="pla-eleven" value="0" onchange="cA()"><span class="crow-p" id="pct-eleven">0%</span></div>
+          <div class="crow"><span class="crow-n">CapCut</span><input type="number" id="pla-capcut" value="0" onchange="cA()"><span class="crow-p" id="pct-capcut">0%</span></div>
+          <div class="crow"><span class="crow-n">Admine</span><input type="number" id="pla-admine" value="0" onchange="cA()"><span class="crow-p" id="pct-admine">0%</span></div>
+          <div class="crow"><span class="crow-n">Bloqueador de Página</span><input type="number" id="pla-bloq" value="0" onchange="cA()"><span class="crow-p" id="pct-bloq">0%</span></div>
+          <div class="crow"><span class="crow-n">Scale Boost</span><input type="number" id="pla-scale" value="0" onchange="cA()"><span class="crow-p" id="pct-scale">0%</span></div>
+          <div class="crow"><span class="crow-n">Mant. de Cuentas</span><input type="number" id="pla-mant" value="0" onchange="cA()"><span class="crow-p" id="pct-mant">0%</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">🏢 Administración</div></div><span class="badge bb" id="lb-adm">$0</span></div>
+        <div class="cb">
+          <div class="crow"><span class="crow-n">Préstamo 1</span><input type="number" id="adm-p1" value="1300000" onchange="cA()"><span class="crow-p" id="pct-adm-p1">0%</span></div>
+          <div class="crow"><span class="crow-n">Arriendo</span><input type="number" id="adm-arr" value="0" onchange="cA()"><span class="crow-p" id="pct-adm-arr">0%</span></div>
+          <div class="crow"><span class="crow-n">Servicios</span><input type="number" id="adm-srv" value="0" onchange="cA()"><span class="crow-p" id="pct-adm-srv">0%</span></div>
+          <div class="crow"><span class="crow-n">Préstamo 2</span><input type="number" id="adm-p2" value="0" onchange="cA()"><span class="crow-p" id="pct-adm-p2">0%</span></div>
+          <div class="crow"><span class="crow-n">Préstamo 3</span><input type="number" id="adm-p3" value="0" onchange="cA()"><span class="crow-p" id="pct-adm-p3">0%</span></div>
+          <div class="crow"><span class="crow-n">Limpieza</span><input type="number" id="adm-limp" value="0" onchange="cA()"><span class="crow-p" id="pct-adm-limp">0%</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-r">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Distribución</div></div><span class="badge bg" id="slide-badge">1 / 3</span></div>
+        <div class="slides-wrap">
+          <div class="slides-track" id="st">
+            <div class="slide">
+              <div class="cb">
+                <div class="donut-wrap">
+                  <svg width="90" height="90" viewBox="0 0 96 96" style="flex-shrink:0">
+                    <circle cx="48" cy="48" r="34" fill="none" stroke="#1A1A24" stroke-width="13"/>
+                    <circle id="dnut-per" cx="48" cy="48" r="34" fill="none" stroke="#00E5A0" stroke-width="13" stroke-dasharray="213" stroke-dashoffset="0" transform="rotate(-90 48 48)" style="transition:stroke-dashoffset .5s"/>
+                    <circle id="dnut-pla" cx="48" cy="48" r="34" fill="none" stroke="#FFB547" stroke-width="13" stroke-dasharray="213" stroke-dashoffset="0" transform="rotate(-90 48 48)" style="transition:stroke-dashoffset .5s"/>
+                    <circle id="dnut-adm" cx="48" cy="48" r="34" fill="none" stroke="#4A8FFF" stroke-width="13" stroke-dasharray="213" stroke-dashoffset="0" transform="rotate(-90 48 48)" style="transition:stroke-dashoffset .5s"/>
+                    <text x="48" y="44" text-anchor="middle" font-size="7" fill="#5A5A78" font-family="Cabinet Grotesk">TOTAL</text>
+                    <text id="dnut-tot" x="48" y="56" text-anchor="middle" font-size="7" fill="#E8E8F0" font-weight="600" font-family="JetBrains Mono">$0</text>
+                  </svg>
+                  <div class="d-legend">
+                    <div class="d-li"><div class="d-dot" style="background:var(--green)"></div><span class="d-lbl">Personal</span><span class="d-val" id="dleg-per">$0</span><span class="d-pct" id="dleg-per-p">0%</span></div>
+                    <div class="d-li"><div class="d-dot" style="background:var(--gold)"></div><span class="d-lbl">Plataformas</span><span class="d-val" id="dleg-pla">$0</span><span class="d-pct" id="dleg-pla-p">0%</span></div>
+                    <div class="d-li"><div class="d-dot" style="background:var(--blue)"></div><span class="d-lbl">Administración</span><span class="d-val" id="dleg-adm">$0</span><span class="d-pct" id="dleg-adm-p">0%</span></div>
+                  </div>
+                </div>
+                <div class="dv"></div>
+                <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;color:var(--dim)">Personal</span><span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--green)" id="bpct-per">0%</span></div><div class="prog"><div class="pf pg" id="bfill-per" style="width:0%"></div></div></div>
+                <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;color:var(--dim)">Plataformas</span><span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--gold)" id="bpct-pla">0%</span></div><div class="prog"><div class="pf pa" id="bfill-pla" style="width:0%"></div></div></div>
+                <div><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:10px;color:var(--dim)">Administración</span><span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--blue)" id="bpct-adm">0%</span></div><div class="prog"><div class="pf pb" id="bfill-adm" style="width:0%"></div></div></div>
+              </div>
+            </div>
+            <div class="slide">
+              <div class="cb">
+                <div class="sbar" style="margin-top:0"><span class="sbar-l">Resumen por rubro</span><div class="sbar-line"></div></div>
+                <div class="rr hl" style="margin-bottom:6px"><span class="rr-l">👥 Personal</span><span class="rr-v g" id="sl2-per">$0</span></div>
+                <div class="rr hl" style="background:rgba(255,181,71,.06);margin-bottom:6px"><span class="rr-l">💻 Plataformas</span><span class="rr-v a" id="sl2-pla">$0</span></div>
+                <div class="rr hl" style="background:var(--bdim);margin-bottom:6px"><span class="rr-l">🏢 Administración</span><span class="rr-v b" id="sl2-adm">$0</span></div>
+                <div class="dv"></div>
+                <div class="rr"><span class="rr-l" style="font-weight:700;color:var(--text)">TOTAL COSTOS</span><span class="rr-v r" id="sl2-tot">$0</span></div>
+                <div class="rr"><span class="rr-l">Costo × Día (30d)</span><span class="rr-v g" id="sl2-dia">$0</span></div>
+                <div class="rr"><span class="rr-l">Mayor Rubro</span><span id="sl2-mayor"><span class="badge bg">—</span></span></div>
+                <div class="rr"><span class="rr-l">Distribución sana</span><span id="sl2-salud"><span class="badge bg">—</span></span></div>
+              </div>
+            </div>
+            <div class="slide">
+              <div class="cb np">
+                <div style="padding:10px 16px 6px;font-size:10px;color:var(--muted)">Costo admin unitario según volumen mensual de ventas</div>
+                <table class="tbl"><thead><tr><th>Ventas / mes</th><th>Costo admin/uds</th><th>Ahorro vs anterior</th></tr></thead><tbody id="tbl-ventas"></tbody></table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sdots" id="sdots"><div class="dot on" onclick="gS(0)"></div><div class="dot" onclick="gS(1)"></div><div class="dot" onclick="gS(2)"></div></div>
+        <div class="snav"><button class="sbtn" onclick="pS()">‹</button><span class="sctr" id="sctr">1 / 3</span><button class="sbtn" onclick="nS()">›</button></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc r"></div><div class="ct r">Resumen Total</div></div></div>
+        <div class="cb">
+          <div class="rr"><span class="rr-l">Costos Personal</span><span class="rr-v g" id="res-per">$0</span></div>
+          <div class="rr"><span class="rr-l">Costos Plataformas</span><span class="rr-v a" id="res-pla">$0</span></div>
+          <div class="rr"><span class="rr-l">Costos Administración</span><span class="rr-v b" id="res-adm">$0</span></div>
+          <div class="dv" style="margin:8px 0"></div>
+          <div class="rr hl"><span class="rr-l">TOTAL</span><span class="rr-v r" id="res-tot">$0</span></div>
+          <div class="rr"><span class="rr-l">Costo por Día</span><span class="rr-v g" id="res-dia">$0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ COLOMBIA ═══════════════ -->
+<div class="page" id="page-col">
+  <div class="ph"><div class="ph-t">🇨🇴 Colombia</div><div class="ph-s">Calculadora de rentabilidad · Peso Colombiano (COP)</div></div>
+  <div class="krow" style="grid-template-columns:repeat(5,1fr)">
+    <div class="kpi" id="k-col-util-card"><div class="kpi-v" id="k-col-util">$0</div><div class="kpi-l">Utilidad Real</div></div>
+    <div class="kpi kr"><div class="kpi-v" id="k-col-cos">$0</div><div class="kpi-l">Total Costos</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="k-col-cpa">$0</div><div class="kpi-l">CPA Break Even</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="k-col-sug">$0</div><div class="kpi-l">Precio Sugerido</div></div>
+    <div class="kpi kr"><div class="kpi-v" id="k-col-inef">30%</div><div class="kpi-l">Inefectividad</div><div class="kpi-s">Calculada automát.</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="col-l">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Configuración</div></div><span class="badge bg">Parámetros globales</span></div>
+        <div class="cb">
+          <div class="slider-field">
+            <div class="slider-header"><span class="slider-label">Tasa de Descap</span><span class="slider-value" id="sv-tasa">80%</span></div>
+            <div class="slider-track" id="st-tasa" onmousedown="startDrag(event,'tasa')" ontouchstart="startDrag(event,'tasa')"><div class="slider-fill" id="sf-tasa" style="width:80%"></div><div class="slider-thumb" id="sth-tasa" style="left:80%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <div class="slider-hint">% de pedidos que salen a domicilio</div>
+            <input type="hidden" id="c-tasa" value=".8">
+          </div>
+          <div class="slider-field">
+            <div class="slider-header"><span class="slider-label">% Devolución</span><span class="slider-value sv-r" id="sv-dev">10%</span></div>
+            <div class="slider-track" id="st-dev" onmousedown="startDrag(event,'dev')" ontouchstart="startDrag(event,'dev')"><div class="slider-fill sf-r" id="sf-dev" style="width:10%"></div><div class="slider-thumb st-r" id="sth-dev" style="left:10%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <div class="slider-hint">% de pedidos devueltos sobre descapachados</div>
+            <input type="hidden" id="c-dev" value=".1">
+          </div>
+          <div class="slider-field">
+            <div class="slider-header"><span class="slider-label">% Publicidad</span><span class="slider-value sv-a" id="sv-pub">30%</span></div>
+            <div class="slider-track" id="st-pub" onmousedown="startDrag(event,'pub')" ontouchstart="startDrag(event,'pub')"><div class="slider-fill sf-a" id="sf-pub" style="width:30%"></div><div class="slider-thumb st-a" id="sth-pub" style="left:30%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <div class="slider-hint">% del precio de venta destinado a pauta</div>
+            <input type="hidden" id="c-pub" value=".3">
+          </div>
+          <div class="slider-field" style="margin-bottom:0">
+            <div class="slider-header"><span class="slider-label">Utilidad Esperada</span><span class="slider-value sv-b" id="sv-uesp">20%</span></div>
+            <div class="slider-track" id="st-uesp" onmousedown="startDrag(event,'uesp')" ontouchstart="startDrag(event,'uesp')"><div class="slider-fill sf-b" id="sf-uesp" style="width:20%"></div><div class="slider-thumb st-b" id="sth-uesp" style="left:20%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <div class="slider-hint">% de margen objetivo sobre precio de venta</div>
+            <input type="hidden" id="c-uesp" value=".2">
+          </div>
+          <div class="dv" style="margin:14px 0 10px"></div>
+          <div class="sbar" style="margin-top:0"><span class="sbar-l">Inefectividad Automática</span><div class="sbar-line"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:10px;color:var(--dim)">Calculada: (1−Tasa) + Tasa×Dev</span><span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--red);font-weight:600" id="sv-inef">30%</span></div>
+          <div class="prog" style="height:6px"><div class="pf pr" id="sf-inef" style="width:30%"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Costos Unitarios</div></div><span class="badge ba">COP</span></div>
+        <div class="cb">
+          <div class="fr3">
+            <div class="field"><label>Producto</label><input type="number" id="c-prod" value="79500" onchange="cC()"></div>
+            <div class="field"><label>Flete</label><input type="number" id="c-flete" value="8000" onchange="cC()"></div>
+            <div class="field"><label>Administrativos</label><input type="number" id="c-adm" value="3725" onchange="cC()"></div>
+          </div>
+          <div class="fr2">
+            <div class="field"><label>CPA Mínimo</label><input type="number" id="c-cpam" value="25000" onchange="cC()"></div>
+            <div class="field"><label>Precio de Venta</label><input type="number" id="c-precio" value="169700" onchange="cC()"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc r"></div><div class="ct r">Auto-calculados</div></div><span class="badge br">Solo lectura</span></div>
+        <div class="cb">
+          <div class="rr"><span class="rr-l">CPA Calculado</span><span class="rr-v a" id="disp-cpac">$0</span></div>
+          <div class="rr"><span class="rr-l" style="display:flex;align-items:center;gap:5px">CAC Real <span class="badge ba" style="font-size:8px">AUTO</span></span><span class="rr-v a" id="disp-cac">$0</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Ofertas de Cantidad</div></div></div>
+        <div class="cb">
+          <div class="g2" style="gap:10px">
+            <div class="ocard">
+              <div class="otitle">📦 2 Unidades</div>
+              <div class="field" style="margin-bottom:8px"><label>Precio de Venta</label><input type="number" id="c-of2p" value="169700" onchange="cC()"></div>
+              <div style="font-size:9px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace" id="of2-hint">Sugerido: –</div>
+              <div class="oprice" id="c-of2u">$0</div>
+              <div class="outil" id="c-of2pct">0% utilidad</div>
+            </div>
+            <div class="ocard">
+              <div class="otitle">📦 3 Unidades</div>
+              <div class="field" style="margin-bottom:8px"><label>Precio de Venta</label><input type="number" id="c-of3p" value="220400" onchange="cC()"></div>
+              <div style="font-size:9px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace" id="of3-hint">Sugerido: –</div>
+              <div class="oprice" id="c-of3u">$0</div>
+              <div class="outil" id="c-of3pct">0% utilidad</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-l">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc r"></div><div class="ct r">Estructura de Costos</div></div></div>
+        <div class="cb" id="col-costos-body"></div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Simulador de Pedidos</div></div></div>
+        <div class="cb">
+          <div class="field"><label>Pedidos Facturados</label><input type="number" id="c-sped" value="1000" onchange="cC()"></div>
+          <div class="slider-field" style="margin-bottom:0">
+            <div class="slider-header"><span class="slider-label">% Tasa de Entrega</span><span class="slider-value" id="sv-stasa">100%</span></div>
+            <div class="slider-track" id="st-stasa" onmousedown="startDrag(event,'stasa')" ontouchstart="startDrag(event,'stasa')"><div class="slider-fill" id="sf-stasa" style="width:100%"></div><div class="slider-thumb" id="sth-stasa" style="left:100%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <input type="hidden" id="c-stasa" value="1">
+          </div>
+        </div>
+        <div class="sim-row sh"><span>Concepto</span><span style="text-align:right"># Pedidos</span><span style="text-align:right">Valor COP</span></div>
+        <div id="col-sim-rows"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Proveeduría — Fulfilment</div></div><span class="badge ba">Costo fulfilment: $2.000 · Utilidad esperada: 20%</span></div>
+    <div class="cb">
+      <div class="g2" style="gap:20px">
+        <div>
+          <div class="sbar" style="margin-top:0"><span class="sbar-l">Ingresa costo con IVA por producto</span><div class="sbar-line"></div></div>
+          <div id="col-ff-in">
+            <div class="ffr"><span class="ffr-n">Producto 1</span><input type="number" class="ffv" value="79500" onchange="cFF()"></div>
+            <div class="ffr"><span class="ffr-n">Producto 2</span><input type="number" class="ffv" value="80000" onchange="cFF()"></div>
+            <div class="ffr"><span class="ffr-n">Producto 3</span><input type="number" class="ffv" value="31000" onchange="cFF()"></div>
+            <div class="ffr"><span class="ffr-n">Producto 4</span><input type="number" class="ffv" value="0" onchange="cFF()"></div>
+            <div class="ffr"><span class="ffr-n">Producto 5</span><input type="number" class="ffv" value="0" onchange="cFF()"></div>
+          </div>
+        </div>
+        <div>
+          <div class="sbar" style="margin-top:0"><span class="sbar-l">Resultados</span><div class="sbar-line"></div></div>
+          <table class="tbl" style="margin-bottom:12px"><thead><tr><th>Producto</th><th>Vlr IVA</th><th>Vlr Sugerido</th><th>Utilidad</th></tr></thead><tbody id="col-ff-tbl"></tbody></table>
+          <div class="rr"><span class="rr-l">Inversión 1.000 uds.</span><span class="rr-v" id="ff-inv">$0</span></div>
+          <div class="rr"><span class="rr-l">Recaudado (80% entrega)</span><span class="rr-v" id="ff-rec">$0</span></div>
+          <div class="rr hl"><span class="rr-l">Utilidad Neta</span><span class="rr-v g" id="ff-util">$0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PAGO ANTICIPADO ═══════════════ -->
+<div class="page" id="page-ant">
+  <div class="ph"><div class="ph-t">💳 Calculadora Pago Anticipado</div><div class="ph-s">Modelo Prepaid — Comisión Shopify incluida · Selecciona la moneda de trabajo</div></div>
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+    <span style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;">Moneda:</span>
+    <div class="curr-toggle">
+      <button class="curr-btn on" id="cb-usd" onclick="setCurr('USD')">🇺🇸 USD</button>
+      <button class="curr-btn" id="cb-mxn" onclick="setCurr('MXN')">🇲🇽 MXN</button>
+    </div>
+    <div id="ant-curr-note" style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Mostrando en USD</div>
+    <div id="trm-wrap" style="display:none;align-items:center;gap:8px;">
+      <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;">TRM USD→MXN</label>
+      <input type="number" id="ant-trm" value="17.5" style="width:90px;padding:5px 9px;font-size:12px;" onchange="cAnt()">
+    </div>
+  </div>
+  <div class="krow" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px;">
+    <div class="kpi"><div class="kpi-v" id="ant-k-precio">$0</div><div class="kpi-l">Precio Ideal x1</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="ant-k-cpa">$0</div><div class="kpi-l">CPA Ideal</div></div>
+    <div class="kpi kr"><div class="kpi-v" id="ant-k-shopify">$0</div><div class="kpi-l">Comisión Shopify</div></div>
+    <div class="kpi"><div class="kpi-v" id="ant-k-util">$0</div><div class="kpi-l">Utilidad Real</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="ant-k-roas">—</div><div class="kpi-l">ROAS Ideal</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px;">
+    <div class="col-l">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Configuración</div></div><span class="badge bg">Parámetros globales</span></div>
+        <div class="cb">
+          <div class="slider-field">
+            <div class="slider-header"><span class="slider-label">Comisión Shopify</span><span class="slider-value sv-r" id="asv-shopify">5.2%</span></div>
+            <div class="slider-track" id="ast-shopify" onmousedown="startAntDrag(event,'shopify')" ontouchstart="startAntDrag(event,'shopify')"><div class="slider-fill sf-r" id="asf-shopify" style="width:26%"></div><div class="slider-thumb st-r" id="asth-shopify" style="left:26%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">10%</span><span class="slider-limit">20%</span></div>
+            <div class="slider-hint">Comisión que cobra Shopify por transacción</div>
+            <input type="hidden" id="ant-shopify" value="5.2">
+          </div>
+          <div class="slider-field">
+            <div class="slider-header"><span class="slider-label">CPA Ideal %</span><span class="slider-value sv-a" id="asv-cpapct">30%</span></div>
+            <div class="slider-track" id="ast-cpapct" onmousedown="startAntDrag(event,'cpapct')" ontouchstart="startAntDrag(event,'cpapct')"><div class="slider-fill sf-a" id="asf-cpapct" style="width:30%"></div><div class="slider-thumb st-a" id="asth-cpapct" style="left:30%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <div class="slider-hint">% del precio de venta destinado a publicidad</div>
+            <input type="hidden" id="ant-cpapct" value="30">
+          </div>
+          <div class="slider-field" style="margin-bottom:0">
+            <div class="slider-header"><span class="slider-label">Utilidad Esperada %</span><span class="slider-value sv-b" id="asv-utilpct">30%</span></div>
+            <div class="slider-track" id="ast-utilpct" onmousedown="startAntDrag(event,'utilpct')" ontouchstart="startAntDrag(event,'utilpct')"><div class="slider-fill sf-b" id="asf-utilpct" style="width:30%"></div><div class="slider-thumb st-b" id="asth-utilpct" style="left:30%"></div></div>
+            <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+            <div class="slider-hint">Margen de ganancia objetivo</div>
+            <input type="hidden" id="ant-utilpct" value="30">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Costos Unitarios</div></div><span class="badge ba">Valores en moneda seleccionada</span></div>
+        <div class="cb">
+          <div class="fr3">
+            <div class="field"><label>Producto</label><input type="number" id="ant-prod" value="10.7" step="0.1" onchange="cAnt()"></div>
+            <div class="field"><label>Flete</label><input type="number" id="ant-flete" value="0" step="0.1" onchange="cAnt()"></div>
+            <div class="field"><label>Administrativos</label><input type="number" id="ant-adm" value="0" step="0.1" onchange="cAnt()"></div>
+          </div>
+          <div class="fr3">
+            <div class="field"><label>Costo Total x1</label><input type="number" id="ant-ct1" value="13.9" step="0.1" onchange="cAnt()"></div>
+            <div class="field"><label>Costo Total x2</label><input type="number" id="ant-ct2" value="25.4" step="0.1" onchange="cAnt()"></div>
+            <div class="field"><label>Costo Total x3</label><input type="number" id="ant-ct3" value="36.9" step="0.1" onchange="cAnt()"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Simulador</div></div><span class="badge bb">Datos reales</span></div>
+        <div class="cb">
+          <div class="fr3">
+            <div class="field"><label>Precio de Venta</label><input type="number" id="ant-sv-precio" value="80" step="0.5" onchange="cAnt()"></div>
+            <div class="field"><label>CPA Real</label><input type="number" id="ant-sv-cpa" value="25" step="0.5" onchange="cAnt()"></div>
+            <div class="field"><label>Costo de Producto</label><input type="number" id="ant-sv-prod" value="33.5" step="0.5" onchange="cAnt()"></div>
+          </div>
+          <div class="dv" style="margin:10px 0 8px"></div>
+          <div class="g2" style="gap:10px">
+            <div style="text-align:center;background:var(--s2);border-radius:8px;padding:14px"><div style="font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Utilidad Real</div><div style="font-family:'Clash Display',sans-serif;font-size:28px;color:var(--green)" id="ant-sv-util">$0</div></div>
+            <div style="text-align:center;background:var(--s2);border-radius:8px;padding:14px"><div style="font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">ROAS Real</div><div style="font-family:'Clash Display',sans-serif;font-size:28px;color:var(--blue)" id="ant-sv-roas">—</div></div>
+          </div>
+          <div class="dv" style="margin:10px 0 6px"></div>
+          <div class="rr"><span class="rr-l">Comisión Shopify</span><span class="rr-v r" id="ant-sv-shopify">$0</span></div>
+          <div class="rr"><span class="rr-l">CPA Break Even</span><span class="rr-v a" id="ant-sv-cpabreak">$0</span></div>
+          <div class="rr"><span class="rr-l">ROAS Break Even</span><span class="rr-v a" id="ant-sv-roasbreak">—</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-l">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Resultados — 1 Unidad</div></div><span class="badge bg" id="ant-curr-badge">USD</span></div>
+        <div class="cb">
+          <div class="rr"><span class="rr-l">Precio Ideal</span><span class="rr-v g" id="ant-r1-precio">$0</span></div>
+          <div class="rr"><span class="rr-l">CPA Ideal $</span><span class="rr-v a" id="ant-r1-cpa">$0</span></div>
+          <div class="rr"><span class="rr-l">Comisión Shopify</span><span class="rr-v r" id="ant-r1-shop">$0</span></div>
+          <div class="rr hl"><span class="rr-l">Utilidad Real</span><span class="rr-v g" id="ant-r1-util">$0</span></div>
+          <div class="rr"><span class="rr-l">ROAS Ideal</span><span class="rr-v b" id="ant-r1-roas">—</span></div>
+          <div class="rr"><span class="rr-l">CPA Break Even</span><span class="rr-v a" id="ant-r1-cpabreak">$0</span></div>
+          <div class="rr"><span class="rr-l">ROAS Break Even</span><span class="rr-v" id="ant-r1-roasbreak">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Ofertas de Volumen</div></div></div>
+        <div class="cb">
+          <div class="g2" style="gap:12px;margin-bottom:14px">
+            <div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;font-family:'Clash Display',sans-serif">📦 Configurar x2</div><div class="field"><label>% Descuento x2</label><input type="number" id="ant-desc2" value="20" step="1" onchange="cAnt()"></div></div>
+            <div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);margin-bottom:8px;font-family:'Clash Display',sans-serif">📦 Configurar x3</div><div class="field"><label>% Descuento x3</label><input type="number" id="ant-desc3" value="30" step="1" onchange="cAnt()"></div></div>
+          </div>
+          <div class="offer-trio" style="grid-template-columns:1fr 1fr">
+            <div class="otrio-card" style="border-color:rgba(255,181,71,.25)">
+              <div class="otrio-head" style="color:var(--gold)">2 Unidades</div>
+              <div class="otrio-price" id="ant-o2-precio">$0</div>
+              <div class="otrio-sub" id="ant-o2-desc">20% descuento</div>
+              <div class="dv" style="margin:8px 0"></div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">CPA Máx</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)" id="ant-o2-cpa">$0</span></div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">Shopify</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)" id="ant-o2-shop">$0</span></div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">Utilidad</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green)" id="ant-o2-util">$0</span></div>
+              <div class="roas-badge" id="ant-o2-roas">ROAS —</div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">CPA Break</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)" id="ant-o2-break">$0</span></div>
+            </div>
+            <div class="otrio-card" style="border-color:rgba(74,143,255,.25)">
+              <div class="otrio-head" style="color:var(--blue)">3 Unidades</div>
+              <div class="otrio-price" id="ant-o3-precio">$0</div>
+              <div class="otrio-sub" id="ant-o3-desc">30% descuento</div>
+              <div class="dv" style="margin:8px 0"></div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">CPA Máx</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)" id="ant-o3-cpa">$0</span></div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">Shopify</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red)" id="ant-o3-shop">$0</span></div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">Utilidad</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green)" id="ant-o3-util">$0</span></div>
+              <div class="roas-badge" id="ant-o3-roas">ROAS —</div>
+              <div class="rr" style="padding:5px 0"><span style="font-size:10px;color:var(--dim)">CPA Break</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold)" id="ant-o3-break">$0</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SEGUIMIENTO DIARIO ═══════════════ -->
+<div class="page" id="page-track">
+  <div class="ph"><div class="ph-t">📈 Seguimiento Diario de Operación</div><div class="ph-s">Registra · filtra por período · visualiza tendencias · exporta a Excel</div></div>
+  <div class="card" style="margin-bottom:16px">
+    <div class="ch">
+      <div class="ch-l"><div class="acc"></div><div class="ct">Nuevo Registro</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="track-add-btn" onclick="addTrackRow()">＋ Guardar día</button>
+        <button class="export-btn" onclick="exportExcel()">⬇ Exportar CSV</button>
+        <button class="export-btn" onclick="clearTrack()" style="color:var(--red);border-color:rgba(255,69,103,.3)">🗑 Limpiar todo</button>
+      </div>
+    </div>
+    <div class="cb">
+      <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:end">
+        <div class="field" style="margin:0"><label>📅 Fecha</label><input type="date" id="t-fecha" style="padding:9px 11px;font-size:12px;"></div>
+        <div class="field" style="margin:0"><label>📦 Órdenes Totales</label><input type="number" id="t-total" placeholder="ej. 10" oninput="calcTrackEntry()"></div>
+        <div class="field" style="margin:0"><label>✅ Confirmadas</label><input type="number" id="t-conf" placeholder="ej. 7" oninput="calcTrackEntry()"></div>
+        <div class="field" style="margin:0"><label>❌ Canceladas</label><input type="number" id="t-cancel" placeholder="ej. 2" oninput="calcTrackEntry()"></div>
+        <div class="field" style="margin:0"><label style="color:var(--gold)">⏳ Por Confirmar <span class="badge ba" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="number" id="t-porcnf" readonly style="background:var(--s3);color:var(--gold);font-weight:600;cursor:default"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:14px;align-items:end">
+        <div class="field" style="margin:0"><label>💰 Facturación</label><input type="number" id="t-fact" placeholder="ej. 1190000" oninput="calcTrackEntry()"></div>
+        <div class="field" style="margin:0"><label>📢 Pauta del día</label><input type="number" id="t-pauta" placeholder="ej. 297500" oninput="calcTrackEntry()"></div>
+        <div class="field" style="margin:0"><label style="color:var(--gold)">📊 % Publicidad <span class="badge ba" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="text" id="t-pctpub" readonly style="background:var(--s3);font-weight:700;cursor:default"></div>
+        <div class="field" style="margin:0"><label style="color:var(--green)">🎯 % Confirmación <span class="badge bg" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="text" id="t-pctconf" readonly style="background:var(--s3);font-weight:700;cursor:default"></div>
+        <div class="field" style="margin:0"><label style="color:var(--blue)">💵 CPA Real <span class="badge bb" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="text" id="t-cpareal" readonly style="background:var(--s3);color:var(--blue);font-weight:700;cursor:default"></div>
+      </div>
+    </div>
+  </div>
+  <div class="g2" style="gap:12px;margin-bottom:16px">
+    <div class="card">
+      <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Período de Análisis</div></div></div>
+      <div class="cb">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button id="flt-dia"  onclick="setFilter('dia')"  style="background:var(--green);color:#070709;border:none;border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif">Día</button>
+          <button id="flt-sem"  onclick="setFilter('sem')"  style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif">Semana</button>
+          <button id="flt-mes"  onclick="setFilter('mes')"  style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif">Mes</button>
+          <button id="flt-anio" onclick="setFilter('anio')" style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif">Año</button>
+          <button id="flt-rng"  onclick="setFilter('rng')"  style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif">Rango</button>
+          <button id="flt-all"  onclick="setFilter('all')"  style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;font-family:'Clash Display',sans-serif">Todo</button>
+        </div>
+        <div id="flt-controls" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+          <div id="flt-fecha-wrap" class="field" style="margin:0"><label>Fecha</label><input type="date" id="flt-fecha" style="padding:7px 10px;font-size:12px;" onchange="renderTrack()"></div>
+          <div id="flt-mes-wrap" class="field" style="margin:0;display:none"><label>Mes</label><input type="month" id="flt-mes-val" style="padding:7px 10px;font-size:12px;" onchange="renderTrack()"></div>
+          <div id="flt-anio-wrap" class="field" style="margin:0;display:none"><label>Año</label><input type="number" id="flt-anio-val" placeholder="2025" min="2020" max="2099" style="width:100px" onchange="renderTrack()"></div>
+          <div id="flt-rng-wrap" style="display:none;gap:10px;align-items:end">
+            <div class="field" style="margin:0"><label>Desde</label><input type="date" id="flt-desde" style="padding:7px 10px;font-size:12px;" onchange="renderTrack()"></div>
+            <div class="field" style="margin:0"><label>Hasta</label><input type="date" id="flt-hasta" style="padding:7px 10px;font-size:12px;" onchange="renderTrack()"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="flt-resumen">Mostrando: todos los registros</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ch-l"><div class="acc g" style="background:var(--green)"></div><div class="ct">Metas de la Operación</div></div><span class="badge bg">Editables</span></div>
+      <div class="cb">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="field" style="margin:0"><label style="color:var(--green)">Meta Confirmación %</label><input type="number" id="meta-conf" value="70" min="1" max="100" step="1" oninput="renderTrack()" style="border-color:rgba(0,229,160,.3)"></div>
+          <div class="field" style="margin:0"><label style="color:var(--red)">Máx Cancelación %</label><input type="number" id="meta-cancel" value="15" min="1" max="100" step="1" oninput="renderTrack()" style="border-color:rgba(255,69,103,.3)"></div>
+          <div class="field" style="margin:0"><label style="color:var(--gold)">Máx % Publicidad</label><input type="number" id="meta-pub" value="35" min="1" max="100" step="1" oninput="renderTrack()" style="border-color:rgba(255,181,71,.3)"></div>
+          <div class="field" style="margin:0"><label style="color:var(--blue)">CPA Objetivo ($)</label><input type="number" id="meta-cpa" value="0" min="0" step="100" oninput="renderTrack()" style="border-color:rgba(74,143,255,.3)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px">
+    <div class="kpi"><div class="kpi-v g" id="trk-k-total">0</div><div class="kpi-l">Órd. Totales</div></div>
+    <div class="kpi"><div class="kpi-v g" id="trk-k-conf">0</div><div class="kpi-l">Confirmadas</div></div>
+    <div class="kpi kr"><div class="kpi-v" id="trk-k-cancel">0</div><div class="kpi-l">Canceladas</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="trk-k-porcnf">0</div><div class="kpi-l">Por Confirmar</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="trk-k-fact">$0</div><div class="kpi-l">Facturación</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="trk-k-cpa">—</div><div class="kpi-l">CPA Real Prom.</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="ch">
+        <div class="ch-l"><div class="acc"></div><div class="ct">Gráfica de Operación</div></div>
+        <div style="display:flex;gap:6px">
+          <button onclick="setChartMetric('ordenes')" id="cm-ordenes" style="background:var(--green);color:#070709;border:none;border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'Clash Display',sans-serif">Órdenes</button>
+          <button onclick="setChartMetric('tasas')"   id="cm-tasas"   style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'Clash Display',sans-serif">Tasas %</button>
+          <button onclick="setChartMetric('financiero')" id="cm-fin"  style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'Clash Display',sans-serif">Financiero</button>
+          <button onclick="setChartMetric('cpa')"     id="cm-cpa"     style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'Clash Display',sans-serif">CPA</button>
+        </div>
+      </div>
+      <div class="cb" style="padding:14px 16px 10px"><canvas id="track-chart" style="width:100%;height:260px;max-height:260px"></canvas><div id="chart-empty" style="display:none;text-align:center;color:var(--muted);padding:60px 0;font-size:12px">Sin datos para graficar · agrega registros primero</div></div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Dashboard Logístico</div></div><span class="badge bg" id="trk-count-badge">0 días</span></div>
+      <div class="cb">
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:11px;color:var(--dim);font-weight:600">Tasa Confirmación</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">Meta: <span id="dash-meta-conf-lbl">70%</span></span><span style="font-family:'Clash Display',sans-serif;font-size:20px" id="dash-pct-conf">—</span></div></div>
+          <div style="height:10px;background:var(--s3);border-radius:6px;overflow:visible;position:relative"><div id="dash-bar-conf" style="height:100%;background:var(--green);border-radius:6px;transition:width .5s;width:0%;position:relative"></div><div id="dash-meta-conf-line" style="position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.3);border-radius:1px;transition:left .3s"></div></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:11px;color:var(--dim);font-weight:600">Tasa Cancelación</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">Máx: <span id="dash-meta-cancel-lbl">15%</span></span><span style="font-family:'Clash Display',sans-serif;font-size:20px" id="dash-pct-cancel">—</span></div></div>
+          <div style="height:10px;background:var(--s3);border-radius:6px;overflow:visible;position:relative"><div id="dash-bar-cancel" style="height:100%;background:var(--red);border-radius:6px;transition:width .5s;width:0%"></div><div id="dash-meta-cancel-line" style="position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.3);border-radius:1px;transition:left .3s"></div></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:11px;color:var(--dim);font-weight:600">% Publicidad / Facturación</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">Máx: <span id="dash-meta-pub-lbl">35%</span></span><span style="font-family:'Clash Display',sans-serif;font-size:20px" id="dash-pct-pub">—</span></div></div>
+          <div style="height:10px;background:var(--s3);border-radius:6px;overflow:visible;position:relative"><div id="dash-bar-pub" style="height:100%;background:var(--gold);border-radius:6px;transition:width .5s;width:0%"></div><div id="dash-meta-pub-line" style="position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.3);border-radius:1px;transition:left .3s"></div></div>
+        </div>
+        <div class="dv" style="margin:10px 0"></div>
+        <div style="margin-bottom:10px"><div style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px;font-family:'Clash Display',sans-serif">Desglose de Órdenes</div><div style="display:flex;height:18px;border-radius:5px;overflow:hidden;gap:1px" id="dash-stack"></div><div style="display:flex;gap:14px;margin-top:7px;flex-wrap:wrap" id="dash-legend"></div></div>
+        <div class="dv" style="margin:10px 0"></div>
+        <div class="rr"><span class="rr-l">Total Facturación</span><span class="rr-v g" id="dash-fact">$0</span></div>
+        <div class="rr"><span class="rr-l">Total Pauta</span><span class="rr-v r" id="dash-pauta">$0</span></div>
+        <div class="rr"><span class="rr-l">CPA Real promedio</span><span class="rr-v b" id="dash-cpa">—</span></div>
+        <div class="rr hl"><span class="rr-l">Estado operación</span><span id="dash-estado">—</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Historial</div></div><span class="badge bb" id="trk-flt-badge">todos los registros</span></div>
+    <div style="overflow-x:auto;max-height:380px;overflow-y:auto">
+      <table class="track-tbl">
+        <thead><tr><th style="text-align:left">Fecha</th><th>Total</th><th>Confirm.</th><th>Cancel.</th><th>P.Conf.</th><th>Fact.</th><th>Pauta</th><th>%Pub</th><th>%Conf</th><th>CPA</th><th></th></tr></thead>
+        <tbody id="track-tbody"></tbody>
+        <tfoot><tr class="track-total"><td>TOTAL / PROM.</td><td id="tf-total">—</td><td id="tf-conf">—</td><td id="tf-cancel">—</td><td id="tf-porcnf">—</td><td id="tf-fact">—</td><td id="tf-pauta">—</td><td id="tf-pctpub">—</td><td id="tf-pctconf">—</td><td id="tf-cpa">—</td><td></td></tr></tfoot>
+      </table>
+    </div>
+    <div id="track-empty" style="padding:36px;text-align:center;color:var(--muted);font-size:12px">Sin registros · Ingresa los datos arriba y pulsa <strong style="color:var(--green)">Guardar día</strong></div>
+  </div>
+</div>
+
+</div><!-- /main-app -->
+
+<script>
+// ── SUPABASE + AUTH ─────────────────────────────────────
+const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
+
+const ADMIN_EMAILS = [
+  'ltolentinocamacho@gmail.com',
+  'castellonricardo2@gmail.com'
+];
+
+const { createClient } = supabase;
+const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Check session on load — redirect if not logged in or not admin
+(async () => {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) { window.location.replace('./login.html'); return; }
+    const email = session.user.email.toLowerCase().trim();
+    if (!ADMIN_EMAILS.includes(email)) {
+      window.location.replace('./home.html'); return;
+    }
+    document.getElementById('main-app').style.display = 'block';
+    document.getElementById('hdr-user').textContent = session.user.email;
+    initApp();
+  } catch(e) { window.location.replace('./login.html'); }
+})();
+
+async function authLogout() {
+  await _sb.auth.signOut();
+  window.location.replace('./home.html');
+}
+
+// ── APP INIT ────────────────────────────────────────────
+function initApp() {
+  cA(); initSliders(); cC(); cFF(); initAntSliders(); cAnt(); initTrack();
+}
+
+// ── CLOCK ────────────────────────────────────────────────
+(function tick(){
+  const n = new Date();
+  const el = document.getElementById('clock');
+  if(el) el.textContent = n.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+n.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  setTimeout(tick,1000);
+})();
+
+// ── TABS ─────────────────────────────────────────────────
+function goTab(k){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('page-'+k)?.classList.add('on');
+  const m={admin:0,col:1,ant:2,track:3};
+  if(m[k]!=null) document.querySelectorAll('.ntab')[m[k]]?.classList.add('on');
+}
+
+// ── HELPERS ──────────────────────────────────────────────
+const FMT=new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',minimumFractionDigits:0,maximumFractionDigits:0});
+const cop=n=>isNaN(n)||!isFinite(n)?'$0':FMT.format(n);
+const pct=(n,d=1)=>isNaN(n)||!isFinite(n)?'0%':(n*100).toFixed(d)+'%';
+function copK(n){if(n>=1e9)return '$'+(n/1e9).toFixed(1).replace('.',',')+'B';if(n>=1e6)return '$'+(n/1e6).toFixed(1).replace('.',',')+'M';if(n>=1e3)return '$'+(n/1e3).toFixed(0)+'K';return cop(n);}
+function tx(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function g(id){return parseFloat(document.getElementById(id)?.value)||0;}
+function ih(id,h){const e=document.getElementById(id);if(e)e.innerHTML=h;}
+
+// ── SLIDES ───────────────────────────────────────────────
+let cs=0;const TS=3;
+function gS(n){cs=Math.max(0,Math.min(n,TS-1));document.getElementById('st').style.transform=`translateX(-${cs*100}%)`;document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cs));const lbl=`${cs+1} / ${TS}`;tx('sctr',lbl);tx('slide-badge',lbl);}
+function nS(){gS(cs+1<TS?cs+1:0);}
+function pS(){gS(cs-1>=0?cs-1:TS-1);}
+
+// ── ADMIN CALC ───────────────────────────────────────────
+function cA(){
+  const per=['per-gerente','per-subger','per-coord1','per-coord2','per-diseno','per-carrito','per-confirm','per-cm','per-traffiker','per-asf','per-cont','per-segsoc'].reduce((s,id)=>s+g(id),0);
+  const pla=['pla-shopify','pla-canva','pla-chatgpt','pla-eleven','pla-capcut','pla-admine','pla-bloq','pla-scale','pla-mant'].reduce((s,id)=>s+g(id),0);
+  const adm=['adm-p1','adm-arr','adm-srv','adm-p2','adm-p3','adm-limp'].reduce((s,id)=>s+g(id),0);
+  const tot=per+pla+adm,dia=tot/30;
+  const pp=tot>0?per/tot:0,pl=tot>0?pla/tot:0,pa=tot>0?adm/tot:0;
+  const C=213;
+  tx('k-per',copK(per));tx('k-pla',copK(pla));tx('k-adm',copK(adm));tx('k-tot',copK(tot));tx('k-dia',cop(dia));
+  tx('lb-per',cop(per));tx('lb-pla',cop(pla));tx('lb-adm',cop(adm));
+  tx('res-per',cop(per));tx('res-pla',cop(pla));tx('res-adm',cop(adm));tx('res-tot',cop(tot));tx('res-dia',cop(dia));
+  ['per-gerente','per-subger','per-coord1','per-coord2','per-diseno','per-carrito','per-confirm','per-cm','per-traffiker','per-asf','per-cont','per-segsoc'].forEach(id=>tx('pct-'+id.replace('per-',''),tot>0?pct(g(id)/tot):'0%'));
+  ['pla-shopify','pla-canva','pla-chatgpt','pla-eleven','pla-capcut','pla-admine','pla-bloq','pla-scale','pla-mant'].forEach(id=>tx('pct-'+id.replace('pla-',''),tot>0?pct(g(id)/tot):'0%'));
+  ['adm-p1','adm-arr','adm-srv','adm-p2','adm-p3','adm-limp'].forEach(id=>tx('pct-'+id,tot>0?pct(g(id)/tot):'0%'));
+  tx('bpct-per',pct(pp));document.getElementById('bfill-per').style.width=(pp*100)+'%';
+  tx('bpct-pla',pct(pl));document.getElementById('bfill-pla').style.width=(pl*100)+'%';
+  tx('bpct-adm',pct(pa));document.getElementById('bfill-adm').style.width=(pa*100)+'%';
+  function setArc(id,seg,startAngle){const el=document.getElementById(id);if(!el)return;el.setAttribute('stroke-dasharray',`${seg*C} ${C-seg*C}`);el.setAttribute('stroke-dashoffset',C-startAngle*C);}
+  setArc('dnut-per',pp,0);setArc('dnut-pla',pl,pp);setArc('dnut-adm',pa,pp+pl);
+  tx('dnut-tot',copK(tot));tx('dleg-per',cop(per));tx('dleg-per-p',pct(pp,0));tx('dleg-pla',cop(pla));tx('dleg-pla-p',pct(pl,0));tx('dleg-adm',cop(adm));tx('dleg-adm-p',pct(pa,0));
+  tx('sl2-per',cop(per));tx('sl2-pla',cop(pla));tx('sl2-adm',cop(adm));tx('sl2-tot',cop(tot));tx('sl2-dia',cop(dia));
+  const mn=pp>=pl&&pp>=pa?'Personal':pl>=pa?'Plataformas':'Administración';const mx=Math.max(pp,pl,pa);
+  ih('sl2-mayor',`<span class="badge bg">${mn} ${pct(mx,0)}</span>`);
+  ih('sl2-salud',`<span class="badge ${pp<0.6&&pl<0.3?'bg':'br'}">${pp<0.6&&pl<0.3?'✓ Balanceado':'⚠ Revisar'}</span>`);
+  const ventas=[100,200,300,400,500,700,1000,1200,1500,2000,2500,3000,4000,5000,7500];
+  const tbody=document.getElementById('tbl-ventas');
+  if(tbody)tbody.innerHTML=ventas.map((v,i)=>{const cu=tot>0&&v>0?tot/v:0;const prev=i>0&&ventas[i-1]>0?tot/ventas[i-1]:cu;const diff=cu-prev;const badge=i===0?'–':`<span class="badge bg">↓ ${cop(Math.abs(diff))}</span>`;return `<tr><td>${v.toLocaleString('es-CO')}</td><td>${cop(cu)}</td><td>${badge}</td></tr>`;}).join('');
+}
+
+// ── COLOMBIA CALC ────────────────────────────────────────
+function cC(){
+  const tasa=g('c-tasa'),dev=g('c-dev'),pub=g('c-pub'),uesp=g('c-uesp');
+  const prod=g('c-prod'),flete=g('c-flete'),adm=g('c-adm'),cpam=g('c-cpam');
+  const precio=g('c-precio'),sped=g('c-sped'),stasa=g('c-stasa');
+  const inef=(1-tasa)+tasa*dev;
+  const fleteAdj=dev<1?flete/(1-dev):flete;
+  const admAdj=inef<1?(adm+inef)/(1-inef):adm;
+  const base=fleteAdj+admAdj+prod;
+  const cpac=pub<1?((base+base*uesp)/(1-pub))-base:0;
+  const cacReal=inef<1?Math.max(cpac,cpam)/(1-inef):Math.max(cpac,cpam);
+  const totC=prod+fleteAdj+admAdj+cacReal;
+  const precSug=(uesp<1&&inef<1)?totC+(totC/(1-uesp)-totC)/(1-inef):totC;
+  const utilB=precio-totC,utilPerd=inef*utilB,utilR=utilB-utilPerd;
+  const cpaBreak=Math.max(cpac,cpam)+utilR;
+  const inefPct=Math.round(inef*1000)/10;
+  tx('sv-inef',inefPct.toFixed(1)+'%');tx('k-col-inef',inefPct.toFixed(1)+'%');
+  const sfI=document.getElementById('sf-inef');if(sfI)sfI.style.width=Math.min(inef*100,100)+'%';
+  tx('k-col-util',copK(utilR));tx('k-col-cos',copK(totC));tx('k-col-cpa',copK(cpaBreak));tx('k-col-sug',copK(precSug));
+  const kCard=document.getElementById('k-col-util-card');const kVal=document.getElementById('k-col-util');
+  if(kCard)kCard.className='kpi'+(utilR<0?' kr':'');if(kVal)kVal.className='kpi-v';
+  tx('disp-cpac',cop(cpac));tx('disp-cac',cop(cacReal));
+  const pS=precio>0;
+  ih('col-costos-body',`
+    <div class="rr"><span class="rr-l">Producto</span><div style="display:flex;align-items:center;gap:6px"><span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${pS?pct(prod/precio,1):'–'}</span><span class="rr-v">${cop(prod)}</span></div></div>
+    <div class="rr"><span class="rr-l">Flete Promedio</span><span class="rr-v">${cop(flete)}</span></div>
+    <div class="rr"><span class="rr-l" style="display:flex;align-items:center;gap:4px">Flete Ajust. ÷(1−Dev)<span class="badge ba" style="font-size:8px">AUTO</span></span><span class="rr-v a">${cop(fleteAdj)}</span></div>
+    <div class="rr"><span class="rr-l">Administrativos</span><span class="rr-v">${cop(adm)}</span></div>
+    <div class="rr"><span class="rr-l" style="display:flex;align-items:center;gap:4px">Admin Ajustado<span class="badge ba" style="font-size:8px">AUTO</span></span><span class="rr-v a">${cop(admAdj)}</span></div>
+    <div class="rr"><span class="rr-l" style="display:flex;align-items:center;gap:4px">CPA Calculado<span class="badge ba" style="font-size:8px">AUTO</span></span><span class="rr-v a">${cop(cpac)}</span></div>
+    <div class="rr"><span class="rr-l">CPA Mínimo</span><span class="rr-v">${cop(cpam)}</span></div>
+    <div class="rr"><span class="rr-l" style="display:flex;align-items:center;gap:4px">CAC Real<span class="badge ba" style="font-size:8px">AUTO</span></span><span class="rr-v a">${cop(cacReal)}</span></div>
+    <div class="dv" style="margin:8px 0"></div>
+    <div class="rr hl"><span class="rr-l">TOTAL COSTOS</span><span class="rr-v r">${cop(totC)}</span></div>
+    <div class="rr"><span class="rr-l">Precio Establecido</span><span class="rr-v g">${cop(precio)}</span></div>
+    <div class="rr"><span class="rr-l">Precio Sugerido</span><span class="rr-v a">${cop(Math.round(precSug))}</span></div>
+    <div class="dv" style="margin:8px 0"></div>
+    <div class="rr"><span class="rr-l">Utilidad Bruta</span><span class="rr-v">${cop(utilB)}</span></div>
+    <div class="rr"><span class="rr-l">Pérdida Inefect. (${inefPct.toFixed(1)}%)</span><span class="rr-v r">−${cop(utilPerd)}</span></div>
+    <div class="rr hl" style="background:${utilR>0?'var(--gdim2)':'rgba(255,69,103,.08)'}">
+      <span class="rr-l">UTILIDAD REAL</span>
+      <span class="rr-v ${utilR>0?'g':'r'}">${cop(utilR)} <span style="font-size:9px">${pS?pct(utilR/precio,2):''}</span></span>
+    </div>
+    <div class="rr"><span class="rr-l">CPA Break Even</span><span class="rr-v a">${cop(Math.round(cpaBreak))}</span></div>
+  `);
+  const roundH=v=>Math.round(v/100)*100;
+  const of2Auto=roundH(precio+utilB+prod),of3Auto=roundH(of2Auto+utilB+prod);
+  tx('of2-hint','Sugerido: '+cop(of2Auto));tx('of3-hint','Sugerido: '+cop(of3Auto));
+  const of2p=g('c-of2p'),of3p=g('c-of3p');
+  tx('c-of2u',cop(of2p-totC-prod));tx('c-of2pct',pct(of2p>0?(of2p-totC-prod)/of2p:0,1)+' utilidad');
+  tx('c-of3u',cop(of3p-totC-prod));tx('c-of3pct',pct(of3p>0?(of3p-totC-prod)/of3p:0,1)+' utilidad');
+  const pedidos=sped,descap=Math.round(pedidos*tasa),devsCnt=Math.round(descap*dev),entregados=descap-devsCnt;
+  const facVlr=pedidos*precio,entVlr=entregados*precio,devVlr=devsCnt*flete;
+  const costProd=entregados*prod,costFlet=entregados*flete,gastPub=Math.max(cpac,cpam)*pedidos,gastAdm=adm*pedidos;
+  const ganancia=entVlr-devVlr-costProd-costFlet-gastPub-gastAdm,pctNeta=facVlr>0?ganancia/facVlr:0;
+  ih('col-sim-rows',`
+    <div class="sim-row"><span class="sl">📋 Facturado</span><span class="sn">${pedidos.toLocaleString('es-CO')}</span><span class="sv">${cop(facVlr)}</span></div>
+    <div class="sim-row"><span class="sl">🚚 Descapachado</span><span class="sn">${descap.toLocaleString('es-CO')}</span><span class="sv">${cop(descap*precio)}</span></div>
+    <div class="sim-row"><span class="sl">✅ Entregado</span><span class="sn">${entregados.toLocaleString('es-CO')}</span><span class="sv">${cop(entVlr)}</span></div>
+    <div class="sim-row"><span class="sl">🔄 Devolución</span><span class="sn">${devsCnt.toLocaleString('es-CO')}</span><span class="sv"><span class="badge br">${pct(pedidos>0?devsCnt/pedidos:0,1)}</span></span></div>
+    <div class="sim-row" style="background:var(--s2)"><span class="sl" style="color:var(--muted)">Ticket Promedio</span><span class="sn">–</span><span class="sv">${cop(precio)}</span></div>
+    <div class="sim-row"><span class="sl">📦 Costo Producto</span><span class="sn">–</span><span class="sv" style="color:var(--red)">−${cop(costProd)}</span></div>
+    <div class="sim-row"><span class="sl">🚛 Flete Entregados</span><span class="sn">–</span><span class="sv" style="color:var(--red)">−${cop(costFlet)}</span></div>
+    <div class="sim-row"><span class="sl">📢 Gasto Publicidad</span><span class="sn">–</span><span class="sv" style="color:var(--red)">−${cop(gastPub)}</span></div>
+    <div class="sim-row"><span class="sl">🏢 Gastos Admin</span><span class="sn">–</span><span class="sv" style="color:var(--red)">−${cop(gastAdm)}</span></div>
+    <div class="sim-row stotal"><span class="sl">💰 GANANCIA NETA</span><span class="sn">${entregados.toLocaleString('es-CO')} ent.</span><span class="sv">${cop(ganancia)}</span></div>
+    <div class="sim-row" style="background:var(--s2)"><span class="sl" style="color:var(--muted)">% Utilidad Neta</span><span class="sn"></span><span class="sv"><span class="badge ${ganancia>=0?'bg':'br'}">${pct(pctNeta,2)}</span></span></div>
+  `);
+}
+
+// ── FULFILMENT ───────────────────────────────────────────
+function cFF(){
+  const FF=2000,UP=0.2,ENT=0.8;
+  const ins=[...document.querySelectorAll('#col-ff-in .ffv')];
+  const tbl=document.getElementById('col-ff-tbl');
+  const rows=ins.map((inp,i)=>{const v=parseFloat(inp.value)||0;if(v===0)return null;const sug=(v+FF)/(1-UP);const util=sug-v-FF;return{i,v,sug,util};});
+  if(tbl)tbl.innerHTML=rows.map(r=>r?`<tr><td>Producto ${r.i+1}</td><td>${cop(r.v)}</td><td>${cop(r.sug)}</td><td><span class="badge bg">${cop(r.util)}</span></td></tr>`:'').join('');
+  const un=1000;
+  const totalInv=ins.reduce((s,inp)=>{const v=parseFloat(inp.value)||0;return s+v*un;},0);
+  const totalRec=rows.filter(Boolean).reduce((s,r)=>s+r.sug*un*ENT,0);
+  const netUtil=totalRec-totalInv;
+  tx('ff-inv',cop(totalInv));tx('ff-rec',cop(totalRec));tx('ff-util',cop(netUtil));
+  const el=document.getElementById('ff-util');if(el)el.className='rr-v '+(netUtil>0?'g':'r');
+}
+
+// ── SLIDERS ──────────────────────────────────────────────
+const sliderCfg={tasa:{min:0,max:1,step:0.01,dec:0},dev:{min:0,max:1,step:0.01,dec:0},pub:{min:0,max:1,step:0.01,dec:0},uesp:{min:0,max:1,step:0.01,dec:0},stasa:{min:0,max:1,step:0.01,dec:0}};
+let activeDrag=null;
+function startDrag(e,key){e.preventDefault();activeDrag=key;updateSliderFromEvent(e,key);document.addEventListener('mousemove',onDragMove);document.addEventListener('mouseup',stopDrag);document.addEventListener('touchmove',onDragMove,{passive:false});document.addEventListener('touchend',stopDrag);}
+function onDragMove(e){if(!activeDrag)return;e.preventDefault();updateSliderFromEvent(e,activeDrag);}
+function stopDrag(){activeDrag=null;document.removeEventListener('mousemove',onDragMove);document.removeEventListener('mouseup',stopDrag);document.removeEventListener('touchmove',onDragMove);document.removeEventListener('touchend',stopDrag);}
+function updateSliderFromEvent(e,key){const track=document.getElementById('st-'+key);if(!track)return;const rect=track.getBoundingClientRect();const clientX=e.touches?e.touches[0].clientX:e.clientX;const cfg=sliderCfg[key];let ratio=Math.max(0,Math.min(1,(clientX-rect.left)/rect.width));const steps=Math.round(ratio*(cfg.max-cfg.min)/cfg.step);const val=Math.min(cfg.max,cfg.min+steps*cfg.step);setSlider(key,val);const hidden=document.getElementById('c-'+key);if(hidden)hidden.value=val;cC();}
+function setSlider(key,val){const cfg=sliderCfg[key];const ratio=cfg.max>cfg.min?(val-cfg.min)/(cfg.max-cfg.min):0;const pctStr=(ratio*100).toFixed(0)+'%';const fill=document.getElementById('sf-'+key);const thumb=document.getElementById('sth-'+key);const label=document.getElementById('sv-'+key);if(fill)fill.style.width=pctStr;if(thumb)thumb.style.left=pctStr;if(label)label.textContent=Math.round(val*100)+'%';}
+function initSliders(){Object.entries(sliderCfg).forEach(([key,cfg])=>{const hidden=document.getElementById('c-'+key);const val=hidden?parseFloat(hidden.value):cfg.min;setSlider(key,val);});}
+
+// ── PAGO ANTICIPADO SLIDERS ──────────────────────────────
+const antSliderCfg={shopify:{min:0,max:20,step:0.1,suffix:'%',hidden:'ant-shopify',sv:'asv-shopify',sf:'asf-shopify',sth:'asth-shopify'},cpapct:{min:0,max:100,step:1,suffix:'%',hidden:'ant-cpapct',sv:'asv-cpapct',sf:'asf-cpapct',sth:'asth-cpapct'},utilpct:{min:0,max:100,step:1,suffix:'%',hidden:'ant-utilpct',sv:'asv-utilpct',sf:'asf-utilpct',sth:'asth-utilpct'}};
+let activeAntDrag=null;
+function startAntDrag(e,key){e.preventDefault();activeAntDrag=key;updateAntSlider(e,key);document.addEventListener('mousemove',onAntMove);document.addEventListener('mouseup',stopAntDrag);document.addEventListener('touchmove',onAntMove,{passive:false});document.addEventListener('touchend',stopAntDrag);}
+function onAntMove(e){if(!activeAntDrag)return;e.preventDefault();updateAntSlider(e,activeAntDrag);}
+function stopAntDrag(){activeAntDrag=null;document.removeEventListener('mousemove',onAntMove);document.removeEventListener('mouseup',stopAntDrag);document.removeEventListener('touchmove',onAntMove);document.removeEventListener('touchend',stopAntDrag);}
+function updateAntSlider(e,key){const cfg=antSliderCfg[key];const track=document.getElementById('ast-'+key);if(!track)return;const rect=track.getBoundingClientRect();const cx=e.touches?e.touches[0].clientX:e.clientX;let ratio=Math.max(0,Math.min(1,(cx-rect.left)/rect.width));const steps=Math.round(ratio*(cfg.max-cfg.min)/cfg.step);const val=Math.min(cfg.max,cfg.min+steps*cfg.step);const pctW=((val-cfg.min)/(cfg.max-cfg.min)*100).toFixed(1)+'%';const sf=document.getElementById(cfg.sf);if(sf)sf.style.width=pctW;const sth=document.getElementById(cfg.sth);if(sth)sth.style.left=pctW;const sv=document.getElementById(cfg.sv);if(sv)sv.textContent=val.toFixed(cfg.step<1?1:0)+cfg.suffix;const hid=document.getElementById(cfg.hidden);if(hid)hid.value=val;cAnt();}
+function initAntSliders(){Object.entries(antSliderCfg).forEach(([key,cfg])=>{const hid=document.getElementById(cfg.hidden);const val=hid?parseFloat(hid.value):cfg.min;const pctW=((val-cfg.min)/(cfg.max-cfg.min)*100).toFixed(1)+'%';const sf=document.getElementById(cfg.sf);if(sf)sf.style.width=pctW;const sth=document.getElementById(cfg.sth);if(sth)sth.style.left=pctW;const sv=document.getElementById(cfg.sv);if(sv)sv.textContent=val.toFixed(cfg.step<1?1:0)+cfg.suffix;});}
+
+// ── PAGO ANTICIPADO CALC ─────────────────────────────────
+let antCurr='USD';
+const MXN_FMT=new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',minimumFractionDigits:2,maximumFractionDigits:2});
+const USD_FMT=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+function antFmt(n){return isNaN(n)||!isFinite(n)?(antCurr==='USD'?'$0.00':'$0.00'):(antCurr==='MXN'?MXN_FMT.format(n):USD_FMT.format(n));}
+function antFmtK(n){const abs=Math.abs(n);const sym=antCurr==='MXN'?'MX$':'$';if(abs>=1e6)return sym+(n/1e6).toFixed(1)+'M';if(abs>=1e3)return sym+(n/1e3).toFixed(1)+'K';return antFmt(n);}
+function roas(n){return isNaN(n)||!isFinite(n)||n===0?'—':n.toFixed(2)+'x';}
+function setCurr(c){antCurr=c;document.getElementById('cb-usd').classList.toggle('on',c==='USD');document.getElementById('cb-mxn').classList.toggle('on',c==='MXN');const tw=document.getElementById('trm-wrap');if(tw)tw.style.display=c==='MXN'?'flex':'none';tx('ant-curr-note',c==='USD'?'Mostrando en dólares (USD)':'Mostrando en pesos mexicanos (MXN)');tx('ant-curr-badge',c);cAnt();}
+function cAnt(){
+  const shopPct=g('ant-shopify')/100,cpaPct=g('ant-cpapct')/100,utilPct=g('ant-utilpct')/100;
+  const ct1=g('ant-ct1'),ct2=g('ant-ct2'),ct3=g('ant-ct3');
+  const desc2=g('ant-desc2')/100,desc3=g('ant-desc3')/100;
+  const trm=antCurr==='MXN'?(g('ant-trm')||17.5):1;
+  const denom=1-shopPct-cpaPct-utilPct;
+  const L4=denom>0?(ct1*trm)/denom:0,L5=L4*cpaPct,L6=L4*shopPct,L7=L4-(ct1*trm)-L5-L6;
+  const L8=L5>0?L4/L5:0,L9=L4-(ct1*trm)-L6,L10=L9>0?L4/L9:0;
+  tx('ant-k-precio',antFmtK(L4));tx('ant-k-cpa',antFmtK(L5));tx('ant-k-shopify',antFmtK(L6));tx('ant-k-util',antFmtK(L7));tx('ant-k-roas',roas(L8));
+  tx('ant-r1-precio',antFmt(L4));tx('ant-r1-cpa',antFmt(L5));tx('ant-r1-shop',antFmt(L6));tx('ant-r1-util',antFmt(L7));tx('ant-r1-roas',roas(L8));tx('ant-r1-cpabreak',antFmt(L9));tx('ant-r1-roasbreak',roas(L10));
+  const L14=L4*2*(1-desc2),L15=L14*cpaPct,L16=L14*shopPct,L17=L14-(ct2*trm)-L15-L16,L18=L15>0?L14/L15:0,L19=L14-(ct2*trm)-L16;
+  tx('ant-o2-precio',antFmt(L14));tx('ant-o2-desc',`${g('ant-desc2')}% descuento`);tx('ant-o2-cpa',antFmt(L15));tx('ant-o2-shop',antFmt(L16));tx('ant-o2-util',antFmt(L17));tx('ant-o2-roas','ROAS '+roas(L18));tx('ant-o2-break',antFmt(L19));
+  const O14=L4*3*(1-desc3),O15=O14*cpaPct,O16=O14*shopPct,O17=O14-(ct3*trm)-O15-O16,O18=O15>0?O14/O15:0,O19=O14-(ct3*trm)-O16;
+  tx('ant-o3-precio',antFmt(O14));tx('ant-o3-desc',`${g('ant-desc3')}% descuento`);tx('ant-o3-cpa',antFmt(O15));tx('ant-o3-shop',antFmt(O16));tx('ant-o3-util',antFmt(O17));tx('ant-o3-roas','ROAS '+roas(O18));tx('ant-o3-break',antFmt(O19));
+  const svPrecio=g('ant-sv-precio')*trm,svCpa=g('ant-sv-cpa')*trm,svProd=g('ant-sv-prod')*trm;
+  const svShop=svPrecio*shopPct,svUtil=svPrecio-svProd-svCpa-svShop,svRoas=svCpa>0?svPrecio/svCpa:0;
+  const svBreak=svPrecio-svProd-svShop,svRoasB=svBreak>0?svPrecio/svBreak:0;
+  tx('ant-sv-util',antFmt(svUtil));tx('ant-sv-roas',roas(svRoas));tx('ant-sv-shopify',antFmt(svShop));tx('ant-sv-cpabreak',antFmt(svBreak));tx('ant-sv-roasbreak',roas(svRoasB));
+  const svUtilEl=document.getElementById('ant-sv-util');if(svUtilEl)svUtilEl.style.color=svUtil>=0?'var(--green)':'var(--red)';
+}
+
+// ── SEGUIMIENTO DIARIO ───────────────────────────────────
+let trackData=[],activeFilter='dia',chartMetric='ordenes',trackChart=null;
+const COPF=n=>isNaN(n)||n===0?'—':'$'+Math.round(n).toLocaleString('es-CO');
+const PCTF=n=>isNaN(n)||n===0?'—':(n*100).toFixed(1)+'%';
+const pubC=v=>v===0?'':(v<=0.3?'pct-good':v<=0.45?'pct-warn':'pct-bad');
+const confC=v=>v===0?'':(v>=0.6?'pct-good':v>=0.4?'pct-warn':'pct-bad');
+
+function initTrack(){
+  const today=new Date().toISOString().split('T')[0];
+  const de=document.getElementById('t-fecha');if(de)de.value=today;
+  const fd=document.getElementById('flt-fecha');if(fd)fd.value=today;
+  const fm=document.getElementById('flt-mes-val');if(fm)fm.value=today.slice(0,7);
+  const fa=document.getElementById('flt-anio-val');if(fa)fa.value=today.slice(0,4);
+  const fd2=document.getElementById('flt-desde');if(fd2)fd2.value=today.slice(0,8)+'01';
+  const fh=document.getElementById('flt-hasta');if(fh)fh.value=today;
+  // Use user-specific key
+  const uid=_sb.auth.getUser ? 'tp_track_v2' : 'tp_track_v2';
+  try{const s=localStorage.getItem('tp_track_v2');if(s)trackData=JSON.parse(s);}catch(e){}
+  setFilter('dia');
+}
+function saveTrack(){try{localStorage.setItem('tp_track_v2',JSON.stringify(trackData));}catch(e){}}
+function setFilter(f){
+  activeFilter=f;
+  ['dia','sem','mes','anio','rng','all'].forEach(b=>{const el=document.getElementById('flt-'+b);if(!el)return;const on=b===f;el.style.background=on?'var(--green)':'var(--s2)';el.style.color=on?'#070709':'var(--muted)';el.style.borderColor=on?'var(--green)':'var(--border2)';});
+  const fechaW=document.getElementById('flt-fecha-wrap'),mesW=document.getElementById('flt-mes-wrap'),anioW=document.getElementById('flt-anio-wrap'),rngW=document.getElementById('flt-rng-wrap');
+  [fechaW,mesW,anioW].forEach(el=>{if(el)el.style.display='none';});if(rngW)rngW.style.display='none';
+  if((f==='dia'||f==='sem')&&fechaW)fechaW.style.display='block';
+  else if(f==='mes'&&mesW)mesW.style.display='block';
+  else if(f==='anio'&&anioW)anioW.style.display='block';
+  else if(f==='rng'&&rngW)rngW.style.display='flex';
+  renderTrack();
+}
+function getFilteredData(){
+  if(!trackData.length)return[];
+  if(activeFilter==='all')return[...trackData];
+  const fd=document.getElementById('flt-fecha')?.value||'';
+  const fm=document.getElementById('flt-mes-val')?.value||'';
+  const fa=document.getElementById('flt-anio-val')?.value||'';
+  const fD=document.getElementById('flt-desde')?.value||'';
+  const fH=document.getElementById('flt-hasta')?.value||'';
+  if(activeFilter==='dia')return trackData.filter(r=>r.fecha===fd);
+  if(activeFilter==='mes')return trackData.filter(r=>r.fecha.startsWith(fm));
+  if(activeFilter==='anio')return trackData.filter(r=>r.fecha.startsWith(fa));
+  if(activeFilter==='rng')return trackData.filter(r=>r.fecha>=fD&&r.fecha<=fH);
+  if(activeFilter==='sem'){const d=new Date(fd+'T00:00:00');const day=d.getDay();const diff=d.getDate()-day+(day===0?-6:1);const mon=new Date(d);mon.setDate(diff);const sun=new Date(mon);sun.setDate(mon.getDate()+6);const m2=mon.toISOString().split('T')[0],s2=sun.toISOString().split('T')[0];return trackData.filter(r=>r.fecha>=m2&&r.fecha<=s2);}
+  return[...trackData];
+}
+function filterLabel(){
+  const fd=document.getElementById('flt-fecha')?.value||'',fm=document.getElementById('flt-mes-val')?.value||'',fa=document.getElementById('flt-anio-val')?.value||'',fD=document.getElementById('flt-desde')?.value||'',fH=document.getElementById('flt-hasta')?.value||'';
+  if(activeFilter==='all')return'todos los registros';
+  if(activeFilter==='dia')return`día ${fd}`;if(activeFilter==='sem')return`semana del ${fd}`;
+  if(activeFilter==='mes')return`mes ${fm}`;if(activeFilter==='anio')return`año ${fa}`;
+  if(activeFilter==='rng')return`${fD} → ${fH}`;return'';
+}
+function calcTrackEntry(){
+  const total=parseFloat(document.getElementById('t-total')?.value)||0,conf=parseFloat(document.getElementById('t-conf')?.value)||0,cancel=parseFloat(document.getElementById('t-cancel')?.value)||0;
+  const fact=parseFloat(document.getElementById('t-fact')?.value)||0,pauta=parseFloat(document.getElementById('t-pauta')?.value)||0;
+  const porcnf=Math.max(0,total-conf-cancel);
+  const peEl=document.getElementById('t-porcnf');if(peEl)peEl.value=porcnf>0?porcnf:'';
+  const pctPub=fact>0?pauta/fact:0,pctConf=total>0?conf/total:0,cpaReal=conf>0?pauta/conf:0;
+  const ppEl=document.getElementById('t-pctpub'),pcEl=document.getElementById('t-pctconf'),cpEl=document.getElementById('t-cpareal');
+  if(ppEl){ppEl.value=fact>0?PCTF(pctPub):'';ppEl.style.color=pctPub<=0.3?'var(--green)':pctPub<=0.45?'var(--gold)':'var(--red)';}
+  if(pcEl){pcEl.value=total>0?PCTF(pctConf):'';pcEl.style.color=pctConf>=0.6?'var(--green)':pctConf>=0.4?'var(--gold)':'var(--red)';}
+  if(cpEl){cpEl.value=conf>0?COPF(cpaReal):'';cpEl.style.color='var(--blue)';}
+}
+function addTrackRow(){
+  const fecha=document.getElementById('t-fecha')?.value||'';
+  const total=parseFloat(document.getElementById('t-total')?.value)||0,conf=parseFloat(document.getElementById('t-conf')?.value)||0,cancel=parseFloat(document.getElementById('t-cancel')?.value)||0;
+  const porcnf=Math.max(0,total-conf-cancel),fact=parseFloat(document.getElementById('t-fact')?.value)||0,pauta=parseFloat(document.getElementById('t-pauta')?.value)||0;
+  if(!fecha){alert('Selecciona una fecha');return;}
+  const pctPub=fact>0?pauta/fact:0,pctConf=total>0?conf/total:0,cpaReal=conf>0?pauta/conf:0;
+  const existing=trackData.findIndex(r=>r.fecha===fecha);
+  const row={id:existing>=0?trackData[existing].id:Date.now(),fecha,total,conf,cancel,porcnf,fact,pauta,pctPub,pctConf,cpaReal};
+  if(existing>=0)trackData[existing]=row;else trackData.push(row);
+  trackData.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  saveTrack();renderTrack();
+  ['t-total','t-conf','t-cancel','t-porcnf','t-fact','t-pauta','t-pctpub','t-pctconf','t-cpareal'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+}
+function deleteRow(id){trackData=trackData.filter(r=>r.id!==id);saveTrack();renderTrack();}
+function clearTrack(){if(!confirm('¿Borrar TODOS los registros?'))return;trackData=[];saveTrack();renderTrack();}
+function setChartMetric(m){
+  chartMetric=m;
+  const map={ordenes:'ordenes',tasas:'tasas',financiero:'fin',cpa:'cpa'};
+  Object.entries(map).forEach(([k,btnId])=>{const el=document.getElementById('cm-'+btnId);if(!el)return;const on=k===m;el.style.background=on?'var(--green)':'var(--s2)';el.style.color=on?'#070709':'var(--muted)';el.style.borderColor=on?'var(--green)':'var(--border2)';});
+  updateChart(getFilteredData());
+}
+function updateChart(data){
+  const canvas=document.getElementById('track-chart'),empty=document.getElementById('chart-empty');
+  if(!canvas)return;
+  if(!data.length){canvas.style.display='none';if(empty)empty.style.display='block';if(trackChart){trackChart.destroy();trackChart=null;}return;}
+  canvas.style.display='block';if(empty)empty.style.display='none';
+  const labels=data.map(r=>{const d=new Date(r.fecha+'T00:00:00');return d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit'});});
+  const mConf=parseFloat(document.getElementById('meta-conf')?.value)||70,mPub=parseFloat(document.getElementById('meta-pub')?.value)||35,mCpa=parseFloat(document.getElementById('meta-cpa')?.value)||0;
+  let datasets=[];const gridC='rgba(255,255,255,.04)',tickC='#5A5A78';
+  if(chartMetric==='ordenes')datasets=[{label:'Total',data:data.map(r=>r.total),borderColor:'#2A2A3E',backgroundColor:'transparent',tension:.35,pointRadius:3,borderWidth:1.5,borderDash:[4,4]},{label:'Confirmadas',data:data.map(r=>r.conf),borderColor:'#00E5A0',backgroundColor:'rgba(0,229,160,.08)',tension:.35,fill:true,pointRadius:4,borderWidth:2},{label:'Canceladas',data:data.map(r=>r.cancel),borderColor:'#FF4567',backgroundColor:'rgba(255,69,103,.06)',tension:.35,fill:false,pointRadius:3,borderWidth:2},{label:'Por Confirmar',data:data.map(r=>r.porcnf),borderColor:'#FFB547',backgroundColor:'transparent',tension:.35,fill:false,pointRadius:3,borderWidth:1.5,borderDash:[3,3]}];
+  else if(chartMetric==='tasas')datasets=[{label:'% Confirmación',data:data.map(r=>+(r.pctConf*100).toFixed(1)),borderColor:'#00E5A0',tension:.35,fill:false,pointRadius:4,borderWidth:2},{label:'% Cancelación',data:data.map(r=>r.total>0?+(r.cancel/r.total*100).toFixed(1):0),borderColor:'#FF4567',tension:.35,fill:false,pointRadius:3,borderWidth:2},{label:'% Publicidad',data:data.map(r=>+(r.pctPub*100).toFixed(1)),borderColor:'#FFB547',tension:.35,fill:false,pointRadius:3,borderWidth:2},{label:`Meta Conf. (${mConf}%)`,data:data.map(()=>mConf),borderColor:'rgba(0,229,160,.3)',borderDash:[6,4],pointRadius:0,fill:false,tension:0,borderWidth:1.5},{label:`Máx Pub. (${mPub}%)`,data:data.map(()=>mPub),borderColor:'rgba(255,181,71,.3)',borderDash:[6,4],pointRadius:0,fill:false,tension:0,borderWidth:1.5}];
+  else if(chartMetric==='financiero')datasets=[{label:'Facturación',data:data.map(r=>r.fact),borderColor:'#00E5A0',backgroundColor:'rgba(0,229,160,.1)',tension:.35,fill:true,pointRadius:4,borderWidth:2,yAxisID:'y'},{label:'Pauta',data:data.map(r=>r.pauta),borderColor:'#FF4567',backgroundColor:'rgba(255,69,103,.06)',tension:.35,fill:true,pointRadius:3,borderWidth:2,yAxisID:'y'}];
+  else if(chartMetric==='cpa'){datasets=[{label:'CPA Real',data:data.map(r=>Math.round(r.cpaReal||0)),borderColor:'#4A8FFF',backgroundColor:'rgba(74,143,255,.1)',tension:.35,fill:true,pointRadius:5,pointHoverRadius:7,borderWidth:2}];if(mCpa>0)datasets.push({label:`Objetivo (${COPF(mCpa)})`,data:data.map(()=>mCpa),borderColor:'rgba(74,143,255,.3)',borderDash:[6,4],pointRadius:0,fill:false,tension:0,borderWidth:1.5});}
+  const yTickCb=v=>chartMetric==='tasas'?v+'%':chartMetric==='financiero'||chartMetric==='cpa'?'$'+v.toLocaleString('es-CO'):v;
+  const cfg={type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:'#5A5A78',font:{size:10},boxWidth:10,padding:10,usePointStyle:true}},tooltip:{backgroundColor:'#0D0D12',borderColor:'#2A2A3E',borderWidth:1,titleColor:'#E8E8F0',bodyColor:'#8888A8',padding:10,cornerRadius:8}},scales:{x:{grid:{color:gridC},ticks:{color:tickC,font:{size:10}}},y:{grid:{color:gridC},ticks:{color:tickC,font:{size:10},callback:yTickCb}}}}};
+  if(trackChart)trackChart.destroy();
+  trackChart=new Chart(canvas,cfg);
+}
+function renderTrack(){
+  const filtered=getFilteredData();
+  const tbody=document.getElementById('track-tbody'),empty=document.getElementById('track-empty');
+  const badge=document.getElementById('trk-count-badge'),fltBadge=document.getElementById('trk-flt-badge'),fltRes=document.getElementById('flt-resumen');
+  if(!tbody)return;
+  const label=filterLabel();
+  if(fltBadge)fltBadge.textContent=label;
+  if(fltRes)fltRes.textContent='Mostrando: '+label+(filtered.length>0?` · ${filtered.length} día${filtered.length!==1?'s':''}`:'');
+  if(badge)badge.textContent=`${filtered.length} día${filtered.length!==1?'s':''}`;
+  const mConf=parseFloat(document.getElementById('meta-conf')?.value)||70,mCancel=parseFloat(document.getElementById('meta-cancel')?.value)||15,mPub=parseFloat(document.getElementById('meta-pub')?.value)||35;
+  tx('dash-meta-conf-lbl',mConf+'%');tx('dash-meta-cancel-lbl',mCancel+'%');tx('dash-meta-pub-lbl',mPub+'%');
+  if(filtered.length===0){tbody.innerHTML='';if(empty)empty.style.display='block';if(badge)badge.textContent='0 días';['trk-k-total','trk-k-conf','trk-k-cancel','trk-k-porcnf'].forEach(id=>tx(id,'0'));tx('trk-k-fact','$0');tx('trk-k-cpa','—');['dash-pct-conf','dash-pct-cancel','dash-pct-pub'].forEach(id=>tx(id,'—'));['dash-bar-conf','dash-bar-cancel','dash-bar-pub'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.width='0%';});['dash-fact','dash-pauta','dash-cpa'].forEach(id=>tx(id,'—'));ih('dash-estado','—');ih('dash-stack','');ih('dash-legend','');['tf-total','tf-conf','tf-cancel','tf-porcnf','tf-fact','tf-pauta','tf-pctpub','tf-pctconf','tf-cpa'].forEach(id=>tx(id,'—'));updateChart([]);return;}
+  if(empty)empty.style.display='none';
+  tbody.innerHTML=trackData.map(r=>{const inF=filtered.includes(r);return`<tr style="${inF?'':'opacity:.3'}"><td>${r.fecha||'—'}</td><td>${r.total||'—'}</td><td style="color:var(--green)">${r.conf||'—'}</td><td style="color:var(--red)">${r.cancel||'—'}</td><td style="color:var(--gold)">${r.porcnf>0?r.porcnf:'—'}</td><td>${COPF(r.fact)}</td><td>${COPF(r.pauta)}</td><td class="${pubC(r.pctPub)}">${PCTF(r.pctPub)}</td><td class="${confC(r.pctConf)}">${PCTF(r.pctConf)}</td><td style="color:var(--blue)">${COPF(r.cpaReal)}</td><td><button class="track-del-btn" onclick="deleteRow(${r.id})">✕</button></td></tr>`;}).join('');
+  const sT=filtered.reduce((s,r)=>s+(r.total||0),0),sC=filtered.reduce((s,r)=>s+(r.conf||0),0),sX=filtered.reduce((s,r)=>s+(r.cancel||0),0),sP=filtered.reduce((s,r)=>s+(r.porcnf||0),0),sF=filtered.reduce((s,r)=>s+(r.fact||0),0),sPa=filtered.reduce((s,r)=>s+(r.pauta||0),0);
+  const avgPub=sF>0?sPa/sF:0,avgConf=sT>0?sC/sT:0,avgCpa=sC>0?sPa/sC:0,avgCancel=sT>0?sX/sT:0;
+  tx('tf-total',sT);tx('tf-conf',sC);tx('tf-cancel',sX);tx('tf-porcnf',sP>0?sP:'—');tx('tf-fact',COPF(sF));tx('tf-pauta',COPF(sPa));tx('tf-pctpub',PCTF(avgPub));tx('tf-pctconf',PCTF(avgConf));tx('tf-cpa',COPF(avgCpa));
+  tx('trk-k-total',sT.toLocaleString('es-CO'));tx('trk-k-conf',sC.toLocaleString('es-CO'));tx('trk-k-cancel',sX.toLocaleString('es-CO'));tx('trk-k-porcnf',sP.toLocaleString('es-CO'));tx('trk-k-fact',sF>=1e6?'$'+(sF/1e6).toFixed(1)+'M':COPF(sF));tx('trk-k-cpa',COPF(avgCpa));
+  const pC=avgConf*100,pX=avgCancel*100,pP=avgPub*100;
+  const confEl=document.getElementById('dash-pct-conf');if(confEl){confEl.textContent=pC.toFixed(1)+'%';confEl.style.color=pC>=mConf?'var(--green)':pC>=mConf*.7?'var(--gold)':'var(--red)';}
+  const cancelEl=document.getElementById('dash-pct-cancel');if(cancelEl){cancelEl.textContent=pX.toFixed(1)+'%';cancelEl.style.color=pX<=mCancel?'var(--green)':pX<=mCancel*1.5?'var(--gold)':'var(--red)';}
+  const pubEl=document.getElementById('dash-pct-pub');if(pubEl){pubEl.textContent=pP.toFixed(1)+'%';pubEl.style.color=pP<=mPub?'var(--green)':pP<=mPub*1.3?'var(--gold)':'var(--red)';}
+  const bcEl=document.getElementById('dash-bar-conf');if(bcEl){bcEl.style.width=Math.min(pC,100)+'%';bcEl.style.background=pC>=mConf?'var(--green)':pC>=mConf*.7?'var(--gold)':'var(--red)';}
+  const bxEl=document.getElementById('dash-bar-cancel');if(bxEl){bxEl.style.width=Math.min(pX,100)+'%';bxEl.style.background=pX<=mCancel?'var(--green)':pX<=mCancel*1.5?'var(--gold)':'var(--red)';}
+  const bpEl=document.getElementById('dash-bar-pub');if(bpEl){bpEl.style.width=Math.min(pP,100)+'%';bpEl.style.background=pP<=mPub?'var(--green)':pP<=mPub*1.3?'var(--gold)':'var(--red)';}
+  const setM=(id,val)=>{const el=document.getElementById(id);if(el)el.style.left=Math.min(val,100)+'%';};
+  setM('dash-meta-conf-line',mConf);setM('dash-meta-cancel-line',mCancel);setM('dash-meta-pub-line',mPub);
+  const stack=document.getElementById('dash-stack');
+  if(stack&&sT>0){const wC=(sC/sT*100).toFixed(1),wX=(sX/sT*100).toFixed(1),wP=(sP/sT*100).toFixed(1);stack.innerHTML=`<div style="flex:${wC};background:var(--green)" title="Confirmadas ${wC}%"></div><div style="flex:${wX};background:var(--red)" title="Canceladas ${wX}%"></div><div style="flex:${wP};background:var(--gold)" title="Por confirmar ${wP}%"></div>`;ih('dash-legend',`<span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--dim)"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Conf. ${wC}%</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--dim)"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block"></span>Cancel. ${wX}%</span><span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--dim)"><span style="width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block"></span>P.Conf. ${wP}%</span>`);}
+  tx('dash-fact',COPF(sF));tx('dash-pauta',COPF(sPa));tx('dash-cpa',COPF(avgCpa));
+  const gC=pC>=mConf,gX=pX<=mCancel,gP=pP<=mPub;const score=[gC,gX,gP].filter(Boolean).length;
+  const estados=['🔴 Requiere atención','🟡 Operación aceptable','🟡 Casi en meta','🟢 Operación saludable'];
+  const colores=['var(--red)','var(--gold)','var(--gold)','var(--green)'];
+  ih('dash-estado',`<span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${colores[score]}">${estados[score]}</span>`);
+  updateChart(filtered);
+}
+function exportExcel(){
+  const data=getFilteredData();if(!data.length){alert('No hay datos en el período seleccionado');return;}
+  const headers=['Fecha','Órd.Total','Confirmadas','Canceladas','Por Confirmar','Facturación','Pauta','% Publicidad','% Confirmación','CPA Real'];
+  const sT=data.reduce((s,r)=>s+(r.total||0),0),sC=data.reduce((s,r)=>s+(r.conf||0),0),sX=data.reduce((s,r)=>s+(r.cancel||0),0),sP=data.reduce((s,r)=>s+(r.porcnf||0),0),sF=data.reduce((s,r)=>s+(r.fact||0),0),sPa=data.reduce((s,r)=>s+(r.pauta||0),0);
+  const rows=data.map(r=>[r.fecha,r.total,r.conf,r.cancel,r.porcnf,r.fact,r.pauta,r.pctPub?(r.pctPub*100).toFixed(1)+'%':'—',r.pctConf?(r.pctConf*100).toFixed(1)+'%':'—',r.cpaReal?Math.round(r.cpaReal):'—']);
+  rows.push(['TOTAL/PROM.',sT,sC,sX,sP,sF,sPa,sF>0?(sPa/sF*100).toFixed(1)+'%':'—',sT>0?(sC/sT*100).toFixed(1)+'%':'—',sC>0?Math.round(sPa/sC):'—']);
+  const csv=[headers,...rows].map(r=>r.map(v=>typeof v==='string'&&v.includes(',')?`"${v}"`:v??'').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`optimux_${activeFilter}_${new Date().toISOString().split('T')[0]}.csv`;a.click();URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

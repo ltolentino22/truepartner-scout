@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True Partner — Inicio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#070709;--s1:#0D0D12;--s2:#13131A;--s3:#1A1A24;
+  --border:#1F1F2E;--border2:#2A2A3E;
+  --text:#E8E8F0;--muted:#5A5A78;--dim:#8888A8;
+  --green:#00E5A0;--gold:#FFB547;--blue:#4A8FFF;--red:#FF4567;--purple:#9B6DFF;
+}
+html,body{height:100%;}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.04) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,229,160,.06) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+header{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(13,13,18,.95);border-bottom:1px solid var(--border);backdrop-filter:blur(12px);}
+.logo{display:flex;flex-direction:column;line-height:1;}
+.logo-main{font-family:'Clash Display',sans-serif;font-size:15px;font-weight:700;color:var(--text);letter-spacing:4px;}
+.logo-badge{font-size:9px;font-weight:700;letter-spacing:3px;color:var(--green);background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:1px 6px;margin-top:3px;display:inline-block;width:fit-content;}
+.hdr-right{display:flex;align-items:center;gap:12px;}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--border);border-radius:99px;padding:6px 14px;}
+.user-dot{width:7px;height:7px;border-radius:50%;background:var(--green);}
+.user-email{font-size:12px;color:var(--muted);}
+.logout-btn{font-size:12px;padding:7px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;font-family:'Cabinet Grotesk',sans-serif;}
+.logout-btn:hover{border-color:var(--red);color:#ff8fa3;}
+
+main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;}
+
+.hero{text-align:center;margin-bottom:56px;}
+.hero-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--green);background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:99px;padding:5px 14px;margin-bottom:16px;}
+.hero h1{font-family:'Clash Display',sans-serif;font-size:clamp(24px,4vw,40px);font-weight:700;line-height:1.15;margin-bottom:10px;}
+.hero p{font-size:14px;color:var(--muted);max-width:420px;margin:0 auto;line-height:1.7;}
+
+.apps-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:min(760px,100%);}
+
+.app-card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:32px;cursor:pointer;transition:all .25s;text-decoration:none;color:inherit;position:relative;overflow:hidden;display:block;}
+.app-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0;transition:opacity .25s;}
+.app-card:hover{border-color:rgba(0,229,160,.3);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.app-card:hover::before{opacity:1;}
+.app-card.locked{cursor:default;}
+.app-card.locked:hover{transform:none;box-shadow:none;border-color:var(--border);}
+.app-card.locked::before{display:none;}
+
+.app-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;border:1px solid var(--border2);}
+.app-icon.scout{background:rgba(0,229,160,.08);border-color:rgba(0,229,160,.2);}
+.app-icon.logistic{background:rgba(74,143,255,.08);border-color:rgba(74,143,255,.2);}
+.app-icon.locked{background:var(--s2);}
+
+.app-tag{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:3px 10px;border-radius:99px;display:inline-block;margin-bottom:10px;}
+.app-tag.scout{color:var(--green);background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);}
+.app-tag.logistic{color:var(--blue);background:rgba(74,143,255,.08);border:1px solid rgba(74,143,255,.2);}
+.app-tag.wip{color:var(--muted);background:var(--s2);border:1px solid var(--border);}
+.app-tag.admin{color:var(--purple);background:rgba(155,109,255,.08);border:1px solid rgba(155,109,255,.2);}
+
+.app-name{font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;margin-bottom:8px;}
+.app-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+
+.app-features{display:flex;flex-direction:column;gap:7px;margin-bottom:20px;}
+.app-feature{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);}
+.app-feature .dot{width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.app-feature .dot.blue{background:var(--blue);}
+.app-feature .dot.muted{background:var(--muted);}
+
+.app-cta{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
+.app-cta.scout{color:var(--green);}
+.app-cta.logistic{color:var(--blue);}
+.app-cta.wip{color:var(--muted);}
+.app-cta-arrow{transition:transform .2s;}
+.app-card:hover .app-cta-arrow{transform:translateX(4px);}
+
+.wip-overlay{position:absolute;inset:0;background:rgba(7,7,9,.7);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border-radius:18px;}
+.wip-badge{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--s2);border:1px solid var(--border2);border-radius:99px;padding:6px 16px;}
+.wip-text{font-size:13px;color:var(--muted);text-align:center;max-width:200px;line-height:1.5;}
+
+/* Loading */
+#loading{position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;align-items:center;justify-content:center;}
+#loading.hidden{display:none;}
+.loading-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);}}
+
+@media(max-width:600px){
+  header{padding:16px 20px;}
+  .apps-grid{grid-template-columns:1fr;}
+  main{padding:24px 16px;}
+}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="loading-dot"></div></div>
+
+<header>
+  <div class="logo">
+    <span class="logo-main">TRUE PARTNER</span>
+    <span class="logo-badge">SUITE</span>
+  </div>
+  <div class="hdr-right">
+    <div class="user-pill"><div class="user-dot"></div><span class="user-email" id="user-email">—</span></div>
+    <button class="logout-btn" onclick="handleLogout()">⎋ Salir</button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-tag">Bienvenido</div>
+    <h1>¿Qué quieres usar hoy?</h1>
+    <p>Selecciona la herramienta con la que quieres trabajar.</p>
+  </div>
+
+  <div class="apps-grid">
+
+    <!-- TRUE PARTNER SCOUT -->
+    <a href="./dashboard.html" class="app-card" id="card-scout">
+      <div class="app-icon scout">🔍</div>
+      <div class="app-tag scout">Analytics</div>
+      <div class="app-name">True Partner Scout</div>
+      <div class="app-desc">Analiza creadores de TikTok Shop, descubre qué creativos venden y encuentra las mejores oportunidades de dropshipping.</div>
+      <div class="app-features">
+        <div class="app-feature"><div class="dot"></div>Análisis de creadores TikTok Shop</div>
+        <div class="app-feature"><div class="dot"></div>Score de rendimiento 0-100</div>
+        <div class="app-feature"><div class="dot"></div>Comparación de creadores</div>
+        <div class="app-feature"><div class="dot"></div>Recomendaciones automáticas</div>
+      </div>
+      <div class="app-cta scout">Abrir Scout <span class="app-cta-arrow">→</span></div>
+    </a>
+
+    <!-- TRUE PARTNER LOGISTIC -->
+    <div class="app-card locked" id="card-logistic" onclick="openLogistic()">
+      <div class="app-icon logistic" id="logistic-icon">📊</div>
+      <div class="app-tag logistic" id="logistic-tag">Logística</div>
+      <div class="app-name">True Partner Logistic</div>
+      <div class="app-desc">Calculadora de rentabilidad, costos administrativos, seguimiento diario de operación y análisis financiero.</div>
+      <div class="app-features">
+        <div class="app-feature"><div class="dot blue"></div>Calculadora Colombia & USD/MXN</div>
+        <div class="app-feature"><div class="dot blue"></div>Costos administrativos</div>
+        <div class="app-feature"><div class="dot blue"></div>Seguimiento diario con gráficas</div>
+        <div class="app-feature"><div class="dot blue"></div>Pago anticipado Shopify</div>
+      </div>
+      <div class="app-cta logistic" id="logistic-cta">Abrir Logistic <span class="app-cta-arrow">→</span></div>
+
+      <!-- WIP overlay — shown for non-admin users -->
+      <div class="wip-overlay" id="wip-overlay" style="display:none;">
+        <div style="font-size:36px">🚧</div>
+        <div class="wip-badge">En construcción</div>
+        <div class="wip-text">Esta herramienta estará disponible próximamente para todos los usuarios.</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
+
+// Admin emails — access to True Partner Logistic
+const ADMIN_EMAILS = [
+  'ltolentinocamacho@gmail.com',
+  'castellonricardo2@gmail.com'
+];
+
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+let isAdmin = false;
+
+(async () => {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) {
+      window.location.replace('./login.html');
+      return;
+    }
+    currentUser = session.user;
+    isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase().trim());
+
+    // Update UI
+    document.getElementById('user-email').textContent = currentUser.email;
+
+    // Show/hide WIP overlay based on admin status
+    if (!isAdmin) {
+      document.getElementById('wip-overlay').style.display = 'flex';
+      document.getElementById('card-logistic').style.cursor = 'default';
+    } else {
+      // Show admin badge
+      document.getElementById('logistic-tag').textContent = 'Admin · Logística';
+      document.getElementById('logistic-tag').className = 'app-tag admin';
+    }
+
+    document.getElementById('loading').classList.add('hidden');
+
+  } catch(e) {
+    window.location.replace('./login.html');
+  }
+})();
+
+function openLogistic() {
+  if (!isAdmin) return;
+  window.location.href = './optimux.html';
+}
+
+async function handleLogout() {
+  try {
+    const uid = currentUser?.id;
+    if (uid) {
+      try { localStorage.removeItem('tps_' + uid); } catch(e) {}
+    }
+    await _sb.auth.signOut();
+  } catch(e) {}
+  window.location.replace('./login.html');
+}
+</script>
+</body>
+</html>

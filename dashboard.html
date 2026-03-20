@@ -381,17 +381,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   try { const r = await _sb.auth.getSession(); session = r.data.session; } catch(e) { return; }
   if (!session) { window.location.replace(window.location.origin + '/login.html'); return; }
   // Store that user accessed dashboard directly — fine to stay here
-  // Redirect to home.html unless coming from home or optimux
-  const ref = document.referrer;
-  const comesFromHome = ref.includes('home.html') || ref.includes('optimux.html');
-  const hasFlag = localStorage.getItem('tp_entered_from_home');
-  if (!comesFromHome && !hasFlag) {
-    localStorage.setItem('tp_entered_from_home', '1');
-    window.location.replace('./home.html');
-    return;
-  }
-  localStorage.removeItem('tp_entered_from_home');
-
   window._sb = _sb;
   window._session = session;
   window._userPlan = 'free';

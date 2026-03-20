@@ -138,7 +138,7 @@ var SB = supabase.createClient(
 
 function goToDash(){
   document.getElementById('overlay').className='overlay on';
-  setTimeout(function(){window.location.href=window.location.origin+'/dashboard.html';},700);
+  setTimeout(function(){window.location.href=window.location.origin+'/home.html';},700);
 }
 function showMsg(txt,type){
   var el=document.getElementById('msg');
@@ -207,7 +207,7 @@ function tpLogin(){
     if(r.error){
       var m={'Invalid login credentials':'Email o contraseña incorrectos.','Email not confirmed':'Confirma tu email primero.'};
       showMsg(m[r.error.message]||r.error.message);
-      btn.disabled=false;btn.textContent='Entrar al home →';
+      btn.disabled=false;btn.textContent='Entrar al dashboard →';
     } else {goToDash();}
   }).catch(function(){
     showMsg('Error de conexión. Intenta de nuevo.');
@@ -242,7 +242,7 @@ function tpReg(){
 function tpGoogle(){
   SB.auth.signInWithOAuth({
     provider:'google',
-    options:{redirectTo:window.location.origin+'/dashboard.html'}
+    options:{redirectTo:window.location.origin+'/home.html'}
   });
 }
 
@@ -250,7 +250,7 @@ function tpForgot(e){
   e.preventDefault();
   var email=document.getElementById('l-email').value.trim();
   if(!email){showMsg('Escribe tu email primero.');return;}
-  SB.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/dashboard.html'}).then(function(r){
+  SB.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+'/home.html'}).then(function(r){
     if(r.error)showMsg(r.error.message);
     else showMsg('Te enviamos un link para restablecer tu contraseña.','ok');
   });

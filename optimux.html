@@ -820,23 +820,26 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
 
-const ADMIN_EMAILS = [
-  'ltolentinocamacho@gmail.com',
-  'castellonricardo2@gmail.com'
-];
-
 const { createClient } = supabase;
 const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Check session on load — redirect if not logged in or not admin
+// Check session — redirect if not logged in or not admin
 (async () => {
   try {
     const { data: { session } } = await _sb.auth.getSession();
     if (!session) { window.location.replace('./login.html'); return; }
-    const email = session.user.email.toLowerCase().trim();
-    if (!ADMIN_EMAILS.includes(email)) {
+
+    // Check is_admin from Supabase
+    const { data: profile } = await _sb
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!profile?.is_admin) {
       window.location.replace('./home.html'); return;
     }
+
     document.getElementById('main-app').style.display = 'block';
     document.getElementById('hdr-user').textContent = session.user.email;
     initApp();

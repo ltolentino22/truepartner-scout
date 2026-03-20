@@ -46,6 +46,10 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
 .app-card.locked{cursor:default;}
 .app-card.locked:hover{transform:none;box-shadow:none;border-color:var(--border);}
 .app-card.locked::before{display:none;}
+.app-card.admin-card{cursor:pointer;}
+.app-card.admin-card:hover{border-color:rgba(74,143,255,.3);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.app-card.admin-card::before{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
+.app-card.admin-card:hover::before{opacity:1;}
 
 .app-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;border:1px solid var(--border2);}
 .app-icon.scout{background:rgba(0,229,160,.08);border-color:rgba(0,229,160,.2);}
@@ -117,7 +121,7 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
 
     <!-- TRUE PARTNER SCOUT -->
     <a href="./dashboard.html" class="app-card" id="card-scout" >
-      <div class="app-icon scout">🔍</div>
+      <div class="app-icon scout" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:#00E5A0;letter-spacing:1px;">TP</div>
       <div class="app-tag scout">Analytics</div>
       <div class="app-name">True Partner Scout</div>
       <div class="app-desc">Analiza creadores de TikTok Shop, descubre qué creativos venden y encuentra las mejores oportunidades de dropshipping.</div>
@@ -132,7 +136,7 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
 
     <!-- TRUE PARTNER LOGISTIC -->
     <div class="app-card locked" id="card-logistic" onclick="openLogistic()">
-      <div class="app-icon logistic" id="logistic-icon">📊</div>
+      <div class="app-icon logistic" id="logistic-icon" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;color:#4A8FFF;letter-spacing:1px;">TP</div>
       <div class="app-tag logistic" id="logistic-tag">Logística</div>
       <div class="app-name">True Partner Logistic</div>
       <div class="app-desc">Calculadora de rentabilidad, costos administrativos, seguimiento diario de operación y análisis financiero.</div>
@@ -191,6 +195,9 @@ let isAdmin = false;
     } else {
       document.getElementById('logistic-tag').textContent = 'Admin · Logística';
       document.getElementById('logistic-tag').className = 'app-tag admin';
+      const card = document.getElementById('card-logistic');
+      card.classList.remove('locked');
+      card.classList.add('admin-card');
     }
 
     document.getElementById('loading').classList.add('hidden');

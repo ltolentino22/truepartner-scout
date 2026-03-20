@@ -116,7 +116,7 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
   <div class="apps-grid">
 
     <!-- TRUE PARTNER SCOUT -->
-    <a href="./dashboard.html" class="app-card" id="card-scout" onclick="sessionStorage.setItem('from_home','1')">
+    <a href="./dashboard.html" class="app-card" id="card-scout" >
       <div class="app-icon scout">🔍</div>
       <div class="app-tag scout">Analytics</div>
       <div class="app-name">True Partner Scout</div>
@@ -160,11 +160,6 @@ const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
 
 // Admin emails — access to True Partner Logistic
-const ADMIN_EMAILS = [
-  'ltolentinocamacho@gmail.com',
-  'castellonricardo2@gmail.com'
-];
-
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let isAdmin = false;
@@ -177,17 +172,23 @@ let isAdmin = false;
       return;
     }
     currentUser = session.user;
-    isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase().trim());
+
+    // Check is_admin from Supabase profiles table
+    const { data: profile } = await _sb
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', currentUser.id)
+      .single();
+
+    isAdmin = profile?.is_admin === true;
 
     // Update UI
     document.getElementById('user-email').textContent = currentUser.email;
 
-    // Show/hide WIP overlay based on admin status
     if (!isAdmin) {
       document.getElementById('wip-overlay').style.display = 'flex';
       document.getElementById('card-logistic').style.cursor = 'default';
     } else {
-      // Show admin badge
       document.getElementById('logistic-tag').textContent = 'Admin · Logística';
       document.getElementById('logistic-tag').className = 'app-tag admin';
     }

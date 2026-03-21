@@ -6,6 +6,7 @@
 <title>True Partner Logistic</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -774,13 +775,19 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
   <div class="card" style="margin-bottom:16px">
     <div class="ch">
       <div class="ch-l"><div class="acc"></div><div class="ct">Nuevo Registro</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="track-add-btn" onclick="addTrackRow()">＋ Guardar día</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <!-- Mode toggle -->
+        <div style="display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:8px;padding:3px;gap:2px;">
+          <button id="mode-manual-btn" onclick="setEntryMode('manual')" style="padding:5px 14px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;border:none;background:var(--green);color:#070709;font-family:'Clash Display',sans-serif;transition:all .15s;">✏️ Manual</button>
+          <button id="mode-auto-btn" onclick="setEntryMode('auto')" style="padding:5px 14px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Clash Display',sans-serif;transition:all .15s;">📂 Importar xlsx</button>
+        </div>
         <button class="export-btn" onclick="exportExcel()">⬇ Exportar CSV</button>
         <button class="export-btn" onclick="clearTrack()" style="color:var(--red);border-color:rgba(255,69,103,.3)">🗑 Limpiar todo</button>
       </div>
     </div>
-    <div class="cb">
+
+    <!-- MANUAL MODE -->
+    <div id="entry-manual" class="cb">
       <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr 1fr;gap:14px;margin-bottom:14px;align-items:end">
         <div class="field" style="margin:0"><label>📅 Fecha</label><input type="date" id="t-fecha" style="padding:9px 11px;font-size:12px;"></div>
         <div class="field" style="margin:0"><label>📦 Órdenes Totales</label><input type="number" id="t-total" placeholder="ej. 10" oninput="calcTrackEntry()"></div>
@@ -788,12 +795,36 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         <div class="field" style="margin:0"><label>❌ Canceladas</label><input type="number" id="t-cancel" placeholder="ej. 2" oninput="calcTrackEntry()"></div>
         <div class="field" style="margin:0"><label style="color:var(--gold)">⏳ Por Confirmar <span class="badge ba" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="number" id="t-porcnf" readonly style="background:var(--s3);color:var(--gold);font-weight:600;cursor:default"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:14px;align-items:end">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:14px;align-items:end;margin-bottom:14px">
         <div class="field" style="margin:0"><label>💰 Facturación</label><input type="number" id="t-fact" placeholder="ej. 1190000" oninput="calcTrackEntry()"></div>
         <div class="field" style="margin:0"><label>📢 Pauta del día</label><input type="number" id="t-pauta" placeholder="ej. 297500" oninput="calcTrackEntry()"></div>
         <div class="field" style="margin:0"><label style="color:var(--gold)">📊 % Publicidad <span class="badge ba" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="text" id="t-pctpub" readonly style="background:var(--s3);font-weight:700;cursor:default"></div>
         <div class="field" style="margin:0"><label style="color:var(--green)">🎯 % Confirmación <span class="badge bg" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="text" id="t-pctconf" readonly style="background:var(--s3);font-weight:700;cursor:default"></div>
         <div class="field" style="margin:0"><label style="color:var(--blue)">💵 CPA Real <span class="badge bb" style="font-size:8px;padding:1px 5px">AUTO</span></label><input type="text" id="t-cpareal" readonly style="background:var(--s3);color:var(--blue);font-weight:700;cursor:default"></div>
+      </div>
+      <button class="track-add-btn" onclick="addTrackRow()">＋ Guardar día</button>
+    </div>
+
+    <!-- AUTO IMPORT MODE -->
+    <div id="entry-auto" class="cb" style="display:none;">
+      <!-- Drop zone -->
+      <div id="xlsx-dropzone" onclick="document.getElementById('xlsx-file-inp').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleXlsxDrop(event)"
+        style="border:2px dashed var(--border2);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:16px;">
+        <div style="font-size:32px;margin-bottom:10px;">📂</div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">Arrastra el archivo xlsx aquí</div>
+        <div style="font-size:11px;color:var(--muted);">o haz clic para seleccionar · <strong style="color:var(--green)">ordenes_productos_XXXXXX.xlsx</strong></div>
+        <input type="file" id="xlsx-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleXlsxFile(this.files[0])">
+      </div>
+
+      <!-- Preview — shown after file loaded -->
+      <div id="xlsx-preview" style="display:none;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Vista previa por día</div>
+        <div id="xlsx-days-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button onclick="importSelectedDays()" id="btn-import-days" style="background:var(--green);color:#070709;border:none;border-radius:8px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">⬇ Guardar días seleccionados</button>
+          <button onclick="importAllDays()" style="background:var(--s2);border:1px solid var(--border2);color:var(--dim);border-radius:8px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Guardar todos</button>
+          <span id="xlsx-file-name" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -1228,6 +1259,262 @@ function renderSavedProducts() {
         <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)">${cop(co.precio)}</span>
       </div>
     </div>`).join('');
+}
+
+// ── XLSX IMPORT ─────────────────────────────────────────────
+let xlsxParsedDays = {}; // { 'YYYY-MM-DD': { total, conf, porcnf, cancel, fact } }
+
+function setEntryMode(mode) {
+  const manual = document.getElementById('entry-manual');
+  const auto = document.getElementById('entry-auto');
+  const btnM = document.getElementById('mode-manual-btn');
+  const btnA = document.getElementById('mode-auto-btn');
+  if (!manual || !auto) return;
+  if (mode === 'manual') {
+    manual.style.display = 'block';
+    auto.style.display = 'none';
+    btnM.style.background = 'var(--green)'; btnM.style.color = '#070709';
+    btnA.style.background = 'transparent'; btnA.style.color = 'var(--muted)';
+  } else {
+    manual.style.display = 'none';
+    auto.style.display = 'block';
+    btnM.style.background = 'transparent'; btnM.style.color = 'var(--muted)';
+    btnA.style.background = 'var(--green)'; btnA.style.color = '#070709';
+  }
+}
+
+function handleXlsxDrop(e) {
+  e.preventDefault();
+  document.getElementById('xlsx-dropzone').style.borderColor = 'var(--border2)';
+  const file = e.dataTransfer.files[0];
+  if (file) handleXlsxFile(file);
+}
+
+function handleXlsxFile(file) {
+  if (!file) return;
+  document.getElementById('xlsx-file-name').textContent = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+      parseXlsxOrders(rows);
+    } catch(err) {
+      alert('Error al leer el archivo: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseXlsxOrders(rows) {
+  // Estado mapping exacto:
+  // ✅ Confirmados    = GUIA_GENERADA
+  // ⏳ Por confirmar  = PENDIENTE CONFIRMACION
+  // ❌ Cancelados     = CANCELADO (y variantes)
+  // 🚫 Ignorar        = todo lo demás (EN BODEGA ORIGEN, EN TERMINAL ORIGEN, etc.)
+
+  const CONFIRMADOS  = ['GUIA_GENERADA'];
+  const POR_CONFIRMAR = ['PENDIENTE CONFIRMACION'];
+  const CANCELADOS   = ['CANCELADO', 'CANCELADA', 'ANULADO', 'ANULADA'];
+
+  const byDay = {};
+
+  rows.forEach(row => {
+    const rawFecha = (row['FECHA'] || row['FECHA DE REPORTE'] || '').toString().trim();
+    if (!rawFecha) return;
+
+    // Parse DD-MM-YYYY → YYYY-MM-DD
+    let fecha = '';
+    const parts = rawFecha.split('-');
+    if (parts.length === 3 && parts[0].length <= 2) {
+      fecha = parts[2].padStart(4,'20') + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
+    } else {
+      return; // skip unparseable
+    }
+
+    const estado = (row['ESTATUS'] || '').toString().trim().toUpperCase();
+    const totalOrden = parseFloat(row['TOTAL DE LA ORDEN'] || 0) || 0;
+    const notas = (row['NOTAS'] || '').toString().trim();      // producto/variante info
+    const novedad = (row['NOVEDAD'] || '').toString().trim();   // cancellation reason if any
+
+    // Only count the 3 relevant states; ignore the rest
+    const isConf    = CONFIRMADOS.includes(estado);
+    const isPorConf = POR_CONFIRMAR.includes(estado);
+    const isCancel  = CANCELADOS.some(s => estado.includes(s));
+
+    if (!isConf && !isPorConf && !isCancel) return; // IGNORE
+
+    if (!byDay[fecha]) {
+      byDay[fecha] = {
+        total: 0, conf: 0, porcnf: 0, cancel: 0, fact: 0,
+        labels: {},    // { 'CANCELADO': ['motivo1','motivo2',...] }
+        products: {}   // { 'Producto': count }
+      };
+    }
+
+    byDay[fecha].total += 1;
+
+    if (isConf) {
+      byDay[fecha].conf += 1;
+      byDay[fecha].fact += totalOrden;
+    } else if (isPorConf) {
+      byDay[fecha].porcnf += 1;
+    } else if (isCancel) {
+      byDay[fecha].cancel += 1;
+      // Capture label/reason
+      const reason = novedad || notas || estado;
+      if (reason) {
+        if (!byDay[fecha].labels[reason]) byDay[fecha].labels[reason] = 0;
+        byDay[fecha].labels[reason]++;
+      }
+    }
+
+    // Track product from NOTAS or PRODUCTO column
+    const prod = (row['PRODUCTO'] || notas || '').toString().substring(0,40).trim();
+    if (prod) {
+      if (!byDay[fecha].products[prod]) byDay[fecha].products[prod] = 0;
+      byDay[fecha].products[prod]++;
+    }
+  });
+
+  xlsxParsedDays = byDay;
+  renderXlsxPreview();
+}
+
+function renderXlsxPreview() {
+  const container = document.getElementById('xlsx-days-list');
+  const preview = document.getElementById('xlsx-preview');
+  if (!container || !preview) return;
+
+  const days = Object.keys(xlsxParsedDays).sort().reverse();
+  if (!days.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px;">No se encontraron órdenes en el archivo.</div>';
+    preview.style.display = 'block';
+    return;
+  }
+
+  // Check which days already exist in trackData
+  const existingDates = new Set(trackData.map(r => r.fecha));
+
+  container.innerHTML = days.map(fecha => {
+    const d = xlsxParsedDays[fecha];
+    const alreadySaved = existingDates.has(fecha);
+    const confPct = d.total > 0 ? ((d.conf / d.total) * 100).toFixed(1) : '0.0';
+    const cancelPct = d.total > 0 ? ((d.cancel / d.total) * 100).toFixed(1) : '0.0';
+    const porConfPct = d.total > 0 ? ((d.porcnf / d.total) * 100).toFixed(1) : '0.0';
+
+    // Labels (cancellation reasons)
+    const labelEntries = Object.entries(d.labels || {}).sort((a,b)=>b[1]-a[1]);
+    const labelsHtml = labelEntries.length
+      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">🏷 Etiquetas de cancelación</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            ${labelEntries.map(([lbl,cnt])=>`<span style="font-size:10px;background:var(--rdim);border:1px solid rgba(255,69,103,.2);border-radius:5px;padding:2px 8px;color:var(--red);">${lbl} <strong>(${cnt})</strong></span>`).join('')}
+          </div>
+        </div>`
+      : '';
+
+    // Products breakdown
+    const prodEntries = Object.entries(d.products || {}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const prodsHtml = prodEntries.length
+      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;">📦 Productos del día</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            ${prodEntries.map(([p,cnt])=>`<span style="font-size:10px;background:rgba(155,109,255,.1);border:1px solid rgba(155,109,255,.2);border-radius:5px;padding:2px 8px;color:var(--purple);">${p.substring(0,30)} <strong>(${cnt})</strong></span>`).join('')}
+          </div>
+        </div>`
+      : '';
+
+    return `<div style="padding:12px 14px;background:var(--s2);border-radius:10px;border:1px solid ${alreadySaved?'rgba(255,181,71,.3)':'var(--border2)'};">
+      <div style="display:grid;grid-template-columns:20px 1fr auto;gap:10px;align-items:start;">
+        <input type="checkbox" id="day-chk-${fecha}" ${alreadySaved?'':'checked'} style="accent-color:var(--green);width:15px;height:15px;cursor:pointer;margin-top:3px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;">${fecha}</span>
+            ${alreadySaved?'<span style="font-size:9px;color:var(--gold);background:var(--adim);border:1px solid rgba(255,181,71,.2);border-radius:5px;padding:1px 7px;">⚠ Ya guardado</span>':''}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;background:var(--s1);border:1px solid var(--border);border-radius:5px;padding:3px 9px;color:var(--dim);">📋 Total: <strong style="color:var(--text)">${d.total}</strong></span>
+            <span style="font-size:11px;background:var(--gdim);border:1px solid rgba(0,229,160,.2);border-radius:5px;padding:3px 9px;color:var(--green);">✅ Conf: <strong>${d.conf}</strong> <span style="opacity:.7">(${confPct}%)</span></span>
+            <span style="font-size:11px;background:var(--adim);border:1px solid rgba(255,181,71,.2);border-radius:5px;padding:3px 9px;color:var(--gold);">⏳ P.Conf: <strong>${d.porcnf}</strong> <span style="opacity:.7">(${porConfPct}%)</span></span>
+            <span style="font-size:11px;background:var(--rdim);border:1px solid rgba(255,69,103,.2);border-radius:5px;padding:3px 9px;color:var(--red);">❌ Cancel: <strong>${d.cancel}</strong> <span style="opacity:.7">(${cancelPct}%)</span></span>
+            ${d.fact>0?`<span style="font-size:11px;background:var(--s1);border:1px solid var(--border);border-radius:5px;padding:3px 9px;color:var(--dim);">💰 <strong style="color:var(--green)">${COPF(d.fact)}</strong></span>`:''}
+          </div>
+          ${labelsHtml}
+          ${prodsHtml}
+        </div>
+        <div style="font-size:10px;color:var(--muted);white-space:nowrap;">${d.total} órd.</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  preview.style.display = 'block';
+
+  // Update dropzone style
+  const dz = document.getElementById('xlsx-dropzone');
+  if (dz) {
+    dz.style.borderColor = 'var(--green)';
+    dz.style.background = 'rgba(0,229,160,.04)';
+    dz.innerHTML = `<div style="font-size:20px;margin-bottom:6px;">✅</div><div style="font-size:12px;font-weight:700;color:var(--green);">${Object.keys(xlsxParsedDays).length} día(s) detectados</div><div style="font-size:10px;color:var(--muted);margin-top:4px;">Haz clic para cargar otro archivo</div><input type="file" id="xlsx-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleXlsxFile(this.files[0])">`;
+    dz.onclick = () => document.getElementById('xlsx-file-inp').click();
+  }
+}
+
+function importSelectedDays() {
+  const days = Object.keys(xlsxParsedDays);
+  let imported = 0;
+  days.forEach(fecha => {
+    const chk = document.getElementById('day-chk-' + fecha);
+    if (!chk || !chk.checked) return;
+    saveDayFromXlsx(fecha);
+    imported++;
+  });
+  if (imported > 0) {
+    saveTrack();
+    renderTrack();
+    showTrackAlerts && checkMetaAlerts && renderTrack();
+    alert(`✅ ${imported} día(s) guardados correctamente.`);
+    // Reset
+    xlsxParsedDays = {};
+    document.getElementById('xlsx-preview').style.display = 'none';
+    setEntryMode('manual');
+  }
+}
+
+function importAllDays() {
+  Object.keys(xlsxParsedDays).forEach(fecha => saveDayFromXlsx(fecha));
+  saveTrack();
+  renderTrack();
+  const total = Object.keys(xlsxParsedDays).length;
+  alert('✅ ' + total + ' día(s) guardados correctamente.');
+  xlsxParsedDays = {};
+  document.getElementById('xlsx-preview').style.display = 'none';
+  setEntryMode('manual');
+}
+
+function saveDayFromXlsx(fecha) {
+  const d = xlsxParsedDays[fecha];
+  if (!d) return;
+  const total = d.total;
+  const conf = d.conf;
+  const cancel = d.cancel;
+  const porcnf = d.porcnf;
+  const fact = d.fact;
+  const pctPub = 0; // unknown from xlsx
+  const pctConf = total > 0 ? conf / total : 0;
+  const cpaReal = 0;
+
+  const existing = trackData.findIndex(r => r.fecha === fecha);
+  const row = {
+    id: existing >= 0 ? trackData[existing].id : Date.now() + Math.random(),
+    fecha, total, conf, cancel, porcnf, fact,
+    pauta: 0, pctPub, pctConf, cpaReal
+  };
+  if (existing >= 0) trackData[existing] = row;
+  else trackData.push(row);
+  trackData.sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 
 function initApp() {

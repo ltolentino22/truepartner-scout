@@ -273,7 +273,13 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 
 <header class="hdr">
   <div class="hdr-brand">
-    <div class="hdr-brand-icon">TP</div>
+    <div class="hdr-brand-icon" style="background:transparent;border:none;padding:0;">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#00E5A0" fill-opacity="0.12"/>
+        <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" stroke="#00E5A0" stroke-opacity="0.3"/>
+        <text x="16" y="21" text-anchor="middle" font-family="'Clash Display',sans-serif" font-weight="700" font-size="11" fill="#00E5A0" letter-spacing="1">TP</text>
+      </svg>
+    </div>
     <div>
       <div class="hdr-brand-name">TRUE PARTNER</div>
       <div class="hdr-brand-sub">Logistic · 2025</div>
@@ -289,6 +295,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 <nav class="nav">
   <div class="ntab on" onclick="goTab('admin')">📊 Costos Admin</div>
   <div class="ntab" onclick="goTab('col')">🇨🇴 Colombia</div>
+  <div class="ntab" onclick="goTab('prov')">📦 Proveeduría</div>
   <div class="ntab" onclick="goTab('ant')">💳 Pago Anticipado</div>
   <div class="ntab" onclick="goTab('track')">📈 Seguimiento Diario</div>
 </nav>
@@ -388,7 +395,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     <div class="kpi kb"><div class="kpi-v" id="k-col-sug">$0</div><div class="kpi-l">Precio Sugerido</div></div>
     <div class="kpi kr"><div class="kpi-v" id="k-col-inef">30%</div><div class="kpi-l">Inefectividad</div><div class="kpi-s">Calculada automát.</div></div>
   </div>
-  <div class="g2" style="margin-bottom:14px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 280px;gap:14px;margin-bottom:14px;">
     <div class="col-l">
       <div class="card">
         <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Configuración</div></div><span class="badge bg">Parámetros globales</span></div>
@@ -490,24 +497,105 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         <div id="col-sim-rows"></div>
       </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Proveeduría — Fulfilment</div></div><span class="badge ba">Costo fulfilment: $2.000 · Utilidad esperada: 20%</span></div>
-    <div class="cb">
-      <div class="g2" style="gap:20px">
-        <div>
-          <div class="sbar" style="margin-top:0"><span class="sbar-l">Productos guardados (máx. 10)</span><div class="sbar-line"></div></div>
-          <div id="col-ff-in"></div>
-          <button onclick="addFFProduct()" style="width:100%;padding:8px;border-radius:8px;border:1px dashed var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:11px;font-family:'Cabinet Grotesk',sans-serif;margin-top:8px;transition:all .2s;" onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
-            + Agregar producto
+
+    <!-- ── SIDEBAR DERECHO: PRODUCTOS GUARDADOS ── -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">💾 Guardar Costeo</div></div></div>
+        <div class="cb">
+          <div class="field" style="margin-bottom:10px">
+            <label>Nombre del producto (opcional)</label>
+            <input type="text" id="c-prod-name" placeholder="Ej: Legging Deportivo" style="width:100%;padding:8px 12px;border-radius:8px;background:var(--s2);border:1px solid var(--border2);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:12px;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)'">
+          </div>
+          <button onclick="saveCosteo()" style="width:100%;padding:10px;border-radius:8px;background:var(--green);color:#070709;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            Guardar costeo actual →
           </button>
         </div>
-        <div>
-          <div class="sbar" style="margin-top:0"><span class="sbar-l">Resultados</span><div class="sbar-line"></div></div>
-          <table class="tbl" style="margin-bottom:12px"><thead><tr><th>Producto</th><th>Vlr IVA</th><th>Vlr Sugerido</th><th>Utilidad</th></tr></thead><tbody id="col-ff-tbl"></tbody></table>
-          <div class="rr"><span class="rr-l">Inversión 1.000 uds.</span><span class="rr-v" id="ff-inv">$0</span></div>
-          <div class="rr"><span class="rr-l">Recaudado (80% entrega)</span><span class="rr-v" id="ff-rec">$0</span></div>
-          <div class="rr hl"><span class="rr-l">Utilidad Neta</span><span class="rr-v g" id="ff-util">$0</span></div>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Productos Guardados</div></div>
+          <span class="badge bg" id="saved-count">0</span>
+        </div>
+        <div style="overflow-y:auto;max-height:480px;" id="saved-products-list">
+          <div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6;">Guarda un costeo<br>para verlo aquí</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ PROVEEDURÍA ═══════════════ -->
+<div class="page" id="page-prov">
+  <div class="ph"><div class="ph-t">📦 Proveeduría — Fulfilment</div><div class="ph-s">Costeo de productos con modelo de fulfillment · COP</div></div>
+  <div class="krow k4" style="margin-bottom:20px;">
+    <div class="kpi"><div class="kpi-v" id="prov-k-inv">$0</div><div class="kpi-l">Inversión 1.000 uds.</div></div>
+    <div class="kpi"><div class="kpi-v" id="prov-k-rec">$0</div><div class="kpi-l">Recaudado (80% ent.)</div></div>
+    <div class="kpi"><div class="kpi-v" id="prov-k-util">$0</div><div class="kpi-l">Utilidad Neta</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="prov-k-count">0</div><div class="kpi-l">Productos activos</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 400px;gap:16px;">
+    <div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="ch">
+          <div class="ch-l"><div class="acc a"></div><div class="ct a">Configuración del modelo</div></div>
+          <span class="badge ba">Parámetros globales</span>
+        </div>
+        <div class="cb">
+          <div class="fr3">
+            <div class="field">
+              <label>Costo Fulfilment (COP)</label>
+              <input type="number" id="prov-ff-cost" value="2000" onchange="cFF()">
+            </div>
+            <div class="field">
+              <label>Utilidad esperada %</label>
+              <input type="number" id="prov-util-pct" value="20" min="1" max="100" onchange="cFF()">
+            </div>
+            <div class="field">
+              <label>% Entrega estimada</label>
+              <input type="number" id="prov-ent-pct" value="80" min="1" max="100" onchange="cFF()">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Productos</div></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge bg" id="ff-prod-count">0 / 10</span>
+            <button onclick="addFFProduct()" style="background:var(--green);color:#070709;border:none;border-radius:6px;padding:5px 12px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;letter-spacing:.05em;">+ Agregar</button>
+          </div>
+        </div>
+        <div id="col-ff-in" style="padding:0 16px;"></div>
+        <div style="padding:14px 16px;border-top:1px solid var(--border);margin-top:4px;">
+          <table class="tbl"><thead><tr><th>Producto</th><th>Costo IVA</th><th>Precio Sugerido</th><th>Utilidad</th><th>% Util.</th></tr></thead><tbody id="col-ff-tbl"></tbody></table>
+        </div>
+        <div style="padding:12px 16px;background:var(--s2);display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-top:1px solid var(--border);">
+          <div class="rr" style="flex-direction:column;align-items:flex-start;padding:8px;background:var(--s1);border-radius:8px;border:none;"><span class="rr-l" style="font-size:9px">Inversión 1.000 uds.</span><span class="rr-v" id="ff-inv" style="font-size:14px;margin-top:4px">$0</span></div>
+          <div class="rr" style="flex-direction:column;align-items:flex-start;padding:8px;background:var(--s1);border-radius:8px;border:none;"><span class="rr-l" style="font-size:9px">Recaudado</span><span class="rr-v" id="ff-rec" style="font-size:14px;margin-top:4px">$0</span></div>
+          <div class="rr" style="flex-direction:column;align-items:flex-start;padding:8px;background:rgba(0,229,160,.06);border-radius:8px;border:1px solid rgba(0,229,160,.15);"><span class="rr-l" style="font-size:9px">Utilidad Neta</span><span class="rr-v g" id="ff-util" style="font-size:14px;margin-top:4px">$0</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">¿Cómo funciona?</div></div></div>
+        <div class="cb" style="font-size:12px;color:var(--dim);line-height:1.8;">
+          <div style="margin-bottom:10px">El modelo calcula el <strong style="color:var(--text)">precio sugerido de venta</strong> basándose en:</div>
+          <div class="rr"><span class="rr-l">Costo con IVA</span><span class="rr-v">Tu costo</span></div>
+          <div class="rr"><span class="rr-l">+ Fulfilment</span><span class="rr-v" id="prov-info-ff">$2.000</span></div>
+          <div class="rr"><span class="rr-l">÷ (1 − util%)</span><span class="rr-v a">= Precio sugerido</span></div>
+          <div class="dv" style="margin:10px 0"></div>
+          <div class="rr"><span class="rr-l">Entrega estimada</span><span class="rr-v" id="prov-info-ent">80%</span></div>
+          <div class="rr"><span class="rr-l">Inversión x1.000</span><span class="rr-v">Costo × 1.000 uds</span></div>
+          <div class="rr"><span class="rr-l">Recaudado</span><span class="rr-v">Precio × 1.000 × ent%</span></div>
+        </div>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Mejor producto</div></div></div>
+        <div class="cb" id="prov-best">
+          <div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;">Agrega productos para ver el análisis</div>
         </div>
       </div>
     </div>
@@ -812,11 +900,137 @@ async function authLogout() {
 }
 
 // ── APP INIT ────────────────────────────────────────────
+// ── SAVED COSTEOS ─────────────────────────────────────────
+let savedCosteos = [];
+
+function loadSavedCosteos() {
+  try {
+    const s = localStorage.getItem('tpl_costeos');
+    savedCosteos = s ? JSON.parse(s) : [];
+  } catch(e) { savedCosteos = []; }
+}
+
+function saveSavedCosteos() {
+  try { localStorage.setItem('tpl_costeos', JSON.stringify(savedCosteos)); } catch(e) {}
+}
+
+function saveCosteo() {
+  const name = document.getElementById('c-prod-name')?.value.trim() || '';
+  const prod = parseFloat(document.getElementById('c-prod')?.value) || 0;
+  const flete = parseFloat(document.getElementById('c-flete')?.value) || 0;
+  const adm = parseFloat(document.getElementById('c-adm')?.value) || 0;
+  const cpam = parseFloat(document.getElementById('c-cpam')?.value) || 0;
+  const precio = parseFloat(document.getElementById('c-precio')?.value) || 0;
+  const tasa = parseFloat(document.getElementById('c-tasa')?.value) || 0.8;
+  const dev = parseFloat(document.getElementById('c-dev')?.value) || 0.1;
+  const pub = parseFloat(document.getElementById('c-pub')?.value) || 0.3;
+  const uesp = parseFloat(document.getElementById('c-uesp')?.value) || 0.2;
+
+  if (prod === 0 && precio === 0) { alert('Ingresa al menos el costo del producto o precio de venta'); return; }
+
+  // Calc key metrics
+  const inef=(1-tasa)+tasa*dev;
+  const fleteAdj=dev<1?flete/(1-dev):flete;
+  const admAdj=inef<1?(adm+inef)/(1-inef):adm;
+  const base=fleteAdj+admAdj+prod;
+  const cpac=pub<1?((base+base*uesp)/(1-pub))-base:0;
+  const cacReal=inef<1?Math.max(cpac,cpam)/(1-inef):Math.max(cpac,cpam);
+  const totC=prod+fleteAdj+admAdj+cacReal;
+  const utilB=precio-totC;
+  const utilR=utilB-(inef*utilB);
+  const cpaBreak=Math.max(cpac,cpam)+utilR;
+
+  savedCosteos.unshift({
+    id: Date.now(),
+    name: name || `Costeo ${new Date().toLocaleDateString('es-CO')}`,
+    prod, flete, adm, cpam, precio, tasa, dev, pub, uesp,
+    cpac: Math.round(cpac),
+    cacReal: Math.round(cacReal),
+    utilR: Math.round(utilR),
+    cpaBreak: Math.round(cpaBreak),
+    inef: Math.round(inef*1000)/10,
+    date: new Date().toLocaleDateString('es-CO')
+  });
+
+  saveSavedCosteos();
+  renderSavedProducts();
+  const btn = event.target;
+  btn.textContent = '✓ Guardado';
+  btn.style.background = 'var(--s2)';
+  btn.style.color = 'var(--green)';
+  setTimeout(()=>{ btn.textContent='Guardar costeo actual →'; btn.style.background='var(--green)'; btn.style.color='#070709'; }, 1500);
+}
+
+function loadCosteo(id) {
+  const co = savedCosteos.find(c=>c.id===id);
+  if (!co) return;
+  const set = (elId, val) => { const el=document.getElementById(elId); if(el) el.value=val; };
+  set('c-prod', co.prod); set('c-flete', co.flete); set('c-adm', co.adm);
+  set('c-cpam', co.cpam); set('c-precio', co.precio);
+  set('c-prod-name', co.name);
+  set('c-tasa', co.tasa); set('c-dev', co.dev); set('c-pub', co.pub); set('c-uesp', co.uesp);
+  initSliders(); cC();
+}
+
+function deleteCosteo(id) {
+  savedCosteos = savedCosteos.filter(c=>c.id!==id);
+  saveSavedCosteos();
+  renderSavedProducts();
+}
+
+function renderSavedProducts() {
+  const list = document.getElementById('saved-products-list');
+  const countEl = document.getElementById('saved-count');
+  if (countEl) countEl.textContent = savedCosteos.length;
+  if (!list) return;
+  if (!savedCosteos.length) {
+    list.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6;">Guarda un costeo<br>para verlo aquí</div>';
+    return;
+  }
+  list.innerHTML = savedCosteos.map(co=>`
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='transparent'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${co.name}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">${co.date}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="loadCosteo(${co.id})" style="background:var(--gdim);border:1px solid rgba(0,229,160,.2);color:var(--green);border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;">Cargar</button>
+          <button onclick="deleteCosteo(${co.id})" style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);color:var(--red);border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">CPA Ideal</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:var(--gold)">${cop(co.cpac)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">CPA Break Even</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:var(--blue)">${cop(co.cpaBreak)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Utilidad Real</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:${co.utilR>=0?'var(--green)':'var(--red)'}">${cop(co.utilR)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Inefectividad</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:var(--red)">${co.inef}%</div>
+        </div>
+      </div>
+      <div style="margin-top:6px;background:var(--s2);border-radius:7px;padding:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:10px;color:var(--muted)">Precio venta</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text)">${cop(co.precio)}</span>
+      </div>
+    </div>`).join('');
+}
+
 function initApp() {
   loadAdminCats();
   renderAdminCats();
   loadFFProducts();
   renderFFProducts();
+  loadSavedCosteos();
+  renderSavedProducts();
   cA();
   initSliders();
   cC();
@@ -839,7 +1053,7 @@ function goTab(k){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+k)?.classList.add('on');
-  const m={admin:0,col:1,ant:2,track:3};
+  const m={admin:0,col:1,prov:2,ant:3,track:4};
   if(m[k]!=null) document.querySelectorAll('.ntab')[m[k]]?.classList.add('on');
 }
 
@@ -1123,11 +1337,15 @@ function removeFFProduct(id) {
 function renderFFProducts() {
   const container = document.getElementById('col-ff-in');
   if (!container) return;
+  if (!ffProducts.length) {
+    container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:12px;">Agrega un producto para empezar</div>';
+    return;
+  }
   container.innerHTML = ffProducts.map(p=>`
-    <div class="ffr" style="gap:6px;">
-      <input type="text" value="${p.name}" placeholder="Nombre (opcional)" onchange="ffProducts.find(x=>x.id===${p.id}).name=this.value;saveFFProducts();renderFFSidebar();" style="flex:1;background:transparent;border:none;color:var(--dim);font-size:11px;outline:none;font-family:'Cabinet Grotesk',sans-serif;cursor:pointer;">
-      <input type="number" value="${p.val}" class="ffv" onchange="ffProducts.find(x=>x.id===${p.id}).val=parseFloat(this.value)||0;saveFFProducts();cFF();" style="width:110px;margin:0;padding:6px 10px;font-size:11px;">
-      <button onclick="removeFFProduct(${p.id})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;" title="Eliminar">✕</button>
+    <div style="display:grid;grid-template-columns:1fr 130px auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+      <input type="text" value="${p.name||''}" placeholder="Nombre del producto" onchange="ffProducts.find(x=>x.id===${p.id}).name=this.value;saveFFProducts();cFF();" style="background:transparent;border:none;color:var(--dim);font-size:11px;outline:none;font-family:'Cabinet Grotesk',sans-serif;min-width:0;">
+      <input type="number" value="${p.val||''}" placeholder="Costo IVA" class="ffv" onchange="ffProducts.find(x=>x.id===${p.id}).val=parseFloat(this.value)||0;saveFFProducts();cFF();" style="margin:0;padding:6px 10px;font-size:11px;">
+      <button onclick="removeFFProduct(${p.id})" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px;line-height:1;" title="Eliminar">✕</button>
     </div>`).join('');
 }
 
@@ -1191,21 +1409,64 @@ function renderFFSidebar() {
 }
 
 function cFF(){
-  const FF=2000,UP=0.2,ENT=0.8;
+  const FF=parseFloat(document.getElementById('prov-ff-cost')?.value)||2000;
+  const UP=(parseFloat(document.getElementById('prov-util-pct')?.value)||20)/100;
+  const ENT=(parseFloat(document.getElementById('prov-ent-pct')?.value)||80)/100;
+
+  // Update info panel
+  tx('prov-info-ff',cop(FF));
+  const entEl=document.getElementById('prov-info-ent');if(entEl)entEl.textContent=Math.round(ENT*100)+'%';
+
   const tbl=document.getElementById('col-ff-tbl');
-  const rows=ffProducts.filter(p=>p.val>0).map((p,i)=>{
+  const active=ffProducts.filter(p=>p.val>0);
+  const rows=active.map((p,i)=>{
     const sug=(p.val+FF)/(1-UP);
     const util=sug-p.val-FF;
-    return{i,name:p.name||`Producto ${i+1}`,v:p.val,sug,util};
+    const utilPct=sug>0?util/sug:0;
+    return{name:p.name||`Producto ${i+1}`,v:p.val,sug,util,utilPct};
   });
-  if(tbl)tbl.innerHTML=rows.map(r=>`<tr><td>${r.name}</td><td>${cop(r.v)}</td><td>${cop(r.sug)}</td><td><span class="badge bg">${cop(r.util)}</span></td></tr>`).join('');
+  if(tbl)tbl.innerHTML=rows.map(r=>`<tr><td>${r.name}</td><td>${cop(r.v)}</td><td>${cop(Math.round(r.sug))}</td><td><span class="badge bg">${cop(Math.round(r.util))}</span></td><td><span class="badge bb">${pct(r.utilPct,1)}</span></td></tr>`).join('');
   const un=1000;
   const totalInv=ffProducts.reduce((s,p)=>s+p.val*un,0);
   const totalRec=rows.reduce((s,r)=>s+r.sug*un*ENT,0);
   const netUtil=totalRec-totalInv;
   tx('ff-inv',cop(totalInv));tx('ff-rec',cop(totalRec));tx('ff-util',cop(netUtil));
-  const el=document.getElementById('ff-util');if(el)el.className='rr-v '+(netUtil>0?'g':'r');
-  renderFFSidebar();
+  tx('prov-k-inv',copK(totalInv));tx('prov-k-rec',copK(totalRec));
+  tx('prov-k-util',copK(netUtil));tx('prov-k-count',active.length);
+  const utilEl=document.getElementById('ff-util');if(utilEl)utilEl.className='rr-v '+(netUtil>0?'g':'r');
+  const provUtil=document.getElementById('prov-k-util');if(provUtil)provUtil.style.color=netUtil>0?'var(--green)':'var(--red)';
+  const badge=document.getElementById('ff-prod-count');if(badge)badge.textContent=`${ffProducts.length} / 10`;
+
+  // Best product
+  const best=rows.length?rows.reduce((a,b)=>b.util>a.util?b:a):null;
+  const bestEl=document.getElementById('prov-best');
+  if(bestEl&&best){
+    bestEl.innerHTML=`
+      <div style="text-align:center;margin-bottom:16px;">
+        <div style="font-family:'Clash Display',sans-serif;font-size:20px;color:var(--text);margin-bottom:4px;">${best.name}</div>
+        <div style="font-size:11px;color:var(--muted)">Mayor utilidad del portafolio</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="background:var(--s2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Costo IVA</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:18px;color:var(--text)">${cop(best.v)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Precio Ideal</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:18px;color:var(--green)">${cop(Math.round(best.sug))}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Utilidad x ud.</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:18px;color:var(--gold)">${cop(Math.round(best.util))}</div>
+        </div>
+        <div style="background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:8px;padding:12px;text-align:center;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">% Margen</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:18px;color:var(--green)">${pct(best.utilPct,1)}</div>
+        </div>
+      </div>`;
+  } else if(bestEl){
+    bestEl.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:20px 0;">Agrega productos para ver el análisis</div>';
+  }
 }
 
 // ── SLIDERS ──────────────────────────────────────────────

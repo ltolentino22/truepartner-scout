@@ -1294,24 +1294,10 @@ async function runAIAnalysis() {
   const topVids = [...creator.videos].filter(v=>v.views>0).sort((a,b)=>b.convRate-a.convRate).slice(0,10);
   const avgConv = creator.videos.length ? creator.videos.reduce((s,v)=>s+v.convRate,0)/creator.videos.length : 0;
 
-  const dataStr = `
-DATOS DEL CREADOR DE TIKTOK SHOP:
-Nombre: ${creator.name}
-Score general: ${creator.score}/100
-GMV Total: $${creator.gmv?.toFixed(2)||0}
-Unidades totales: ${creator.units}
-Conv. Rate promedio: ${(avgConv*100).toFixed(2)}%
-Total videos: ${creator.videos.length}
-Total productos: ${creator.products.length}
-
-TOP PRODUCTOS (por unidades vendidas):
-${topProds.map((p,i)=>`${i+1}. ${p.name.substring(0,60)} | Categoría: ${p.category} | Precio: $${p.price} | Unidades: ${p.units} | GMV: $${p.gmv?.toFixed(2)} | Comisión: ${p.commission}%`).join('
-')}
-
-TOP VIDEOS (por conversión):
-${topVids.map((v,i)=>`${i+1}. ${v.title.substring(0,70)} | Conv: ${(v.convRate*100).toFixed(2)}% | Vistas: ${v.views} | Unidades: ${v.units} | GMV: $${v.gmv?.toFixed(2)} | Fecha: ${v.publishDate||'N/A'}`).join('
-')}
-`;
+  const _NL = '\n';
+  const _prodsStr = topProds.map((p,idx)=>(idx+1)+'. '+(p.name||'').substring(0,60)+' | Cat: '+(p.category||'')+' | $'+p.price+' | '+p.units+' uds | $'+(p.gmv||0).toFixed(2)+' GMV | '+p.commission+'%').join(_NL);
+  const _vidsStr = topVids.map((v,idx)=>(idx+1)+'. '+(v.title||'').substring(0,70)+' | Conv: '+(v.convRate*100).toFixed(2)+'% | '+v.views+' vistas | '+v.units+' uds | $'+(v.gmv||0).toFixed(2)+' | '+(v.publishDate||'N/A')).join(_NL);
+  const dataStr = 'CREADOR: '+creator.name+_NL+'Score: '+(creator.score||0)+'/100'+_NL+'GMV: $'+(creator.gmv||0).toFixed(2)+_NL+'Unidades: '+creator.units+_NL+'Conv prom: '+(avgConv*100).toFixed(2)+'%'+_NL+'Videos: '+creator.videos.length+_NL+'Productos: '+creator.products.length+_NL+_NL+'TOP PRODUCTOS:'+_NL+_prodsStr+_NL+_NL+'TOP VIDEOS:'+_NL+_vidsStr;
 
   try {
     if (resultEl) { resultEl.style.display = 'block'; resultEl.innerHTML = `<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:24px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1s infinite;"></div><span style="color:var(--muted);font-size:13px;">Procesando datos...</span></div></div>`; }

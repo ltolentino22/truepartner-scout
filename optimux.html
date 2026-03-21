@@ -823,12 +823,49 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     </div>
     <div class="card">
       <div class="ch"><div class="ch-l"><div class="acc g" style="background:var(--green)"></div><div class="ct">Metas de la Operación</div></div><span class="badge bg">Editables</span></div>
-      <div class="cb">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="field" style="margin:0"><label style="color:var(--green)">Meta Confirmación %</label><input type="number" id="meta-conf" value="70" min="1" max="100" step="1" oninput="renderTrack()" style="border-color:rgba(0,229,160,.3)"></div>
-          <div class="field" style="margin:0"><label style="color:var(--red)">Máx Cancelación %</label><input type="number" id="meta-cancel" value="15" min="1" max="100" step="1" oninput="renderTrack()" style="border-color:rgba(255,69,103,.3)"></div>
-          <div class="field" style="margin:0"><label style="color:var(--gold)">Máx % Publicidad</label><input type="number" id="meta-pub" value="35" min="1" max="100" step="1" oninput="renderTrack()" style="border-color:rgba(255,181,71,.3)"></div>
-          <div class="field" style="margin:0"><label style="color:var(--blue)">CPA Objetivo ($)</label><input type="number" id="meta-cpa" value="0" min="0" step="100" oninput="renderTrack()" style="border-color:rgba(74,143,255,.3)"></div>
+      <div class="cb" style="display:flex;flex-direction:column;gap:18px;">
+        <!-- Meta Confirmación -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Meta Confirmación</span>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-family:'Clash Display',sans-serif;font-size:20px;color:var(--green);" id="meta-conf-display">70%</span>
+            </div>
+          </div>
+          <div class="slider-track" id="st-meta-conf" onmousedown="startMetaDrag(event,'conf')" ontouchstart="startMetaDrag(event,'conf')" style="cursor:pointer;">
+            <div class="slider-fill" id="sf-meta-conf" style="width:70%;background:var(--green);"></div>
+            <div class="slider-thumb" id="sth-meta-conf" style="left:70%;border-color:var(--green);"></div>
+          </div>
+          <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+          <input type="hidden" id="meta-conf" value="70">
+        </div>
+        <!-- Máx Cancelación -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Máx Cancelación</span>
+            <span style="font-family:'Clash Display',sans-serif;font-size:20px;color:var(--red);" id="meta-cancel-display">15%</span>
+          </div>
+          <div class="slider-track" id="st-meta-cancel" onmousedown="startMetaDrag(event,'cancel')" ontouchstart="startMetaDrag(event,'cancel')" style="cursor:pointer;">
+            <div class="slider-fill sf-r" id="sf-meta-cancel" style="width:15%;"></div>
+            <div class="slider-thumb st-r" id="sth-meta-cancel" style="left:15%;"></div>
+          </div>
+          <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+          <input type="hidden" id="meta-cancel" value="15">
+        </div>
+        <!-- Máx Publicidad -->
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);">Máx % Publicidad</span>
+            <span style="font-family:'Clash Display',sans-serif;font-size:20px;color:var(--gold);" id="meta-pub-display">35%</span>
+          </div>
+          <div class="slider-track" id="st-meta-pub" onmousedown="startMetaDrag(event,'pub')" ontouchstart="startMetaDrag(event,'pub')" style="cursor:pointer;">
+            <div class="slider-fill sf-a" id="sf-meta-pub" style="width:35%;"></div>
+            <div class="slider-thumb st-a" id="sth-meta-pub" style="left:35%;"></div>
+          </div>
+          <div class="slider-limits"><span class="slider-limit">0%</span><span class="slider-limit">50%</span><span class="slider-limit">100%</span></div>
+          <input type="hidden" id="meta-pub" value="35">
+          <!-- hidden cpa for backward compat -->
+          <input type="hidden" id="meta-cpa" value="0">
         </div>
       </div>
     </div>
@@ -1203,6 +1240,7 @@ function initApp() {
   loadAntSavedCosteos();
   renderAntSavedProducts();
   cA();
+  initMetaSliders();
   initSliders();
   cC();
   cFF();
@@ -1695,6 +1733,136 @@ const PCTF=n=>isNaN(n)||n===0?'—':(n*100).toFixed(1)+'%';
 const pubC=v=>v===0?'':(v<=0.3?'pct-good':v<=0.45?'pct-warn':'pct-bad');
 const confC=v=>v===0?'':(v>=0.6?'pct-good':v>=0.4?'pct-warn':'pct-bad');
 
+// ── META SLIDERS ─────────────────────────────────────────
+let activeMetaDrag = null;
+const metaCfg = {
+  conf:   { min:0, max:100, fill:'sf-meta-conf',   thumb:'sth-meta-conf',   display:'meta-conf-display',   hidden:'meta-conf',   color:'var(--green)', suffix:'%' },
+  cancel: { min:0, max:100, fill:'sf-meta-cancel', thumb:'sth-meta-cancel', display:'meta-cancel-display', hidden:'meta-cancel', color:'var(--red)',   suffix:'%' },
+  pub:    { min:0, max:100, fill:'sf-meta-pub',    thumb:'sth-meta-pub',    display:'meta-pub-display',    hidden:'meta-pub',    color:'var(--gold)',  suffix:'%' },
+};
+
+function startMetaDrag(e, key) {
+  e.preventDefault();
+  activeMetaDrag = key;
+  updateMetaSlider(e, key);
+  document.addEventListener('mousemove', onMetaMove);
+  document.addEventListener('mouseup', stopMetaDrag);
+  document.addEventListener('touchmove', onMetaMove, {passive:false});
+  document.addEventListener('touchend', stopMetaDrag);
+}
+function onMetaMove(e) { if(!activeMetaDrag)return; e.preventDefault(); updateMetaSlider(e,activeMetaDrag); }
+function stopMetaDrag() {
+  activeMetaDrag = null;
+  document.removeEventListener('mousemove', onMetaMove);
+  document.removeEventListener('mouseup', stopMetaDrag);
+  document.removeEventListener('touchmove', onMetaMove);
+  document.removeEventListener('touchend', stopMetaDrag);
+}
+function updateMetaSlider(e, key) {
+  const cfg = metaCfg[key];
+  const track = document.getElementById('st-meta-'+key);
+  if (!track) return;
+  const rect = track.getBoundingClientRect();
+  const cx = e.touches ? e.touches[0].clientX : e.clientX;
+  let ratio = Math.max(0, Math.min(1, (cx - rect.left) / rect.width));
+  const val = Math.round(ratio * 100);
+  setMetaSlider(key, val);
+  renderTrack();
+}
+function setMetaSlider(key, val) {
+  const cfg = metaCfg[key];
+  const pct = val + '%';
+  const fill = document.getElementById(cfg.fill);
+  const thumb = document.getElementById(cfg.thumb);
+  const display = document.getElementById(cfg.display);
+  const hidden = document.getElementById(cfg.hidden);
+  if (fill) fill.style.width = pct;
+  if (thumb) thumb.style.left = pct;
+  if (display) display.textContent = val + cfg.suffix;
+  if (hidden) hidden.value = val;
+}
+function initMetaSliders() {
+  Object.keys(metaCfg).forEach(key => {
+    const hidden = document.getElementById(metaCfg[key].hidden);
+    const val = hidden ? parseFloat(hidden.value) : 0;
+    setMetaSlider(key, val);
+  });
+}
+
+// ── ALERT SYSTEM ─────────────────────────────────────────
+let alertCooldown = {};
+function checkMetaAlerts(pC, pX, pP, mConf, mCancel, mPub) {
+  const now = Date.now();
+  const COOLDOWN = 60000; // 1 min between same alert
+
+  // Alert thresholds — warn when significantly off target
+  const alerts = [];
+
+  // Confirmación muy baja (< 70% de la meta)
+  if (pC > 0 && pC < mConf * 0.7) {
+    if (!alertCooldown.conf || now - alertCooldown.conf > COOLDOWN) {
+      alerts.push({ type:'danger', msg:`⚠️ Tasa de confirmación crítica: ${pC.toFixed(1)}% (meta: ${mConf}%). Estás muy por debajo del objetivo.` });
+      alertCooldown.conf = now;
+    }
+  }
+
+  // Cancelación muy alta (> 150% de la meta)
+  if (pX > 0 && pX > mCancel * 1.5) {
+    if (!alertCooldown.cancel || now - alertCooldown.cancel > COOLDOWN) {
+      alerts.push({ type:'danger', msg:`🚨 Cancelación fuera de control: ${pX.toFixed(1)}% (máx: ${mCancel}%). Revisa el proceso de confirmación.` });
+      alertCooldown.cancel = now;
+    }
+  }
+
+  // Publicidad muy alta (> 130% de la meta)
+  if (pP > 0 && pP > mPub * 1.3) {
+    if (!alertCooldown.pub || now - alertCooldown.pub > COOLDOWN) {
+      alerts.push({ type:'warning', msg:`📢 Gasto en publicidad elevado: ${pP.toFixed(1)}% (máx: ${mPub}%). Considera optimizar campañas.` });
+      alertCooldown.pub = now;
+    }
+  }
+
+  if (alerts.length) showTrackAlerts(alerts);
+}
+
+function showTrackAlerts(alerts) {
+  // Remove old alerts
+  document.querySelectorAll('.track-alert').forEach(el => el.remove());
+
+  const container = document.getElementById('page-track');
+  if (!container) return;
+
+  alerts.forEach(alert => {
+    const div = document.createElement('div');
+    div.className = 'track-alert';
+    div.style.cssText = `
+      position:fixed;bottom:24px;right:24px;z-index:999;
+      background:${alert.type==='danger'?'rgba(255,69,103,.12)':'rgba(255,181,71,.12)'};
+      border:1px solid ${alert.type==='danger'?'rgba(255,69,103,.4)':'rgba(255,181,71,.4)'};
+      border-radius:12px;padding:14px 18px;max-width:360px;
+      font-size:13px;color:var(--text);line-height:1.5;
+      box-shadow:0 8px 32px rgba(0,0,0,.4);
+      animation:slideIn .3s ease;
+    `;
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <span>${alert.msg}</span>
+        <button onclick="this.parentElement.parentElement.remove()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;">✕</button>
+      </div>`;
+    document.body.appendChild(div);
+    // Auto-remove after 8s
+    setTimeout(() => div.remove(), 8000);
+  });
+}
+
+// Add slideIn animation to CSS
+if (!document.getElementById('alert-style')) {
+  const style = document.createElement('style');
+  style.id = 'alert-style';
+  style.textContent = '@keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+  document.head.appendChild(style);
+}
+
 function initTrack(){
   const today=new Date().toISOString().split('T')[0];
   const de=document.getElementById('t-fecha');if(de)de.value=today;
@@ -1707,6 +1875,7 @@ function initTrack(){
   const uid=_sb.auth.getUser ? 'tp_track_v2' : 'tp_track_v2';
   try{const s=localStorage.getItem('tp_track_v2');if(s)trackData=JSON.parse(s);}catch(e){}
   setFilter('dia');
+  initMetaSliders();
 }
 function saveTrack(){try{localStorage.setItem('tp_track_v2',JSON.stringify(trackData));}catch(e){}}
 function setFilter(f){
@@ -1810,6 +1979,8 @@ function renderTrack(){
   tx('tf-total',sT);tx('tf-conf',sC);tx('tf-cancel',sX);tx('tf-porcnf',sP>0?sP:'—');tx('tf-fact',COPF(sF));tx('tf-pauta',COPF(sPa));tx('tf-pctpub',PCTF(avgPub));tx('tf-pctconf',PCTF(avgConf));tx('tf-cpa',COPF(avgCpa));
   tx('trk-k-total',sT.toLocaleString('es-CO'));tx('trk-k-conf',sC.toLocaleString('es-CO'));tx('trk-k-cancel',sX.toLocaleString('es-CO'));tx('trk-k-porcnf',sP.toLocaleString('es-CO'));tx('trk-k-fact',sF>=1e6?'$'+(sF/1e6).toFixed(1)+'M':COPF(sF));tx('trk-k-cpa',COPF(avgCpa));
   const pC=avgConf*100,pX=avgCancel*100,pP=avgPub*100;
+  // Check alerts only when there's data
+  if (filtered.length > 0) checkMetaAlerts(pC, pX, pP, mConf, mCancel, mPub);
   const confEl=document.getElementById('dash-pct-conf');if(confEl){confEl.textContent=pC.toFixed(1)+'%';confEl.style.color=pC>=mConf?'var(--green)':pC>=mConf*.7?'var(--gold)':'var(--red)';}
   const cancelEl=document.getElementById('dash-pct-cancel');if(cancelEl){cancelEl.textContent=pX.toFixed(1)+'%';cancelEl.style.color=pX<=mCancel?'var(--green)':pX<=mCancel*1.5?'var(--gold)':'var(--red)';}
   const pubEl=document.getElementById('dash-pct-pub');if(pubEl){pubEl.textContent=pP.toFixed(1)+'%';pubEl.style.color=pP<=mPub?'var(--green)':pP<=mPub*1.3?'var(--gold)':'var(--red)';}

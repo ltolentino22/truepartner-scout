@@ -312,6 +312,7 @@ input[type=file]{display:none;}
         <button class="nav-tab" onclick="showTab('niches',this)" id="tab-btn-niches">🎯 Nichos</button>
         <button class="nav-tab" onclick="showTab('timeline',this)" id="tab-btn-timeline">📅 Timeline</button>
         <button class="nav-tab" onclick="showTab('recommendations',this)" id="tab-btn-recs">💡 Recomendaciones</button>
+        <button class="nav-tab" onclick="showTab('ai',this)" id="tab-btn-ai">🤖 Análisis IA</button>
         <button class="nav-tab" onclick="showTab('compare',this)" id="tab-btn-compare" style="display:none">⚡ Comparar</button>
       </div>
 
@@ -323,6 +324,7 @@ input[type=file]{display:none;}
         <div class="tab-panel" id="tab-niches"></div>
         <div class="tab-panel" id="tab-timeline"></div>
         <div class="tab-panel" id="tab-recommendations"></div>
+        <div class="tab-panel" id="tab-ai"></div>
         <div class="tab-panel" id="tab-compare"></div>
       </div>
     </div>
@@ -860,6 +862,7 @@ function renderAllTabs(creator) {
   renderProducts(creator);
   renderNiches(creator);
   renderTimeline(creator);
+  renderAI(creator);
   renderRecommendations(creator);
 }
 
@@ -971,42 +974,117 @@ function renderConversion(creator) {
 // ── VIDEOS ────────────────────────────────────────────────────────────────
 let vidSort='conv', vidNiche='Todos', vidResult='todos', vidPeriod='todos';
 
+// video filter state
+let vidDateFilter = 'todos'; // todos | 7 | 14 | 28 | mes | custom
+let vidDateFrom = '';
+let vidDateTo = '';
+let vidProductFilter = 'todos';
+
 function renderVideos(creator) {
   const vids = creator.videos;
   if (!vids.length) { document.getElementById('tab-videos').innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px">🎬</div><br>Sin creativos cargados.</div>'; return; }
-  const totalViews=vids.reduce((s,v)=>s+v.views,0);
-  const totalUnits=vids.reduce((s,v)=>s+v.units,0);
-  const totalLikes=vids.reduce((s,v)=>s+v.likes,0);
-  const kpis = [{l:'Total Videos',v:fmtInt(vids.length),s:'shoppable videos'},{l:'Vistas Totales',v:fmtInt(totalViews),s:'acumuladas'},{l:'Total Likes',v:fmtInt(totalLikes),s:''},{l:'Unidades via Video',v:fmtInt(totalUnits),s:`${fmtNum(vids.reduce((s,v)=>s+v.gmv,0))}`}].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Build product options from products that have videos linked (match by product in vids niche/title or just show all products)
+  const productNames = ['todos', ...new Set(creator.products.filter(p=>p.units>0).map(p=>p.name))];
+
   const sortOpts=[{v:'conv',l:'🔥 Conv.'},{v:'units',l:'📦 Unidades'},{v:'gmv',l:'💰 GMV'},{v:'views',l:'👁 Vistas'}];
   const niches=['Todos',...new Set(vids.map(v=>v.niche))];
   const resultOpts=[{v:'todos',l:'Todos'},{v:'con_ventas',l:'✅ Con ventas'},{v:'top',l:'🔥 Top'},{v:'sin_conv',l:'⚠️ Sin conv.'}];
+  const dateOpts=[{v:'todos',l:'Todos'},{v:'7',l:'7 días'},{v:'14',l:'14 días'},{v:'28',l:'28 días'},{v:'mes',l:'Por mes'},{v:'custom',l:'📅 Fecha'}];
+
+  // KPIs computed from filtered set
+  const filtered = getFilteredVideos(creator);
+  const totalViews=filtered.reduce((s,v)=>s+v.views,0);
+  const totalUnits=filtered.reduce((s,v)=>s+v.units,0);
+  const totalLikes=filtered.reduce((s,v)=>s+v.likes,0);
+  const kpis = [
+    {l:'Videos',v:fmtInt(filtered.length),s:`de ${vids.length} totales`},
+    {l:'Vistas',v:fmtInt(totalViews),s:'acumuladas'},
+    {l:'Unidades',v:fmtInt(totalUnits),s:`${fmtNum(filtered.reduce((s,v)=>s+v.gmv,0))}`},
+    {l:'Conv. Prom.',v:fmtPct(filtered.length?filtered.reduce((s,v)=>s+v.convRate,0)/filtered.length:0),s:'tasa promedio'}
+  ].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Build month options for mes filter
+  const months = [...new Set(vids.map(v=>{
+    if(!v.publishDate)return null;
+    const d=new Date(v.publishDate); return isNaN(d)?null:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }).filter(Boolean))].sort().reverse();
 
   document.getElementById('tab-videos').innerHTML =
     `<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">${kpis}</div>` +
     `<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:20px;">` +
-    `<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:8px;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--green);font-weight:600;">Ordenar</span><div style="display:flex;gap:6px;flex-wrap:wrap;" id="vid-sort-btns">${sortOpts.map(o=>`<button class="tag${vidSort===o.v?' active':''}" onclick="setVidFilter('sort','${o.v}')">${o.l}</button>`).join('')}</div></div>` +
-    `<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:8px;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;">Nicho</span><div style="display:flex;gap:6px;flex-wrap:wrap;">${niches.map(n=>`<button class="tag${vidNiche===n?' active':''}" onclick="setVidFilter('niche','${n}')">${n}</button>`).join('')}</div></div>` +
-    `<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;">Resultado</span><div style="display:flex;gap:6px;flex-wrap:wrap;">${resultOpts.map(o=>`<button class="tag${vidResult===o.v?' active':''}" onclick="setVidFilter('result','${o.v}')">${o.l}</button>`).join('')}</div></div></div>` +
+    // Row 1: Sort + Result
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--green);font-weight:600;white-space:nowrap;">Ordenar</span>${sortOpts.map(o=>`<button class="tag${vidSort===o.v?' active':''}" onclick="setVidFilter('sort','${o.v}')">${o.l}</button>`).join('')}</div>` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Resultado</span>${resultOpts.map(o=>`<button class="tag${vidResult===o.v?' active':''}" onclick="setVidFilter('result','${o.v}')">${o.l}</button>`).join('')}</div>` +
+    `</div>` +
+    // Row 2: Date filter
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Período</span>${dateOpts.map(o=>`<button class="tag${vidDateFilter===o.v?' active':''}" onclick="setVidFilter('date','${o.v}')">${o.l}</button>`).join('')}` +
+    `<div id="vid-month-sel" style="display:${vidDateFilter==='mes'?'flex':'none'};gap:4px;align-items:center;"><select onchange="setVidFilter('month',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;">${months.map(m=>`<option value="${m}" ${vidDateFilter==='mes'&&vidDateFrom===m?'selected':''}>${m}</option>`).join('')}</select></div>` +
+    `<div id="vid-custom-sel" style="display:${vidDateFilter==='custom'?'flex':'none'};gap:4px;align-items:center;"><input type="date" value="${vidDateFrom}" onchange="setVidFilter('from',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;color-scheme:dark;"><span style="color:var(--muted);font-size:11px;">→</span><input type="date" value="${vidDateTo}" onchange="setVidFilter('to',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;color-scheme:dark;"></div>` +
+    `</div>` +
+    // Row 3: Nicho + Producto
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Nicho</span>${niches.map(n=>`<button class="tag${vidNiche===n?' active':''}" onclick="setVidFilter('niche','${n}')">${n}</button>`).join('')}</div>` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Producto</span><select onchange="setVidFilter('product',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 10px;font-size:11px;outline:none;max-width:280px;"><option value="todos">Todos los productos</option>${creator.products.filter(p=>p.units>0).map(p=>`<option value="${p.name.replace(/"/g,'&quot;')}" ${vidProductFilter===p.name?'selected':''}>${p.name.substring(0,50)}</option>`).join('')}</select></div>` +
+    `</div>` +
+    `</div>` +
     `<div id="vid-grid-container"></div>`;
 
   renderVideoGrid(creator);
+}
+
+function getFilteredVideos(creator) {
+  let vids = [...creator.videos];
+  // Date filter
+  if (vidDateFilter !== 'todos') {
+    const now = new Date();
+    if (['7','14','28'].includes(vidDateFilter)) {
+      const days = parseInt(vidDateFilter);
+      const cutoff = new Date(now - days * 86400000);
+      vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); return !isNaN(d)&&d>=cutoff; });
+    } else if (vidDateFilter === 'mes' && vidDateFrom) {
+      vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); if(isNaN(d))return false; const mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; return mk===vidDateFrom; });
+    } else if (vidDateFilter === 'custom' && vidDateFrom && vidDateTo) {
+      const from = new Date(vidDateFrom); const to = new Date(vidDateTo + 'T23:59:59');
+      vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); return !isNaN(d)&&d>=from&&d<=to; });
+    }
+  }
+  // Product filter — match videos to products by niche/name similarity
+  if (vidProductFilter !== 'todos') {
+    const prod = creator.products.find(p=>p.name===vidProductFilter);
+    if (prod) {
+      // Match by niche or by partial name overlap
+      vids = vids.filter(v => v.niche === prod.category || v.niche === prod.niche ||
+        (prod.name && v.title && prod.name.split(' ').slice(0,3).some(w=>w.length>3&&v.title.toLowerCase().includes(w.toLowerCase()))));
+      // If too strict (no results), show by niche only
+      if (!vids.length) vids = creator.videos.filter(v=>v.niche===prod.category);
+    }
+  }
+  // Result filter
+  if(vidResult==='con_ventas')vids=vids.filter(v=>v.units>0);
+  else if(vidResult==='top')vids=vids.filter(v=>v.convRate>=0.15);
+  else if(vidResult==='sin_conv')vids=vids.filter(v=>v.units===0);
+  // Niche filter
+  if(vidNiche!=='Todos')vids=vids.filter(v=>v.niche===vidNiche);
+  return vids;
 }
 
 function setVidFilter(type, val) {
   if(type==='sort')vidSort=val;
   if(type==='niche')vidNiche=val;
   if(type==='result')vidResult=val;
+  if(type==='date'){ vidDateFilter=val; if(val==='mes'){ const now=new Date(); vidDateFrom=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; } }
+  if(type==='month'){ vidDateFrom=val; vidDateFilter='mes'; }
+  if(type==='from')vidDateFrom=val;
+  if(type==='to')vidDateTo=val;
+  if(type==='product')vidProductFilter=val;
   const creator = window._creators.find(c=>c.id===window._activeCreatorId);
-  if(creator) { renderVideos(creator); }
+  if(creator) renderVideos(creator);
 }
 
 function renderVideoGrid(creator) {
-  let vids = [...creator.videos];
-  if(vidNiche!=='Todos')vids=vids.filter(v=>v.niche===vidNiche);
-  if(vidResult==='con_ventas')vids=vids.filter(v=>v.units>0);
-  else if(vidResult==='top')vids=vids.filter(v=>v.convRate>=0.15);
-  else if(vidResult==='sin_conv')vids=vids.filter(v=>v.units===0);
+  let vids = getFilteredVideos(creator);
   const sortFns={conv:(a,b)=>b.convRate-a.convRate,units:(a,b)=>b.units-a.units,gmv:(a,b)=>b.gmv-a.gmv,views:(a,b)=>b.views-a.views};
   vids.sort(sortFns[vidSort]||sortFns.conv);
 
@@ -1093,7 +1171,33 @@ function renderProductTable(prods, creator) {
   if(!el)return;
   el.innerHTML = sorted.map((p,i) => {
     const uid='p'+i;
-    const bestMonth = p;
+    // Find top 3 videos for this product by matching niche/category or name keywords
+    const allVids = creator.videos || [];
+    const matchVids = allVids.filter(v =>
+      v.niche === p.category ||
+      (p.name.split(' ').slice(0,3).some(w=>w.length>3&&v.title&&v.title.toLowerCase().includes(w.toLowerCase())))
+    ).sort((a,b)=>b.convRate-a.convRate).slice(0,3);
+
+    const top3html = matchVids.length ? `
+      <div style="padding:12px 18px 14px;background:var(--s2);border-bottom:1px solid var(--border);">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">🎬 Top 3 Videos por Conversión</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${matchVids.map((v,vi)=>`
+            <div style="display:grid;grid-template-columns:22px 1fr 70px 70px 80px 80px auto;gap:8px;align-items:center;padding:8px 12px;background:var(--s1);border-radius:8px;border:1px solid var(--border);">
+              <span style="font-family:'Clash Display',sans-serif;font-size:13px;color:var(--muted);">${vi+1}</span>
+              <div style="font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${v.title.substring(0,60)}${v.title.length>60?'…':''}</div>
+              <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px">Vistas</div><div style="font-size:12px;font-weight:600;color:var(--text)">${fmtInt(v.views)}</div></div>
+              <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px">Unidades</div><div style="font-size:12px;font-weight:600;color:var(--gold)">${v.units}</div></div>
+              <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px">Facturación</div><div style="font-size:12px;font-weight:600;color:var(--green)">${fmtNum(v.gmv)}</div></div>
+              <div style="text-align:center;">${rendimiento(v.convRate)}</div>
+              <div style="display:flex;gap:4px;">
+                ${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600;">▶</a>`:''}
+                ${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;">📊</a>`:''}
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>` : '';
+
     return `<div>
       <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:40px 42px 1fr 100px 80px 95px 85px 100px 36px;gap:8px;align-items:center;">
         <div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
@@ -1107,7 +1211,8 @@ function renderProductTable(prods, creator) {
         <button class="expand-btn" id="btn_${uid}" onclick="toggleMonthly('${uid}')">▾</button>
       </div>
       <div class="monthly-panel" id="panel_${uid}">
-        <div style="font-size:12px;color:var(--muted);line-height:1.6;">${p.name}<br><span style="color:var(--green)">${fmtNum(p.gmv)}</span> · ${fmtInt(p.units)} unidades · ${p.commission}% comisión</div>
+        ${top3html}
+        <div style="padding:12px 18px;font-size:12px;color:var(--muted);line-height:1.6;">${p.name}<br><span style="color:var(--green)">${fmtNum(p.gmv)}</span> · ${fmtInt(p.units)} unidades · ${p.commission}% comisión${matchVids.length?'':' · Sin videos coincidentes'}</div>
       </div>
     </div>`;
   }).join('');
@@ -1145,6 +1250,184 @@ function renderTimeline(creator) {
   for(const p of creator.products.filter(p=>p.units>0&&p.launchDate))allItems.push({...p,_type:'product',date:new Date(p.launchDate)});
   allItems.sort((a,b)=>b.date-a.date);
   document.getElementById('tab-timeline').innerHTML=`<div class="sec-label">Actividad Reciente</div><div class="card"><div class="card-head"><div class="card-title">Timeline</div><div class="card-meta">${allItems.length} eventos</div></div><div style="padding:20px"><div class="timeline">${allItems.slice(0,40).map((item,i)=>{const isVid=item._type==='video';const dotColor=isVid?(item.convRate>=0.15?'var(--green)':item.convRate>0?'var(--gold)':'var(--muted)'):'var(--blue)';const content=isVid?`<div class="tl-content-title">🎬 ${item.title.substring(0,70)}</div><div class="tl-content-meta">${fmtInt(item.views)} vistas · ${item.units} uds · ${fmtNum(item.gmv)} · ${rendimiento(item.convRate)}</div>`:`<div class="tl-content-title">📦 ${item.name.substring(0,70)}</div><div class="tl-content-meta">${fmtInt(item.units)} uds · ${fmtNum(item.gmv)} · ${item.category}</div>`;return`<div class="tl-item"><div class="tl-date">${item.date.toLocaleDateString('es',{month:'short',day:'numeric',year:'2-digit'})}</div><div class="tl-line"><div class="tl-dot" style="background:${dotColor}"></div>${i<39?'<div class="tl-line-bar"></div>':''}</div><div class="tl-content">${content}</div></div>`;}).join('')}</div></div></div>`;
+}
+
+// ── AI ANALYSIS ──────────────────────────────────────────────
+async function renderAI(creator) {
+  const el = document.getElementById('tab-ai');
+  if (!el) return;
+
+  el.innerHTML = `
+    <div style="max-width:800px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px;">Análisis de Inteligencia Artificial</div>
+          <div style="font-size:12px;color:var(--muted);">Recomendación de producto winner y videos a testear basado en los datos del creador</div>
+        </div>
+        <button onclick="runAIAnalysis()" id="ai-run-btn" style="background:linear-gradient(135deg,#00E5A0,#4A8FFF);color:#070709;border:none;border-radius:10px;padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:opacity .2s;white-space:nowrap;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+          ✨ Analizar con IA
+        </button>
+      </div>
+      <div id="ai-result" style="display:none;"></div>
+      <div id="ai-empty" style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:48px;text-align:center;color:var(--muted);">
+        <div style="font-size:48px;margin-bottom:16px;">🤖</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px;">IA lista para analizar</div>
+        <div style="font-size:12px;line-height:1.7;">Presiona <strong style="color:var(--green)">Analizar con IA</strong> para obtener:<br>· Producto winner recomendado<br>· Videos con mejor potencial a testear<br>· Estrategia de contenido sugerida</div>
+      </div>
+    </div>`;
+}
+
+async function runAIAnalysis() {
+  const creator = window._creators.find(c=>c.id===window._activeCreatorId);
+  if (!creator) return;
+
+  const btn = document.getElementById('ai-run-btn');
+  const resultEl = document.getElementById('ai-result');
+  const emptyEl = document.getElementById('ai-empty');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Analizando...';
+  btn.style.opacity = '.7';
+
+  // Build data summary for the AI
+  const topProds = [...creator.products].filter(p=>p.units>0).sort((a,b)=>b.units-a.units).slice(0,8);
+  const topVids = [...creator.videos].filter(v=>v.views>0).sort((a,b)=>b.convRate-a.convRate).slice(0,10);
+  const avgConv = creator.videos.length ? creator.videos.reduce((s,v)=>s+v.convRate,0)/creator.videos.length : 0;
+
+  const dataStr = `
+DATOS DEL CREADOR DE TIKTOK SHOP:
+Nombre: ${creator.name}
+Score general: ${creator.score}/100
+GMV Total: $${creator.gmv?.toFixed(2)||0}
+Unidades totales: ${creator.units}
+Conv. Rate promedio: ${(avgConv*100).toFixed(2)}%
+Total videos: ${creator.videos.length}
+Total productos: ${creator.products.length}
+
+TOP PRODUCTOS (por unidades vendidas):
+${topProds.map((p,i)=>`${i+1}. ${p.name.substring(0,60)} | Categoría: ${p.category} | Precio: $${p.price} | Unidades: ${p.units} | GMV: $${p.gmv?.toFixed(2)} | Comisión: ${p.commission}%`).join('
+')}
+
+TOP VIDEOS (por conversión):
+${topVids.map((v,i)=>`${i+1}. ${v.title.substring(0,70)} | Conv: ${(v.convRate*100).toFixed(2)}% | Vistas: ${v.views} | Unidades: ${v.units} | GMV: $${v.gmv?.toFixed(2)} | Fecha: ${v.publishDate||'N/A'}`).join('
+')}
+`;
+
+  try {
+    if (resultEl) { resultEl.style.display = 'block'; resultEl.innerHTML = `<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:24px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1s infinite;"></div><span style="color:var(--muted);font-size:13px;">Procesando datos...</span></div></div>`; }
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `Eres un experto analista de TikTok Shop y dropshipping. Analiza los datos de un creador y da recomendaciones específicas y accionables. Responde ÚNICAMENTE en JSON con este formato exacto (sin markdown, sin backticks):
+{
+  "winner": {
+    "name": "nombre del producto",
+    "reason": "razón breve (2-3 oraciones)",
+    "score": 85,
+    "price": "$XX.XX",
+    "commission": "XX%"
+  },
+  "videos_to_test": [
+    {"title": "título corto del ángulo/concepto", "strategy": "descripción de la estrategia en 1-2 oraciones", "based_on": "video referencia del que se inspira"},
+    {"title": "título corto del ángulo/concepto", "strategy": "descripción", "based_on": "video referencia"},
+    {"title": "título corto del ángulo/concepto", "strategy": "descripción", "based_on": "video referencia"}
+  ],
+  "insights": ["insight 1 breve", "insight 2 breve", "insight 3 breve"],
+  "warning": "una advertencia o riesgo clave si aplica (o null)"
+}`,
+        messages: [{ role: 'user', content: dataStr }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    let parsed;
+    try {
+      const clean = text.replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('No se pudo parsear la respuesta de la IA');
+    }
+
+    const winnerScore = parsed.winner?.score || 0;
+    const scoreColor = winnerScore >= 80 ? 'var(--green)' : winnerScore >= 60 ? 'var(--gold)' : 'var(--red)';
+
+    resultEl.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- WINNER PRODUCT -->
+        <div style="background:var(--s1);border:1px solid rgba(0,229,160,.25);border-radius:14px;overflow:hidden;">
+          <div style="padding:16px 20px;background:rgba(0,229,160,.06);border-bottom:1px solid rgba(0,229,160,.15);display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">🏆</span>
+            <div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;">Producto Winner Recomendado</div>
+            </div>
+          </div>
+          <div style="padding:18px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;">
+              <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);line-height:1.2;">${parsed.winner?.name||'—'}</div>
+              <div style="text-align:center;flex-shrink:0;">
+                <div style="font-family:'Clash Display',sans-serif;font-size:32px;font-weight:700;color:${scoreColor};line-height:1;">${winnerScore}</div>
+                <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Score IA</div>
+              </div>
+            </div>
+            <div style="font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:14px;">${parsed.winner?.reason||''}</div>
+            <div style="display:flex;gap:8px;">
+              <span style="background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--text);">💵 ${parsed.winner?.price||'—'}</span>
+              <span style="background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--text);">📊 ${parsed.winner?.commission||'—'} comisión</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIDEOS TO TEST -->
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;">🎬</span>
+            <div style="font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;">Videos a Testear</div>
+          </div>
+          <div style="padding:8px 0;">
+            ${(parsed.videos_to_test||[]).map((v,i)=>`
+              <div style="padding:14px 20px;border-bottom:1px solid var(--border);${i===2?'border-bottom:none;':''}">
+                <div style="display:flex;align-items:flex-start;gap:12px;">
+                  <div style="width:28px;height:28px;border-radius:8px;background:var(--bdim);display:flex;align-items:center;justify-content:center;font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;">${i+1}</div>
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;">${v.title}</div>
+                    <div style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:6px;">${v.strategy}</div>
+                    ${v.based_on?`<div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Basado en: ${v.based_on.substring(0,70)}</div>`:''}
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- INSIGHTS + WARNING -->
+        <div style="display:grid;grid-template-columns:${parsed.warning?'1fr 1fr':'1fr'};gap:14px;">
+          <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px 20px;">
+            <div style="font-family:'Clash Display',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">💡 Insights Clave</div>
+            ${(parsed.insights||[]).map(ins=>`<div style="display:flex;gap:8px;margin-bottom:9px;font-size:12px;color:var(--dim);line-height:1.5;"><span style="color:var(--green);flex-shrink:0;">→</span>${ins}</div>`).join('')}
+          </div>
+          ${parsed.warning?`<div style="background:rgba(255,181,71,.06);border:1px solid rgba(255,181,71,.25);border-radius:14px;padding:18px 20px;">
+            <div style="font-family:'Clash Display',sans-serif;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">⚠️ Advertencia</div>
+            <div style="font-size:12px;color:var(--dim);line-height:1.6;">${parsed.warning}</div>
+          </div>`:''}
+        </div>
+
+        <div style="text-align:right;font-size:10px;color:var(--muted);">Generado por Claude AI · ${new Date().toLocaleString('es-CO')}</div>
+      </div>`;
+
+  } catch(err) {
+    resultEl.innerHTML = `<div style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);border-radius:12px;padding:20px;color:var(--red);font-size:13px;">Error al analizar: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Analizar de nuevo';
+    btn.style.opacity = '1';
+  }
 }
 
 // ── RECOMMENDATIONS ───────────────────────────────────────────────────────

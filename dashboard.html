@@ -1094,6 +1094,13 @@ function renderVideoGrid(creator) {
     const id='v'+idx;
     const isTop=v.convRate>=0.15;
     const thumbBg=`background:var(--s3);display:flex;align-items:center;justify-content:center;`;
+    // Find matching product for this video
+    const matchProd = creator.products.filter(p=>p.units>0).find(p=>
+      p.category === v.niche ||
+      (p.name && v.title && p.name.split(' ').slice(0,3).some(w=>w.length>3&&v.title.toLowerCase().includes(w.toLowerCase())))
+    );
+    const prodLabel = matchProd ? matchProd.name.substring(0,32)+(matchProd.name.length>32?'…':'') : (v.niche||'');
+
     return `<div class="vid-card ${isTop?'top-performer':''}">
       <div style="position:relative;border-radius:10px;overflow:hidden;margin-bottom:10px;height:140px;cursor:pointer;${thumbBg}" onclick="toggleVidStats('${id}')">
         <span style="font-size:28px">🎬</span>
@@ -1103,6 +1110,7 @@ function renderVideoGrid(creator) {
         </div>
         ${isTop?'<div style="position:absolute;top:8px;right:8px;font-size:15px">🔥</div>':''}
       </div>
+      ${prodLabel?`<div style="font-size:10px;font-weight:600;color:var(--purple);background:rgba(155,109,255,.1);border:1px solid rgba(155,109,255,.2);border-radius:6px;padding:3px 8px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${matchProd?matchProd.name:v.niche}">📦 ${prodLabel}</div>`:''}
       <div class="vid-title" onclick="toggleVidStats('${id}')" style="cursor:pointer">${v.title.substring(0,88)}${v.title.length>88?'…':''}</div>
       <div class="vid-stats-panel" id="vsp_${id}">
         <div class="vsp-grid">
@@ -1111,6 +1119,7 @@ function renderVideoGrid(creator) {
           <div class="vsp-cell"><div class="vsp-lbl">Unidades</div><div class="vsp-val" style="color:var(--gold)">${v.units}</div></div>
           <div class="vsp-cell"><div class="vsp-lbl">Facturación</div><div class="vsp-val" style="color:var(--green);font-size:14px">${fmtNum(v.gmv)}</div></div>
         </div>
+        ${matchProd?`<div class="vsp-row"><span class="vsp-row-lbl">Producto</span><span style="font-size:10px;color:var(--purple);font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${matchProd.name.substring(0,40)}</span></div>`:''}
         <div class="vsp-row"><span class="vsp-row-lbl">Conv. Rate</span>${rendimiento(v.convRate)}</div>
         <div class="vsp-links">
           ${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" class="vsp-link vsp-link-tt">▶ TikTok</a>`:''}
@@ -1253,168 +1262,41 @@ function renderTimeline(creator) {
 }
 
 // ── AI ANALYSIS ──────────────────────────────────────────────
-async function renderAI(creator) {
+function renderAI(creator) {
   const el = document.getElementById('tab-ai');
   if (!el) return;
-
   el.innerHTML = `
-    <div style="max-width:800px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <div style="font-family:'Clash Display',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px;">Análisis de Inteligencia Artificial</div>
-          <div style="font-size:12px;color:var(--muted);">Recomendación de producto winner y videos a testear basado en los datos del creador</div>
-        </div>
-        <button onclick="runAIAnalysis()" id="ai-run-btn" style="background:linear-gradient(135deg,#00E5A0,#4A8FFF);color:#070709;border:none;border-radius:10px;padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:opacity .2s;white-space:nowrap;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-          ✨ Analizar con IA
-        </button>
+    <div style="max-width:640px;margin:0 auto;padding:48px 20px;text-align:center;">
+      <div style="position:relative;display:inline-block;margin-bottom:28px;">
+        <div style="width:96px;height:96px;border-radius:24px;background:linear-gradient(135deg,rgba(0,229,160,.12),rgba(74,143,255,.12));border:1px solid rgba(0,229,160,.2);display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto;">🤖</div>
+        <div style="position:absolute;-top:6px;right:-6px;background:var(--gold);color:#070709;font-size:9px;font-weight:800;padding:3px 8px;border-radius:99px;letter-spacing:.08em;text-transform:uppercase;">Pronto</div>
       </div>
-      <div id="ai-result" style="display:none;"></div>
-      <div id="ai-empty" style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:48px;text-align:center;color:var(--muted);">
-        <div style="font-size:48px;margin-bottom:16px;">🤖</div>
-        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px;">IA lista para analizar</div>
-        <div style="font-size:12px;line-height:1.7;">Presiona <strong style="color:var(--green)">Analizar con IA</strong> para obtener:<br>· Producto winner recomendado<br>· Videos con mejor potencial a testear<br>· Estrategia de contenido sugerida</div>
+      <div style="font-family:'Clash Display',sans-serif;font-size:22px;font-weight:700;margin-bottom:10px;">Análisis IA — En construcción</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:32px;max-width:440px;margin-left:auto;margin-right:auto;">Estamos entrenando el modelo con datos de TikTok Shop para darte recomendaciones ultra precisas. Disponible pronto para todos los usuarios.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;max-width:480px;margin:0 auto 32px;">
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;">
+          <div style="font-size:22px;margin-bottom:8px;">🏆</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;">Producto Winner</div>
+          <div style="font-size:10px;color:var(--muted);">Recomendación basada en datos reales</div>
+        </div>
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;">
+          <div style="font-size:22px;margin-bottom:8px;">🎬</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;">Videos a Testear</div>
+          <div style="font-size:10px;color:var(--muted);">Ángulos con mayor potencial viral</div>
+        </div>
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;">
+          <div style="font-size:22px;margin-bottom:8px;">💡</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px;">Insights Clave</div>
+          <div style="font-size:10px;color:var(--muted);">Patrones y oportunidades detectadas</div>
+        </div>
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:99px;padding:8px 18px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;"></div>
+        <span style="font-size:12px;color:var(--green);font-weight:600;">Disponible para Free y Pro</span>
       </div>
     </div>`;
 }
 
-async function runAIAnalysis() {
-  const creator = window._creators.find(c=>c.id===window._activeCreatorId);
-  if (!creator) return;
-
-  const btn = document.getElementById('ai-run-btn');
-  const resultEl = document.getElementById('ai-result');
-  const emptyEl = document.getElementById('ai-empty');
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Analizando...';
-  btn.style.opacity = '.7';
-
-  // Build data summary for the AI
-  const topProds = [...creator.products].filter(p=>p.units>0).sort((a,b)=>b.units-a.units).slice(0,8);
-  const topVids = [...creator.videos].filter(v=>v.views>0).sort((a,b)=>b.convRate-a.convRate).slice(0,10);
-  const avgConv = creator.videos.length ? creator.videos.reduce((s,v)=>s+v.convRate,0)/creator.videos.length : 0;
-
-  const _NL = '\n';
-  const _prodsStr = topProds.map((p,idx)=>(idx+1)+'. '+(p.name||'').substring(0,60)+' | Cat: '+(p.category||'')+' | $'+p.price+' | '+p.units+' uds | $'+(p.gmv||0).toFixed(2)+' GMV | '+p.commission+'%').join(_NL);
-  const _vidsStr = topVids.map((v,idx)=>(idx+1)+'. '+(v.title||'').substring(0,70)+' | Conv: '+(v.convRate*100).toFixed(2)+'% | '+v.views+' vistas | '+v.units+' uds | $'+(v.gmv||0).toFixed(2)+' | '+(v.publishDate||'N/A')).join(_NL);
-  const dataStr = 'CREADOR: '+creator.name+_NL+'Score: '+(creator.score||0)+'/100'+_NL+'GMV: $'+(creator.gmv||0).toFixed(2)+_NL+'Unidades: '+creator.units+_NL+'Conv prom: '+(avgConv*100).toFixed(2)+'%'+_NL+'Videos: '+creator.videos.length+_NL+'Productos: '+creator.products.length+_NL+_NL+'TOP PRODUCTOS:'+_NL+_prodsStr+_NL+_NL+'TOP VIDEOS:'+_NL+_vidsStr;
-
-  try {
-    if (resultEl) { resultEl.style.display = 'block'; resultEl.innerHTML = `<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:24px;"><div style="display:flex;align-items:center;gap:12px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1s infinite;"></div><span style="color:var(--muted);font-size:13px;">Procesando datos...</span></div></div>`; }
-    if (emptyEl) emptyEl.style.display = 'none';
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `Eres un experto analista de TikTok Shop y dropshipping. Analiza los datos de un creador y da recomendaciones específicas y accionables. Responde ÚNICAMENTE en JSON con este formato exacto (sin markdown, sin backticks):
-{
-  "winner": {
-    "name": "nombre del producto",
-    "reason": "razón breve (2-3 oraciones)",
-    "score": 85,
-    "price": "$XX.XX",
-    "commission": "XX%"
-  },
-  "videos_to_test": [
-    {"title": "título corto del ángulo/concepto", "strategy": "descripción de la estrategia en 1-2 oraciones", "based_on": "video referencia del que se inspira"},
-    {"title": "título corto del ángulo/concepto", "strategy": "descripción", "based_on": "video referencia"},
-    {"title": "título corto del ángulo/concepto", "strategy": "descripción", "based_on": "video referencia"}
-  ],
-  "insights": ["insight 1 breve", "insight 2 breve", "insight 3 breve"],
-  "warning": "una advertencia o riesgo clave si aplica (o null)"
-}`,
-        messages: [{ role: 'user', content: dataStr }]
-      })
-    });
-
-    const data = await response.json();
-    const text = data.content?.[0]?.text || '';
-
-    let parsed;
-    try {
-      const clean = text.replace(/```json|```/g,'').trim();
-      parsed = JSON.parse(clean);
-    } catch(e) {
-      throw new Error('No se pudo parsear la respuesta de la IA');
-    }
-
-    const winnerScore = parsed.winner?.score || 0;
-    const scoreColor = winnerScore >= 80 ? 'var(--green)' : winnerScore >= 60 ? 'var(--gold)' : 'var(--red)';
-
-    resultEl.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:14px;">
-
-        <!-- WINNER PRODUCT -->
-        <div style="background:var(--s1);border:1px solid rgba(0,229,160,.25);border-radius:14px;overflow:hidden;">
-          <div style="padding:16px 20px;background:rgba(0,229,160,.06);border-bottom:1px solid rgba(0,229,160,.15);display:flex;align-items:center;gap:10px;">
-            <span style="font-size:20px;">🏆</span>
-            <div>
-              <div style="font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--green);letter-spacing:.1em;text-transform:uppercase;">Producto Winner Recomendado</div>
-            </div>
-          </div>
-          <div style="padding:18px 20px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;">
-              <div style="font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;color:var(--text);line-height:1.2;">${parsed.winner?.name||'—'}</div>
-              <div style="text-align:center;flex-shrink:0;">
-                <div style="font-family:'Clash Display',sans-serif;font-size:32px;font-weight:700;color:${scoreColor};line-height:1;">${winnerScore}</div>
-                <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Score IA</div>
-              </div>
-            </div>
-            <div style="font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:14px;">${parsed.winner?.reason||''}</div>
-            <div style="display:flex;gap:8px;">
-              <span style="background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--text);">💵 ${parsed.winner?.price||'—'}</span>
-              <span style="background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:5px 12px;font-size:11px;color:var(--text);">📊 ${parsed.winner?.commission||'—'} comisión</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- VIDEOS TO TEST -->
-        <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
-          <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
-            <span style="font-size:18px;">🎬</span>
-            <div style="font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--blue);letter-spacing:.1em;text-transform:uppercase;">Videos a Testear</div>
-          </div>
-          <div style="padding:8px 0;">
-            ${(parsed.videos_to_test||[]).map((v,i)=>`
-              <div style="padding:14px 20px;border-bottom:1px solid var(--border);${i===2?'border-bottom:none;':''}">
-                <div style="display:flex;align-items:flex-start;gap:12px;">
-                  <div style="width:28px;height:28px;border-radius:8px;background:var(--bdim);display:flex;align-items:center;justify-content:center;font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;">${i+1}</div>
-                  <div style="flex:1;">
-                    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;">${v.title}</div>
-                    <div style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:6px;">${v.strategy}</div>
-                    ${v.based_on?`<div style="font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;">Basado en: ${v.based_on.substring(0,70)}</div>`:''}
-                  </div>
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>
-
-        <!-- INSIGHTS + WARNING -->
-        <div style="display:grid;grid-template-columns:${parsed.warning?'1fr 1fr':'1fr'};gap:14px;">
-          <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px 20px;">
-            <div style="font-family:'Clash Display',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">💡 Insights Clave</div>
-            ${(parsed.insights||[]).map(ins=>`<div style="display:flex;gap:8px;margin-bottom:9px;font-size:12px;color:var(--dim);line-height:1.5;"><span style="color:var(--green);flex-shrink:0;">→</span>${ins}</div>`).join('')}
-          </div>
-          ${parsed.warning?`<div style="background:rgba(255,181,71,.06);border:1px solid rgba(255,181,71,.25);border-radius:14px;padding:18px 20px;">
-            <div style="font-family:'Clash Display',sans-serif;font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;">⚠️ Advertencia</div>
-            <div style="font-size:12px;color:var(--dim);line-height:1.6;">${parsed.warning}</div>
-          </div>`:''}
-        </div>
-
-        <div style="text-align:right;font-size:10px;color:var(--muted);">Generado por Claude AI · ${new Date().toLocaleString('es-CO')}</div>
-      </div>`;
-
-  } catch(err) {
-    resultEl.innerHTML = `<div style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);border-radius:12px;padding:20px;color:var(--red);font-size:13px;">Error al analizar: ${err.message}</div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '✨ Analizar de nuevo';
-    btn.style.opacity = '1';
-  }
-}
 
 // ── RECOMMENDATIONS ───────────────────────────────────────────────────────
 function renderRecommendations(creator) {

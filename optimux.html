@@ -624,7 +624,10 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     <div class="kpi"><div class="kpi-v" id="ant-k-util">$0</div><div class="kpi-l">Utilidad Real</div></div>
     <div class="kpi kb"><div class="kpi-v" id="ant-k-roas">—</div><div class="kpi-l">ROAS Ideal</div></div>
   </div>
-  <div class="g2" style="margin-bottom:16px;">
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 280px;gap:14px;margin-bottom:16px;">
+
+    <!-- COL 1: Configuración + Costos -->
     <div class="col-l">
       <div class="card">
         <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Configuración</div></div><span class="badge bg">Parámetros globales</span></div>
@@ -653,7 +656,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         </div>
       </div>
       <div class="card">
-        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Costos Unitarios</div></div><span class="badge ba">Valores en moneda seleccionada</span></div>
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Costos Unitarios</div></div><span class="badge ba" id="ant-curr-badge">USD</span></div>
         <div class="cb">
           <div class="fr3">
             <div class="field"><label>Producto</label><input type="number" id="ant-prod" value="10.7" step="0.1" onchange="cAnt()"></div>
@@ -687,9 +690,11 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         </div>
       </div>
     </div>
+
+    <!-- COL 2: Resultados + Ofertas -->
     <div class="col-l">
       <div class="card">
-        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Resultados — 1 Unidad</div></div><span class="badge bg" id="ant-curr-badge">USD</span></div>
+        <div class="ch"><div class="ch-l"><div class="acc"></div><div class="ct">Resultados — 1 Unidad</div></div></div>
         <div class="cb">
           <div class="rr"><span class="rr-l">Precio Ideal</span><span class="rr-v g" id="ant-r1-precio">$0</span></div>
           <div class="rr"><span class="rr-l">CPA Ideal $</span><span class="rr-v a" id="ant-r1-cpa">$0</span></div>
@@ -734,6 +739,32 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         </div>
       </div>
     </div>
+
+    <!-- COL 3: SIDEBAR guardar + historial -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">💾 Guardar Producto</div></div></div>
+        <div class="cb">
+          <div class="field" style="margin-bottom:10px">
+            <label>Nombre del producto (opcional)</label>
+            <input type="text" id="ant-prod-name" placeholder="Ej: Legging Deportivo" style="width:100%;padding:8px 12px;border-radius:8px;background:var(--s2);border:1px solid var(--border2);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:12px;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)'">
+          </div>
+          <button onclick="saveAntCosteo()" style="width:100%;padding:10px;border-radius:8px;background:var(--green);color:#070709;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+            Guardar costeo actual →
+          </button>
+        </div>
+      </div>
+      <div class="card" style="flex:1;">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Productos Guardados</div></div>
+          <span class="badge bg" id="ant-saved-count">0</span>
+        </div>
+        <div style="overflow-y:auto;max-height:480px;" id="ant-saved-list">
+          <div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6;">Guarda un costeo<br>para verlo aquí</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -914,6 +945,144 @@ function saveSavedCosteos() {
   try { localStorage.setItem('tpl_costeos', JSON.stringify(savedCosteos)); } catch(e) {}
 }
 
+// ── PAGO ANTICIPADO SAVED COSTEOS ─────────────────────────
+let antSavedCosteos = [];
+
+function loadAntSavedCosteos() {
+  try {
+    const s = localStorage.getItem('tpl_ant_costeos');
+    antSavedCosteos = s ? JSON.parse(s) : [];
+  } catch(e) { antSavedCosteos = []; }
+}
+
+function saveAntSavedCosteos() {
+  try { localStorage.setItem('tpl_ant_costeos', JSON.stringify(antSavedCosteos)); } catch(e) {}
+}
+
+function saveAntCosteo() {
+  const name = document.getElementById('ant-prod-name')?.value.trim() || '';
+  const shopPct = parseFloat(document.getElementById('ant-shopify')?.value) || 5.2;
+  const cpaPct  = parseFloat(document.getElementById('ant-cpapct')?.value) || 30;
+  const utilPct = parseFloat(document.getElementById('ant-utilpct')?.value) || 30;
+  const ct1 = parseFloat(document.getElementById('ant-ct1')?.value) || 0;
+  const ct2 = parseFloat(document.getElementById('ant-ct2')?.value) || 0;
+  const ct3 = parseFloat(document.getElementById('ant-ct3')?.value) || 0;
+  const desc2 = parseFloat(document.getElementById('ant-desc2')?.value) || 20;
+  const desc3 = parseFloat(document.getElementById('ant-desc3')?.value) || 30;
+  const curr = antCurr;
+  const trm = curr === 'MXN' ? (parseFloat(document.getElementById('ant-trm')?.value) || 17.5) : 1;
+
+  if (ct1 === 0) { alert('Ingresa al menos el costo total x1'); return; }
+
+  // Calc key metrics
+  const sP = shopPct/100, cP = cpaPct/100, uP = utilPct/100;
+  const denom = 1 - sP - cP - uP;
+  const precio = denom > 0 ? (ct1 * trm) / denom : 0;
+  const cpaIdeal = precio * cP;
+  const shopFee  = precio * sP;
+  const util     = precio - (ct1 * trm) - cpaIdeal - shopFee;
+  const cpaBreak = precio - (ct1 * trm) - shopFee;
+  const roasIdeal = cpaIdeal > 0 ? precio / cpaIdeal : 0;
+
+  antSavedCosteos.unshift({
+    id: Date.now(),
+    name: name || `Costeo ${new Date().toLocaleDateString('es-CO')}`,
+    curr, shopPct, cpaPct, utilPct, ct1, ct2, ct3, desc2, desc3, trm,
+    precio: precio,
+    cpaIdeal: cpaIdeal,
+    shopFee: shopFee,
+    util: util,
+    cpaBreak: cpaBreak,
+    roasIdeal: roasIdeal,
+    date: new Date().toLocaleDateString('es-CO')
+  });
+
+  saveAntSavedCosteos();
+  renderAntSavedProducts();
+
+  const btn = event.target;
+  btn.textContent = '✓ Guardado';
+  btn.style.background = 'var(--s2)';
+  btn.style.color = 'var(--green)';
+  setTimeout(() => { btn.textContent = 'Guardar costeo actual →'; btn.style.background = 'var(--green)'; btn.style.color = '#070709'; }, 1500);
+}
+
+function loadAntCosteo(id) {
+  const co = antSavedCosteos.find(c => c.id === id);
+  if (!co) return;
+  const set = (elId, val) => { const el = document.getElementById(elId); if (el) el.value = val; };
+  set('ant-shopify', co.shopPct); set('ant-cpapct', co.cpaPct); set('ant-utilpct', co.utilPct);
+  set('ant-ct1', co.ct1); set('ant-ct2', co.ct2); set('ant-ct3', co.ct3);
+  set('ant-desc2', co.desc2); set('ant-desc3', co.desc3);
+  set('ant-prod-name', co.name);
+  if (co.curr) setCurr(co.curr);
+  if (co.trm) set('ant-trm', co.trm);
+  initAntSliders(); cAnt();
+}
+
+function deleteAntCosteo(id) {
+  antSavedCosteos = antSavedCosteos.filter(c => c.id !== id);
+  saveAntSavedCosteos();
+  renderAntSavedProducts();
+}
+
+function renderAntSavedProducts() {
+  const list = document.getElementById('ant-saved-list');
+  const countEl = document.getElementById('ant-saved-count');
+  if (countEl) countEl.textContent = antSavedCosteos.length;
+  if (!list) return;
+
+  if (!antSavedCosteos.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6;">Guarda un costeo<br>para verlo aquí</div>';
+    return;
+  }
+
+  const fmtAnt = (n, curr) => {
+    if (isNaN(n) || !isFinite(n)) return '—';
+    const abs = Math.abs(n);
+    const sym = curr === 'MXN' ? 'MX$' : '$';
+    if (abs >= 1000) return sym + (n/1000).toFixed(1) + 'K';
+    return sym + n.toFixed(2);
+  };
+  const roasStr = n => isNaN(n)||n===0 ? '—' : n.toFixed(2)+'x';
+
+  list.innerHTML = antSavedCosteos.map(co => `
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);transition:background .15s;" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='transparent'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${co.name}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">${co.date} · ${co.curr}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="loadAntCosteo(${co.id})" style="background:var(--gdim);border:1px solid rgba(0,229,160,.2);color:var(--green);border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;">Cargar</button>
+          <button onclick="deleteAntCosteo(${co.id})" style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);color:var(--red);border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;">✕</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Precio Ideal</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:14px;color:var(--green)">${fmtAnt(co.precio, co.curr)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">CPA Ideal</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:14px;color:var(--gold)">${fmtAnt(co.cpaIdeal, co.curr)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">CPA Break Even</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:14px;color:var(--blue)">${fmtAnt(co.cpaBreak, co.curr)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">ROAS Ideal</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:14px;color:var(--purple)">${roasStr(co.roasIdeal)}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:7px;padding:8px;grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;color:var(--muted)">Utilidad Real x unidad</span>
+          <span style="font-family:'Clash Display',sans-serif;font-size:14px;color:${co.util>=0?'var(--green)':'var(--red)'}">${fmtAnt(co.util, co.curr)}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
 function saveCosteo() {
   const name = document.getElementById('c-prod-name')?.value.trim() || '';
   const prod = parseFloat(document.getElementById('c-prod')?.value) || 0;
@@ -1013,8 +1182,8 @@ function renderSavedProducts() {
           <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:${co.utilR>=0?'var(--green)':'var(--red)'}">${cop(co.utilR)}</div>
         </div>
         <div style="background:var(--s2);border-radius:7px;padding:8px;">
-          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Inefectividad</div>
-          <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:var(--red)">${co.inef}%</div>
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Precio Venta</div>
+          <div style="font-family:'Clash Display',sans-serif;font-size:15px;color:var(--blue)">${cop(co.precio)}</div>
         </div>
       </div>
       <div style="margin-top:6px;background:var(--s2);border-radius:7px;padding:8px;display:flex;justify-content:space-between;align-items:center;">
@@ -1031,6 +1200,8 @@ function initApp() {
   renderFFProducts();
   loadSavedCosteos();
   renderSavedProducts();
+  loadAntSavedCosteos();
+  renderAntSavedProducts();
   cA();
   initSliders();
   cC();

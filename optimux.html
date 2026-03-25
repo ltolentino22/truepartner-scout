@@ -985,6 +985,7 @@ const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     document.getElementById('main-app').style.display = 'block';
     document.getElementById('hdr-user').textContent = session.user.email;
+    window._currentUserId = session.user.id; // cache for DB ops
     initApp();
   } catch(e) { window.location.replace('./login.html'); }
 })();
@@ -2247,18 +2248,11 @@ async function saveTrack() {
 
 async function upsertDay(row) {
   try {
-    const sessionData = await _sb.auth.getSession();
-    const uid = sessionData?.data?.session?.user?.id;
-    if (!uid) { console.warn('upsertDay: no user session'); return false; }
-
-    // Use fecha-based upsert — no id conflict, just user_id+fecha
-    // First try to find existing record
-    const { data: existing } = await _sb
-      .from('track_dias')
-      .select('id')
-      .eq('user_id', uid)
-      .eq('fecha', row.fecha)
-      .maybeSingle();
+    const uid = window._currentUserId;
+    if (!uid) {
+      alert('⚠️ Sin sesión activa. Recarga la página e inicia sesión de nuevo.');
+      return false;
+    }
 
     const payload = {
       user_id: uid,
@@ -2269,28 +2263,41 @@ async function upsertDay(row) {
       porcnf: row.porcnf || 0,
       fact: Math.round(row.fact || 0),
       pauta: Math.round(row.pauta || 0),
-      pct_pub: row.pctPub || 0,
-      pct_conf: row.pctConf || 0,
-      cpa_real: row.cpaReal || 0
+      pct_pub: parseFloat(row.pctPub || 0),
+      pct_conf: parseFloat(row.pctConf || 0),
+      cpa_real: parseFloat(row.cpaReal || 0)
     };
 
-    let error;
-    if (existing) {
-      // UPDATE
-      ({ error } = await _sb.from('track_dias').update(payload).eq('id', existing.id));
-    } else {
-      // INSERT with safe integer id
-      payload.id = Date.now();
-      ({ error } = await _sb.from('track_dias').insert(payload));
+    // Check if record exists for this user+fecha
+    const { data: existing, error: selErr } = await _sb
+      .from('track_dias')
+      .select('id')
+      .eq('user_id', uid)
+      .eq('fecha', row.fecha)
+      .maybeSingle();
+
+    if (selErr) {
+      alert('Error al verificar registro: ' + selErr.message);
+      return false;
     }
 
-    if (error) {
-      console.error('DB error:', error.message, error.details);
+    let dbError;
+    if (existing) {
+      const { error } = await _sb.from('track_dias').update(payload).eq('id', existing.id);
+      dbError = error;
+    } else {
+      payload.id = Date.now();
+      const { error } = await _sb.from('track_dias').insert(payload);
+      dbError = error;
+    }
+
+    if (dbError) {
+      alert('Error al guardar: ' + dbError.message);
       return false;
     }
     return true;
   } catch(e) {
-    console.error('upsertDay exception:', e);
+    alert('Error inesperado: ' + e.message);
     return false;
   }
 }

@@ -820,11 +820,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
       <div id="xlsx-preview" style="display:none;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">Vista previa por día</div>
         <div id="xlsx-days-list" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button onclick="importSelectedDays()" id="btn-import-days" style="background:var(--green);color:#070709;border:none;border-radius:8px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">⬇ Guardar días seleccionados</button>
-          <button onclick="importAllDays()" style="background:var(--s2);border:1px solid var(--border2);color:var(--dim);border-radius:8px;padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Guardar todos</button>
-          <span id="xlsx-file-name" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
-        </div>
+        <span id="xlsx-file-name" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;"></span>
       </div>
     </div>
   </div>
@@ -1290,19 +1286,77 @@ function handleXlsxDrop(e) {
   if (file) handleXlsxFile(file);
 }
 
-function handleXlsxFile(file) {
+async function handleXlsxFile(file) {
   if (!file) return;
-  document.getElementById('xlsx-file-name').textContent = file.name;
+
+  // Show loading state in dropzone
+  const dz = document.getElementById('xlsx-dropzone');
+  if (dz) {
+    dz.style.borderColor = 'var(--green)';
+    dz.style.background = 'rgba(0,229,160,.04)';
+    dz.innerHTML = `
+      <div style="font-size:28px;margin-bottom:10px;">⏳</div>
+      <div style="font-size:13px;font-weight:700;color:var(--green);">Procesando ${file.name}...</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">Leyendo y guardando en la nube</div>`;
+  }
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+      // Parse
       parseXlsxOrders(rows);
+
+      // Auto-save ALL days immediately
+      const days = Object.keys(xlsxParsedDays);
+      let saved = 0, updated = 0;
+
+      for (const fecha of days) {
+        const row = saveDayFromXlsx(fecha);
+        if (row) {
+          const isExisting = trackData.filter(r => r.fecha === fecha).length > 1;
+          await upsertDay(row);
+          isExisting ? updated++ : saved++;
+        }
+      }
+
+      // Refresh from DB to ensure sync
+      await loadTrackFromDB();
+      renderTrack();
+
+      // Show success in dropzone
+      const total = saved + updated;
+      if (dz) {
+        dz.style.borderColor = 'var(--green)';
+        dz.innerHTML = `
+          <div style="font-size:28px;margin-bottom:8px;">✅</div>
+          <div style="font-size:13px;font-weight:700;color:var(--green);">${total} día(s) guardados en la nube</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">${saved} nuevos · ${updated} actualizados</div>
+          <div style="margin-top:12px;font-size:10px;color:var(--muted);">Haz clic para cargar otro archivo</div>
+          <input type="file" id="xlsx-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleXlsxFile(this.files[0])">`;
+        dz.onclick = () => document.getElementById('xlsx-file-inp')?.click();
+      }
+
+      // Hide preview if visible
+      const preview = document.getElementById('xlsx-preview');
+      if (preview) preview.style.display = 'none';
+
+      xlsxParsedDays = {};
+
     } catch(err) {
-      alert('Error al leer el archivo: ' + err.message);
+      if (dz) {
+        dz.style.borderColor = 'var(--red)';
+        dz.innerHTML = `
+          <div style="font-size:28px;margin-bottom:8px;">❌</div>
+          <div style="font-size:13px;font-weight:700;color:var(--red);">Error al procesar</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;">${err.message}</div>
+          <div style="margin-top:12px;font-size:10px;color:var(--muted);">Haz clic para intentar de nuevo</div>
+          <input type="file" id="xlsx-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleXlsxFile(this.files[0])">`;
+        dz.onclick = () => document.getElementById('xlsx-file-inp')?.click();
+      }
     }
   };
   reader.readAsArrayBuffer(file);
@@ -1508,7 +1562,7 @@ function saveDayFromXlsx(fecha) {
   const cpaReal = 0;
   const existing = trackData.findIndex(r => r.fecha === fecha);
   const row = {
-    id: existing >= 0 ? trackData[existing].id : Date.now() + Math.floor(Math.random()*1000),
+    id: existing >= 0 ? trackData[existing].id : Date.now(),
     fecha, total, conf, cancel, porcnf, fact,
     pauta: 0, pctPub, pctConf, cpaReal
   };
@@ -2193,24 +2247,52 @@ async function saveTrack() {
 
 async function upsertDay(row) {
   try {
-    const uid = _sb.auth.getSession ? (await _sb.auth.getSession())?.data?.session?.user?.id : null;
-    if (!uid) return;
-    const { error } = await _sb.from('track_dias').upsert({
-      id: typeof row.id === 'number' && row.id < 9007199254740991 ? row.id : Date.now(),
+    const sessionData = await _sb.auth.getSession();
+    const uid = sessionData?.data?.session?.user?.id;
+    if (!uid) { console.warn('upsertDay: no user session'); return false; }
+
+    // Use fecha-based upsert — no id conflict, just user_id+fecha
+    // First try to find existing record
+    const { data: existing } = await _sb
+      .from('track_dias')
+      .select('id')
+      .eq('user_id', uid)
+      .eq('fecha', row.fecha)
+      .maybeSingle();
+
+    const payload = {
       user_id: uid,
       fecha: row.fecha,
       total: row.total || 0,
       conf: row.conf || 0,
       cancel: row.cancel || 0,
       porcnf: row.porcnf || 0,
-      fact: row.fact || 0,
-      pauta: row.pauta || 0,
+      fact: Math.round(row.fact || 0),
+      pauta: Math.round(row.pauta || 0),
       pct_pub: row.pctPub || 0,
       pct_conf: row.pctConf || 0,
       cpa_real: row.cpaReal || 0
-    }, { onConflict: 'user_id,fecha' });
-    if (error) console.warn('Upsert error:', error.message);
-  } catch(e) { console.warn('Upsert DB error:', e); }
+    };
+
+    let error;
+    if (existing) {
+      // UPDATE
+      ({ error } = await _sb.from('track_dias').update(payload).eq('id', existing.id));
+    } else {
+      // INSERT with safe integer id
+      payload.id = Date.now();
+      ({ error } = await _sb.from('track_dias').insert(payload));
+    }
+
+    if (error) {
+      console.error('DB error:', error.message, error.details);
+      return false;
+    }
+    return true;
+  } catch(e) {
+    console.error('upsertDay exception:', e);
+    return false;
+  }
 }
 
 async function deleteDay(id) {
@@ -2270,11 +2352,22 @@ async function addTrackRow(){
   const pctPub=fact>0?pauta/fact:0,pctConf=total>0?conf/total:0,cpaReal=conf>0?pauta/conf:0;
   const existing=trackData.findIndex(r=>r.fecha===fecha);
   const row={id:existing>=0?trackData[existing].id:Date.now(),fecha,total,conf,cancel,porcnf,fact,pauta,pctPub,pctConf,cpaReal};
+  // Ensure id is integer
+  row.id = Math.floor(row.id);
   if(existing>=0)trackData[existing]=row;else trackData.push(row);
   trackData.sort((a,b)=>a.fecha.localeCompare(b.fecha));
-  await upsertDay(row);
+  const ok = await upsertDay(row);
   renderTrack();
   ['t-total','t-conf','t-cancel','t-porcnf','t-fact','t-pauta','t-pctpub','t-pctconf','t-cpareal'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  // Show save indicator
+  const saveBtn = document.querySelector('.track-add-btn');
+  if (saveBtn) {
+    const orig = saveBtn.textContent;
+    saveBtn.textContent = ok ? '✅ Guardado en la nube' : '⚠️ Error al guardar';
+    saveBtn.style.background = ok ? 'var(--s2)' : 'var(--rdim)';
+    saveBtn.style.color = ok ? 'var(--green)' : 'var(--red)';
+    setTimeout(() => { saveBtn.textContent = orig; saveBtn.style.background = 'var(--green)'; saveBtn.style.color = '#070709'; }, 2500);
+  }
 }
 async function deleteRow(id){
   trackData=trackData.filter(r=>r.id!==id);

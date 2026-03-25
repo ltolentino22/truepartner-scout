@@ -1462,33 +1462,38 @@ function renderXlsxPreview() {
   }
 }
 
-function importSelectedDays() {
+async function importSelectedDays() {
   const days = Object.keys(xlsxParsedDays);
+  const btn = document.getElementById('btn-import-days');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
   let imported = 0;
-  days.forEach(fecha => {
+  for (const fecha of days) {
     const chk = document.getElementById('day-chk-' + fecha);
-    if (!chk || !chk.checked) return;
-    saveDayFromXlsx(fecha);
-    imported++;
-  });
+    if (!chk || !chk.checked) continue;
+    const row = saveDayFromXlsx(fecha);
+    if (row) { await upsertDay(row); imported++; }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '⬇ Guardar días seleccionados'; }
   if (imported > 0) {
-    saveTrack();
     renderTrack();
-    showTrackAlerts && checkMetaAlerts && renderTrack();
-    alert(`✅ ${imported} día(s) guardados correctamente.`);
-    // Reset
+    alert('✅ ' + imported + ' día(s) guardados en la nube.');
     xlsxParsedDays = {};
     document.getElementById('xlsx-preview').style.display = 'none';
     setEntryMode('manual');
   }
 }
 
-function importAllDays() {
-  Object.keys(xlsxParsedDays).forEach(fecha => saveDayFromXlsx(fecha));
-  saveTrack();
+async function importAllDays() {
+  const days = Object.keys(xlsxParsedDays);
+  const btn = document.querySelector('#entry-auto button:last-of-type');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  for (const fecha of days) {
+    const row = saveDayFromXlsx(fecha);
+    if (row) await upsertDay(row);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar todos'; }
   renderTrack();
-  const total = Object.keys(xlsxParsedDays).length;
-  alert('✅ ' + total + ' día(s) guardados correctamente.');
+  alert('✅ ' + days.length + ' día(s) guardados en la nube.');
   xlsxParsedDays = {};
   document.getElementById('xlsx-preview').style.display = 'none';
   setEntryMode('manual');
@@ -1496,25 +1501,21 @@ function importAllDays() {
 
 function saveDayFromXlsx(fecha) {
   const d = xlsxParsedDays[fecha];
-  if (!d) return;
-  const total = d.total;
-  const conf = d.conf;
-  const cancel = d.cancel;
-  const porcnf = d.porcnf;
-  const fact = d.fact;
-  const pctPub = 0; // unknown from xlsx
+  if (!d) return null;
+  const { total, conf, cancel, porcnf, fact } = d;
+  const pctPub = 0;
   const pctConf = total > 0 ? conf / total : 0;
   const cpaReal = 0;
-
   const existing = trackData.findIndex(r => r.fecha === fecha);
   const row = {
-    id: existing >= 0 ? trackData[existing].id : Date.now() + Math.random(),
+    id: existing >= 0 ? trackData[existing].id : Date.now() + Math.floor(Math.random()*1000),
     fecha, total, conf, cancel, porcnf, fact,
     pauta: 0, pctPub, pctConf, cpaReal
   };
   if (existing >= 0) trackData[existing] = row;
   else trackData.push(row);
   trackData.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  return row; // return for async upsert
 }
 
 function initApp() {
@@ -2150,7 +2151,7 @@ if (!document.getElementById('alert-style')) {
   document.head.appendChild(style);
 }
 
-function initTrack(){
+async function initTrack(){
   const today=new Date().toISOString().split('T')[0];
   const de=document.getElementById('t-fecha');if(de)de.value=today;
   const fd=document.getElementById('flt-fecha');if(fd)fd.value=today;
@@ -2158,13 +2159,65 @@ function initTrack(){
   const fa=document.getElementById('flt-anio-val');if(fa)fa.value=today.slice(0,4);
   const fd2=document.getElementById('flt-desde');if(fd2)fd2.value=today.slice(0,8)+'01';
   const fh=document.getElementById('flt-hasta');if(fh)fh.value=today;
-  // Use user-specific key
-  const uid=_sb.auth.getUser ? 'tp_track_v2' : 'tp_track_v2';
-  try{const s=localStorage.getItem('tp_track_v2');if(s)trackData=JSON.parse(s);}catch(e){}
+  await loadTrackFromDB();
   setFilter('dia');
   initMetaSliders();
 }
-function saveTrack(){try{localStorage.setItem('tp_track_v2',JSON.stringify(trackData));}catch(e){}}
+
+async function loadTrackFromDB() {
+  try {
+    const { data, error } = await _sb
+      .from('track_dias')
+      .select('*')
+      .order('fecha', { ascending: true });
+    if (error) { console.warn('Track load error:', error.message); return; }
+    trackData = (data || []).map(r => ({
+      id: r.id,
+      fecha: r.fecha,
+      total: r.total || 0,
+      conf: r.conf || 0,
+      cancel: r.cancel || 0,
+      porcnf: r.porcnf || 0,
+      fact: parseFloat(r.fact) || 0,
+      pauta: parseFloat(r.pauta) || 0,
+      pctPub: parseFloat(r.pct_pub) || 0,
+      pctConf: parseFloat(r.pct_conf) || 0,
+      cpaReal: parseFloat(r.cpa_real) || 0
+    }));
+  } catch(e) { console.warn('Track DB error:', e); }
+}
+
+async function saveTrack() {
+  // no-op: individual saves handled by upsertDay
+}
+
+async function upsertDay(row) {
+  try {
+    const uid = _sb.auth.getSession ? (await _sb.auth.getSession())?.data?.session?.user?.id : null;
+    if (!uid) return;
+    const { error } = await _sb.from('track_dias').upsert({
+      id: typeof row.id === 'number' && row.id < 9007199254740991 ? row.id : Date.now(),
+      user_id: uid,
+      fecha: row.fecha,
+      total: row.total || 0,
+      conf: row.conf || 0,
+      cancel: row.cancel || 0,
+      porcnf: row.porcnf || 0,
+      fact: row.fact || 0,
+      pauta: row.pauta || 0,
+      pct_pub: row.pctPub || 0,
+      pct_conf: row.pctConf || 0,
+      cpa_real: row.cpaReal || 0
+    }, { onConflict: 'user_id,fecha' });
+    if (error) console.warn('Upsert error:', error.message);
+  } catch(e) { console.warn('Upsert DB error:', e); }
+}
+
+async function deleteDay(id) {
+  try {
+    await _sb.from('track_dias').delete().eq('id', id);
+  } catch(e) { console.warn('Delete error:', e); }
+}
 function setFilter(f){
   activeFilter=f;
   ['dia','sem','mes','anio','rng','all'].forEach(b=>{const el=document.getElementById('flt-'+b);if(!el)return;const on=b===f;el.style.background=on?'var(--green)':'var(--s2)';el.style.color=on?'#070709':'var(--muted)';el.style.borderColor=on?'var(--green)':'var(--border2)';});
@@ -2209,7 +2262,7 @@ function calcTrackEntry(){
   if(pcEl){pcEl.value=total>0?PCTF(pctConf):'';pcEl.style.color=pctConf>=0.6?'var(--green)':pctConf>=0.4?'var(--gold)':'var(--red)';}
   if(cpEl){cpEl.value=conf>0?COPF(cpaReal):'';cpEl.style.color='var(--blue)';}
 }
-function addTrackRow(){
+async function addTrackRow(){
   const fecha=document.getElementById('t-fecha')?.value||'';
   const total=parseFloat(document.getElementById('t-total')?.value)||0,conf=parseFloat(document.getElementById('t-conf')?.value)||0,cancel=parseFloat(document.getElementById('t-cancel')?.value)||0;
   const porcnf=Math.max(0,total-conf-cancel),fact=parseFloat(document.getElementById('t-fact')?.value)||0,pauta=parseFloat(document.getElementById('t-pauta')?.value)||0;
@@ -2219,11 +2272,23 @@ function addTrackRow(){
   const row={id:existing>=0?trackData[existing].id:Date.now(),fecha,total,conf,cancel,porcnf,fact,pauta,pctPub,pctConf,cpaReal};
   if(existing>=0)trackData[existing]=row;else trackData.push(row);
   trackData.sort((a,b)=>a.fecha.localeCompare(b.fecha));
-  saveTrack();renderTrack();
+  await upsertDay(row);
+  renderTrack();
   ['t-total','t-conf','t-cancel','t-porcnf','t-fact','t-pauta','t-pctpub','t-pctconf','t-cpareal'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
 }
-function deleteRow(id){trackData=trackData.filter(r=>r.id!==id);saveTrack();renderTrack();}
-function clearTrack(){if(!confirm('¿Borrar TODOS los registros?'))return;trackData=[];saveTrack();renderTrack();}
+async function deleteRow(id){
+  trackData=trackData.filter(r=>r.id!==id);
+  await deleteDay(id);
+  renderTrack();
+}
+async function clearTrack(){
+  if(!confirm('¿Borrar TODOS los registros? Esta acción no se puede deshacer.'))return;
+  try {
+    await _sb.from('track_dias').delete().neq('fecha','0000-00-00'); // delete all user rows (RLS ensures only own)
+  } catch(e){ console.warn('Clear error:',e); }
+  trackData=[];
+  renderTrack();
+}
 function setChartMetric(m){
   chartMetric=m;
   const map={ordenes:'ordenes',tasas:'tasas',financiero:'fin',cpa:'cpa'};

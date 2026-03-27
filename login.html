@@ -151,7 +151,7 @@ SB.auth.getSession().then(function(r){
   if(r.data&&r.data.session) goToDash();
 });
 SB.auth.onAuthStateChange(function(ev,session){
-  if(session&&(ev==='SIGNED_IN'||ev==='TOKEN_REFRESHED')) goToDash();
+  if(session && ev==='SIGNED_IN') goToDash();
 });
 
 function tpTab(tab){

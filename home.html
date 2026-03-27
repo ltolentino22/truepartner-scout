@@ -188,61 +188,55 @@ let isEmployee = false;
 const ADMIN_EMAILS = ['ltolentinocamacho@gmail.com','castellonricardo2@gmail.com','tribuxco@gmail.com'];
 
 (async () => {
-  try {
-    const { data: { session } } = await _sb.auth.getSession();
-    if (!session) { window.location.replace('./login.html'); return; }
-    currentUser = session.user;
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { window.location.replace('./login.html'); return; }
+  currentUser = session.user;
 
+  // Always show email immediately
+  document.getElementById('user-email').textContent = currentUser.email;
+
+  // Check admin by email first (no DB needed)
+  const email = currentUser.email.toLowerCase().trim();
+  isAdmin = ADMIN_EMAILS.includes(email);
+
+  // Try to get profile for role — but don't fail if it errors
+  try {
     const { data: profile } = await _sb
       .from('profiles')
       .select('is_admin, role')
       .eq('id', currentUser.id)
-      .single();
+      .maybeSingle();
 
-    isAdmin = profile?.is_admin === true || ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+    if (profile?.is_admin === true) isAdmin = true;
     isEmployee = profile?.role === 'employee';
-
-    document.getElementById('user-email').textContent = currentUser.email;
-
-    if (isEmployee && !isAdmin) {
-      // Employee: show Scout + Creativa only, hide Logistic entirely
-      document.getElementById('card-logistic').style.display = 'none';
-      document.getElementById('card-creativa').style.display = 'flex';
-      // Scout is accessible
-    } else if (isAdmin) {
-      // Admin: all cards unlocked
-      document.getElementById('logistic-tag').textContent = 'Admin · Logística';
-      document.getElementById('logistic-tag').className = 'app-tag admin';
-      const card = document.getElementById('card-logistic');
-      card.classList.remove('locked');
-      card.classList.add('admin-card');
-      // Show creativa card
-      document.getElementById('card-creativa').style.display = 'flex';
-      document.getElementById('creativa-tag').textContent = 'Admin · Diseño';
-      document.getElementById('creativa-tag').className = 'app-tag admin';
-      const cc = document.getElementById('card-creativa');
-      cc.classList.remove('locked');
-      cc.classList.add('admin-card');
-      cc.style.cursor = 'pointer';
-    } else {
-      // Regular user: Scout only, Logistic WIP, Creativa hidden
-      document.getElementById('wip-overlay').style.display = 'flex';
-      document.getElementById('card-logistic').style.cursor = 'default';
-      document.getElementById('card-creativa').style.display = 'none';
-    }
-
-    document.getElementById('loading').classList.add('hidden');
-
   } catch(e) {
-    console.error('home.html error:', e);
-    // Don't redirect on error — show the page anyway to avoid redirect loop
-    document.getElementById('user-email').textContent = 'usuario';
-    document.getElementById('loading').classList.add('hidden');
-    // Show only scout for safety
+    console.warn('Profile fetch error (non-fatal):', e.message);
+  }
+
+  // Apply UI based on role
+  if (isAdmin) {
+    document.getElementById('logistic-tag').textContent = 'Admin · Logística';
+    document.getElementById('logistic-tag').className = 'app-tag admin';
+    const card = document.getElementById('card-logistic');
+    card.classList.remove('locked');
+    card.classList.add('admin-card');
+    document.getElementById('card-creativa').style.display = 'flex';
+    document.getElementById('creativa-tag').textContent = 'Admin · Diseño';
+    document.getElementById('creativa-tag').className = 'app-tag admin';
+    const cc = document.getElementById('card-creativa');
+    cc.classList.remove('locked');
+    cc.classList.add('admin-card');
+    cc.style.cursor = 'pointer';
+  } else if (isEmployee) {
+    document.getElementById('card-logistic').style.display = 'none';
+    document.getElementById('card-creativa').style.display = 'flex';
+  } else {
     document.getElementById('wip-overlay').style.display = 'flex';
     document.getElementById('card-logistic').style.cursor = 'default';
     document.getElementById('card-creativa').style.display = 'none';
   }
+
+  document.getElementById('loading').classList.add('hidden');
 })();
 
 function openLogistic() {

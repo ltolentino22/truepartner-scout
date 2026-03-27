@@ -371,16 +371,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
     <div class="field" style="margin-top:10px;">
       <label>Estado</label>
-      <select id="task-status">
+      <select id="task-status" onchange="onStatusChange(this.value)">
         <option value="pending">⏳ Pendiente</option>
         <option value="done">✅ Completada</option>
         <option value="review">🔍 En revisión</option>
       </select>
     </div>
 
-    <div class="field">
-      <label>🔗 Link (Drive, Figma, etc.)</label>
+    <div class="field" id="link-field" style="display:none;">
+      <label>🔗 Link entregable <span id="link-required-label" style="color:var(--red);font-size:9px;">* requerido</span></label>
       <input type="url" id="task-link" placeholder="https://drive.google.com/...">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Drive, Figma, Dropbox o cualquier link del entregable</div>
     </div>
     <div class="field">
       <label>Notas (opcional)</label>
@@ -508,8 +509,9 @@ async function upsertTask(task) {
       title: task.title || '',
       notes: task.notes || '',
       status: task.status || 'pending',
-      link: task.link || '',
     };
+    // Only include link if provided (column may not exist yet)
+    if (task.link) payload.link = task.link;
     let dbErr;
     if (task.id) {
       ({ error: dbErr } = await _sb.from('creative_tasks').update(payload).eq('id', task.id));
@@ -714,9 +716,11 @@ function openAddTask() {
   document.getElementById('modal-title').textContent = 'Nueva Tarea';
   document.getElementById('modal-sub').textContent = 'Agrega una tarea al horario semanal';
   document.getElementById('task-title').value = '';
-  document.getElementById('task-link').value = '';
+  const lnkEl = document.getElementById('task-link');
+  if (lnkEl) lnkEl.value = '';
   document.getElementById('task-notes').value = '';
   document.getElementById('task-status').value = 'pending';
+  onStatusChange('pending');
   document.getElementById('delete-btn').style.display = 'none';
   if (preSelectedDay !== null) document.getElementById('task-day').value = preSelectedDay;
   if (preSelectedHour !== null) document.getElementById('task-hour').value = preSelectedHour;
@@ -731,9 +735,11 @@ function editTask(id) {
   document.getElementById('modal-title').textContent = 'Editar Tarea';
   document.getElementById('modal-sub').textContent = `${DAYS[task.day_index]} · ${task.hour}:00`;
   document.getElementById('task-title').value = task.title || '';
-  document.getElementById('task-link').value = task.link || '';
   document.getElementById('task-notes').value = task.notes || '';
   document.getElementById('task-status').value = task.status || 'pending';
+  const linkEl = document.getElementById('task-link');
+  if (linkEl) linkEl.value = task.link || '';
+  onStatusChange(task.status || 'pending');
   document.getElementById('task-day').value = task.day_index;
   document.getElementById('task-hour').value = task.hour;
   document.getElementById('delete-btn').style.display = 'block';
@@ -754,13 +760,34 @@ function selectType(type) {
   });
 }
 
+function onStatusChange(status) {
+  const linkField = document.getElementById('link-field');
+  const linkReqLabel = document.getElementById('link-required-label');
+  if (!linkField) return;
+  if (status === 'done') {
+    linkField.style.display = 'block';
+    if (linkReqLabel) linkReqLabel.style.display = 'inline';
+  } else if (status === 'review') {
+    linkField.style.display = 'block';
+    if (linkReqLabel) linkReqLabel.style.display = 'none';
+  } else {
+    linkField.style.display = 'none';
+  }
+}
+
 async function saveTask() {
   const title = document.getElementById('task-title').value.trim();
   const day = parseInt(document.getElementById('task-day').value);
   const hour = parseInt(document.getElementById('task-hour').value);
   const status = document.getElementById('task-status').value;
   const notes = document.getElementById('task-notes').value.trim();
-  const link = document.getElementById('task-link').value.trim();
+  const link = document.getElementById('task-link')?.value.trim() || '';
+
+  if (status === 'done' && !link) {
+    alert('Para marcar como ✅ Completada debes incluir el link del entregable (Drive, Figma, etc.)');
+    document.getElementById('task-link')?.focus();
+    return;
+  }
 
   const weekStart = getWeekKey();
 

@@ -174,7 +174,7 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
 
     <!-- TRUE PARTNER CREATIVA -->
     <div class="app-card locked" id="card-creativa" onclick="openCreativa()" style="display:none;">
-      <div class="app-icon" style="background:rgba(255,107,157,.08);border:1px solid rgba(255,107,157,.2);">
+      <div class="app-icon" style="background:rgba(255,107,157,.08);border-color:rgba(255,107,157,.2);">
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
           <path d="M4 20L10 14L14 18L20 8" stroke="#FF6B9D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <circle cx="20" cy="6" r="2.5" fill="#FF6B9D"/>
@@ -185,10 +185,10 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
       <div class="app-name">True Partner Creativa</div>
       <div class="app-desc">Planificación semanal de creativos, landings y mejoras de página para el área de diseño.</div>
       <div class="app-features">
-        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div><span>Horario semanal interactivo</span></div>
-        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div><span>Gestión de creativos y landings</span></div>
-        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div><span>Seguimiento de tareas y estados</span></div>
-        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div><span>Visible para admins en tiempo real</span></div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Horario semanal interactivo</div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Gestión de creativos y landings</div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Seguimiento de tareas y estados</div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Visible para admins en tiempo real</div>
       </div>
       <div class="app-cta" style="color:#FF6B9D;">Abrir Creativa <span class="app-cta-arrow">→</span></div>
     </div>
@@ -241,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const card = document.getElementById('card-logistic');
     card.classList.remove('locked');
     card.classList.add('admin-card');
-    document.getElementById('card-creativa').style.display = 'flex';
+    document.getElementById('card-creativa').style.display = 'block';
     document.getElementById('creativa-tag').textContent = 'Admin · Diseño';
     document.getElementById('creativa-tag').className = 'app-tag admin';
     const cc = document.getElementById('card-creativa');
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     cc.style.cursor = 'pointer';
   } else if (isEmployee) {
     document.getElementById('card-logistic').style.display = 'none';
-    document.getElementById('card-creativa').style.display = 'flex';
+    document.getElementById('card-creativa').style.display = 'block';
   } else {
     document.getElementById('wip-overlay').style.display = 'flex';
     document.getElementById('card-logistic').style.cursor = 'default';

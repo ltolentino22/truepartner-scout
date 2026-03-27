@@ -172,6 +172,27 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
       </div>
     </div>
 
+    <!-- TRUE PARTNER CREATIVA -->
+    <div class="app-card locked" id="card-creativa" onclick="openCreativa()" style="display:none;">
+      <div class="app-icon" style="background:rgba(255,107,157,.08);border-color:rgba(255,107,157,.2);">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <path d="M4 20L10 14L14 18L20 8" stroke="#FF6B9D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="6" r="2.5" fill="#FF6B9D"/>
+          <rect x="2" y="2" width="8" height="8" rx="2" fill="#FF6B9D" fill-opacity="0.3"/>
+        </svg>
+      </div>
+      <div class="app-tag" id="creativa-tag" style="color:#FF6B9D;background:rgba(255,107,157,.08);border:1px solid rgba(255,107,157,.2);">Diseño</div>
+      <div class="app-name">True Partner Creativa</div>
+      <div class="app-desc">Planificación semanal de creativos, landings y mejoras de página para el área de diseño.</div>
+      <div class="app-features">
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Horario semanal interactivo</div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Gestión de creativos y landings</div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Seguimiento de tareas y estados</div>
+        <div class="app-feature"><div class="dot" style="background:#FF6B9D;"></div>Visible para admins en tiempo real</div>
+      </div>
+      <div class="app-cta" style="color:#FF6B9D;">Abrir Creativa <span class="app-cta-arrow">→</span></div>
+    </div>
+
   </div>
 </main>
 
@@ -187,7 +208,7 @@ let isEmployee = false;
 
 const ADMIN_EMAILS = ['ltolentinocamacho@gmail.com','castellonricardo2@gmail.com','tribuxco@gmail.com'];
 
-(async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await _sb.auth.getSession();
   if (!session) { window.location.replace('./login.html'); return; }
   currentUser = session.user;
@@ -237,7 +258,7 @@ const ADMIN_EMAILS = ['ltolentinocamacho@gmail.com','castellonricardo2@gmail.com
   }
 
   document.getElementById('loading').classList.add('hidden');
-})();
+});
 
 function openLogistic() {
   if (!isAdmin) return;

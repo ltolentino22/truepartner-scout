@@ -37,7 +37,7 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
 .hero h1{font-family:'Clash Display',sans-serif;font-size:clamp(24px,4vw,40px);font-weight:700;line-height:1.15;margin-bottom:10px;}
 .hero p{font-size:14px;color:var(--muted);max-width:420px;margin:0 auto;line-height:1.7;}
 
-.apps-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:min(760px,100%);}
+.apps-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;width:min(1100px,100%);}
 
 .app-card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:32px;cursor:pointer;transition:all .25s;text-decoration:none;color:inherit;position:relative;overflow:hidden;display:block;}
 .app-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0;transition:opacity .25s;}
@@ -50,6 +50,9 @@ main{flex:1;position:relative;z-index:1;display:flex;flex-direction:column;align
 .app-card.admin-card:hover{border-color:rgba(74,143,255,.3);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,.4);}
 .app-card.admin-card::before{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
 .app-card.admin-card:hover::before{opacity:1;}
+#card-creativa.admin-card:hover{border-color:rgba(255,107,157,.3);}
+#card-creativa.admin-card::before{background:linear-gradient(90deg,transparent,#FF6B9D,transparent);}
+#card-creativa:hover .app-cta-arrow{transform:translateX(4px);}
 
 .app-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px;border:1px solid var(--border2);}
 .app-icon.scout{background:rgba(0,229,160,.08);border-color:rgba(0,229,160,.2);}
@@ -180,44 +183,57 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null;
 let isAdmin = false;
+let isEmployee = false;
+
+const ADMIN_EMAILS = ['ltolentinocamacho@gmail.com','castellonricardo2@gmail.com','tribuxco@gmail.com'];
 
 (async () => {
   try {
     const { data: { session } } = await _sb.auth.getSession();
-    if (!session) {
-      window.location.replace('./login.html');
-      return;
-    }
+    if (!session) { window.location.replace('./login.html'); return; }
     currentUser = session.user;
 
-    // Check is_admin from Supabase profiles table
     const { data: profile } = await _sb
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin, role')
       .eq('id', currentUser.id)
       .single();
 
-    isAdmin = profile?.is_admin === true;
+    isAdmin = profile?.is_admin === true || ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+    isEmployee = profile?.role === 'employee';
 
-    // Update UI
     document.getElementById('user-email').textContent = currentUser.email;
 
-    if (!isAdmin) {
-      document.getElementById('wip-overlay').style.display = 'flex';
-      document.getElementById('card-logistic').style.cursor = 'default';
-    } else {
+    if (isEmployee && !isAdmin) {
+      // Employee: show Scout + Creativa only, hide Logistic entirely
+      document.getElementById('card-logistic').style.display = 'none';
+      document.getElementById('card-creativa').style.display = 'flex';
+      // Scout is accessible
+    } else if (isAdmin) {
+      // Admin: all cards unlocked
       document.getElementById('logistic-tag').textContent = 'Admin · Logística';
       document.getElementById('logistic-tag').className = 'app-tag admin';
       const card = document.getElementById('card-logistic');
       card.classList.remove('locked');
       card.classList.add('admin-card');
+      // Show creativa card
+      document.getElementById('card-creativa').style.display = 'flex';
+      document.getElementById('creativa-tag').textContent = 'Admin · Diseño';
+      document.getElementById('creativa-tag').className = 'app-tag admin';
+      const cc = document.getElementById('card-creativa');
+      cc.classList.remove('locked');
+      cc.classList.add('admin-card');
+      cc.style.cursor = 'pointer';
+    } else {
+      // Regular user: Scout only, Logistic WIP, Creativa hidden
+      document.getElementById('wip-overlay').style.display = 'flex';
+      document.getElementById('card-logistic').style.cursor = 'default';
+      document.getElementById('card-creativa').style.display = 'none';
     }
 
     document.getElementById('loading').classList.add('hidden');
 
-  } catch(e) {
-    window.location.replace('./login.html');
-  }
+  } catch(e) { window.location.replace('./login.html'); }
 })();
 
 function openLogistic() {
@@ -225,12 +241,15 @@ function openLogistic() {
   window.location.href = './optimux.html';
 }
 
+function openCreativa() {
+  if (!isAdmin && !isEmployee) return;
+  window.location.href = './creativa.html';
+}
+
 async function handleLogout() {
   try {
     const uid = currentUser?.id;
-    if (uid) {
-      try { localStorage.removeItem('tps_' + uid); } catch(e) {}
-    }
+    if (uid) { try { localStorage.removeItem('tps_' + uid); } catch(e) {} }
     await _sb.auth.signOut();
   } catch(e) {}
   window.location.replace('./login.html');

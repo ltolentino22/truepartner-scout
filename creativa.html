@@ -393,45 +393,46 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <script>
 // ── SUPABASE ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4OTIxNjAzfQ.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
 
 // Allowed roles for this page
 const ALLOWED_ROLES = ['admin', 'employee'];
 const ADMIN_EMAILS = ['ltolentinocamacho@gmail.com','castellonricardo2@gmail.com','tribuxco@gmail.com'];
 
-const { createClient } = supabase;
-const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUserId = null;
 let isAdmin = false;
 
 (async () => {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { window.location.replace('./login.html'); return; }
+
+  currentUserId = session.user.id;
+  const email = session.user.email.toLowerCase().trim();
+  isAdmin = ADMIN_EMAILS.includes(email);
+
+  // Check profile role — don't block if fails
   try {
-    const { data: { session } } = await _sb.auth.getSession();
-    if (!session) { window.location.replace('./login.html'); return; }
-
-    currentUserId = session.user.id;
-    const email = session.user.email.toLowerCase().trim();
-    isAdmin = ADMIN_EMAILS.includes(email);
-
-    // Check profile role
-    const { data: profile } = await _sb.from('profiles').select('role, is_admin').eq('id', currentUserId).single();
+    const { data: profile } = await _sb.from('profiles').select('role, is_admin').eq('id', currentUserId).maybeSingle();
+    if (profile?.is_admin === true) isAdmin = true;
     const role = profile?.role || 'user';
-    const hasAccess = isAdmin || profile?.is_admin || role === 'employee';
-
+    const hasAccess = isAdmin || role === 'employee';
     if (!hasAccess) { window.location.replace('./home.html'); return; }
+  } catch(e) {
+    // If profile check fails but email is admin, still allow
+    if (!isAdmin) { window.location.replace('./home.html'); return; }
+  }
 
-    document.getElementById('hdr-user').textContent = session.user.email;
-    document.getElementById('main-app').style.display = 'block';
-    document.getElementById('loading').classList.add('hidden');
+  document.getElementById('hdr-user').textContent = session.user.email;
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('loading').classList.add('hidden');
 
-    await loadTasks();
-    renderWeek();
-    renderKpis();
-    renderTaskList();
-    renderActivity();
-
-  } catch(e) { window.location.replace('./login.html'); }
+  await loadTasks();
+  renderWeek();
+  renderKpis();
+  renderTaskList();
+  renderActivity();
 })();
 
 async function handleLogout() {

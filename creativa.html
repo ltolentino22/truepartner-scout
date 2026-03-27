@@ -379,8 +379,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     </div>
 
     <div class="field">
+      <label>🔗 Link (Drive, Figma, etc.)</label>
+      <input type="url" id="task-link" placeholder="https://drive.google.com/...">
+    </div>
+    <div class="field">
       <label>Notas (opcional)</label>
-      <textarea id="task-notes" placeholder="Detalles adicionales, referencias, links..."></textarea>
+      <textarea id="task-notes" placeholder="Detalles adicionales, referencias..."></textarea>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;">
@@ -504,6 +508,7 @@ async function upsertTask(task) {
       title: task.title || '',
       notes: task.notes || '',
       status: task.status || 'pending',
+      link: task.link || '',
     };
     let dbErr;
     if (task.id) {
@@ -513,7 +518,7 @@ async function upsertTask(task) {
       task.id = payload.id;
       ({ error: dbErr } = await _sb.from('creative_tasks').insert(payload));
     }
-    if (dbErr) { alert('Error: ' + dbErr.message); return false; }
+    if (dbErr) { alert('Error al guardar: ' + dbErr.message); return false; }
     return true;
   } catch(e) { alert('Error: ' + e.message); return false; }
 }
@@ -657,6 +662,7 @@ function renderTaskList() {
         <span style="font-size:10px;color:var(--muted);">${DAYS[t.day_index]} ${t.hour}:00</span>
         ${getStatusBadge(t.status)}
         ${t.notes?`<span style="font-size:10px;color:var(--muted);">📝</span>`:''}
+        ${t.link?`<a href="${t.link}" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none;" onclick="event.stopPropagation()">🔗 Ver</a>`:''}
       </div>
     </div>`).join('');
 }
@@ -708,6 +714,7 @@ function openAddTask() {
   document.getElementById('modal-title').textContent = 'Nueva Tarea';
   document.getElementById('modal-sub').textContent = 'Agrega una tarea al horario semanal';
   document.getElementById('task-title').value = '';
+  document.getElementById('task-link').value = '';
   document.getElementById('task-notes').value = '';
   document.getElementById('task-status').value = 'pending';
   document.getElementById('delete-btn').style.display = 'none';
@@ -724,6 +731,7 @@ function editTask(id) {
   document.getElementById('modal-title').textContent = 'Editar Tarea';
   document.getElementById('modal-sub').textContent = `${DAYS[task.day_index]} · ${task.hour}:00`;
   document.getElementById('task-title').value = task.title || '';
+  document.getElementById('task-link').value = task.link || '';
   document.getElementById('task-notes').value = task.notes || '';
   document.getElementById('task-status').value = task.status || 'pending';
   document.getElementById('task-day').value = task.day_index;
@@ -752,6 +760,7 @@ async function saveTask() {
   const hour = parseInt(document.getElementById('task-hour').value);
   const status = document.getElementById('task-status').value;
   const notes = document.getElementById('task-notes').value.trim();
+  const link = document.getElementById('task-link').value.trim();
 
   const weekStart = getWeekKey();
 
@@ -762,7 +771,7 @@ async function saveTask() {
     hour: hour,
     type: selectedType,
     title: title || getTypeLabel(selectedType),
-    notes, status
+    notes, status, link
   };
 
   const btn = document.querySelector('.modal-btn:not(.danger)');

@@ -299,6 +299,8 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
   <div class="ntab" onclick="goTab('prov')">📦 Proveeduría</div>
   <div class="ntab" onclick="goTab('ant')">💳 Pago Anticipado</div>
   <div class="ntab" onclick="goTab('track')">📈 Seguimiento Diario</div>
+  <div class="ntab" onclick="goTab('anttrack')">💳 Seguimiento Anticipado</div>
+  <div class="ntab" onclick="goTab('fintrack')">💵 Seguimiento Financiero</div>
 </nav>
 
 <!-- ═══════════════ COSTOS ADMINISTRATIVOS ═══════════════ -->
@@ -603,7 +605,271 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
   </div>
 </div>
 
-<!-- ═══════════════ PAGO ANTICIPADO ═══════════════ -->
+<!-- ═══════════════ SEGUIMIENTO PAGO ANTICIPADO ═══════════════ -->
+<div class="page" id="page-anttrack">
+  <div class="ph">
+    <div class="ph-t">💳 Seguimiento Anticipado</div>
+    <div class="ph-s">Registro diario de operación Pago Anticipado · USD / MXN</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="krow" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px;">
+    <div class="kpi"><div class="kpi-v" id="at-k-dias">0</div><div class="kpi-l">Días Registrados</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="at-k-ventas">0</div><div class="kpi-l">Ventas Totales</div></div>
+    <div class="kpi"><div class="kpi-v" id="at-k-fact">$0</div><div class="kpi-l">Facturación</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="at-k-cpa">$0</div><div class="kpi-l">CPA Prom. Real</div></div>
+    <div class="kpi" id="at-k-util-card"><div class="kpi-v" id="at-k-util">$0</div><div class="kpi-l">Utilidad Total</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="at-k-roas">—</div><div class="kpi-l">ROAS Prom.</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;">
+
+    <!-- LEFT: Gráfica + Tabla -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Gráfica -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Tendencias</div></div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="setAtChart('utilidad')"   id="atc-utilidad"    style="background:var(--green);color:#070709;border:none;border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Utilidad</button>
+            <button onclick="setAtChart('ventas')"     id="atc-ventas"      style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Ventas</button>
+            <button onclick="setAtChart('roas')"       id="atc-roas"        style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">ROAS</button>
+            <button onclick="setAtChart('cpa')"        id="atc-cpa"         style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">CPA</button>
+            <button onclick="setAtChart('facturacion')" id="atc-facturacion" style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Facturación</button>
+          </div>
+        </div>
+        <div class="cb" style="padding:14px 16px 10px;">
+          <canvas id="at-chart" style="width:100%;height:220px;max-height:220px;"></canvas>
+          <div id="at-chart-empty" style="display:none;text-align:center;color:var(--muted);padding:50px 0;font-size:12px;">Sin datos para graficar</div>
+        </div>
+      </div>
+
+      <!-- Tabla historial -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Historial</div></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge bg" id="at-count-badge">0 días</span>
+            <button onclick="exportAtCSV()" style="background:var(--s2);border:1px solid var(--border2);color:var(--dim);border-radius:7px;padding:6px 14px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">⬇ CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:380px;overflow-y:auto;">
+          <table style="width:100%;border-collapse:collapse;min-width:700px;">
+            <thead>
+              <tr style="background:var(--s2);position:sticky;top:0;z-index:1;">
+                <th style="padding:9px 12px;text-align:left;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Fecha</th>
+                <th style="padding:9px 12px;text-align:left;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Producto</th>
+                <th style="padding:9px 8px;text-align:center;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Curr.</th>
+                <th style="padding:9px 8px;text-align:center;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Ventas</th>
+                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Precio V.</th>
+                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Fact.</th>
+                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Gasto Pub.</th>
+                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">CPA Real</th>
+                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Utilidad</th>
+                <th style="padding:9px 8px;text-align:center;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">ROAS</th>
+                <th style="padding:9px 6px;border-bottom:1px solid var(--border2);"></th>
+              </tr>
+            </thead>
+            <tbody id="at-tbody"></tbody>
+          </table>
+        </div>
+        <div id="at-empty" style="padding:36px;text-align:center;color:var(--muted);font-size:12px;">Sin registros · Agrega tu primer día</div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Formulario -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc a"></div><div class="ct a">Nuevo Registro</div></div></div>
+        <div class="cb" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="field" style="margin:0;"><label>📅 Fecha</label><input type="date" id="at-fecha" style="padding:8px 10px;font-size:12px;"></div>
+          <div class="field" style="margin:0;"><label>📝 Producto (opcional)</label><input type="text" id="at-producto" placeholder="Ej: Legging Deportivo" style="width:100%;padding:8px 12px;border-radius:8px;background:var(--s2);border:1px solid var(--border2);color:var(--text);font-family:'Cabinet Grotesk',sans-serif;font-size:12px;outline:none;"></div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">
+            <span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);">Moneda</span>
+            <div style="display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:2px;gap:2px;">
+              <button id="at-curr-usd" onclick="setAtCurr('USD')" style="padding:3px 10px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;border:none;background:var(--green);color:#070709;font-family:'Clash Display',sans-serif;">USD</button>
+              <button id="at-curr-mxn" onclick="setAtCurr('MXN')" style="padding:3px 10px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Clash Display',sans-serif;">MXN</button>
+            </div>
+            <input type="hidden" id="at-curr-val" value="USD">
+          </div>
+          <div class="field" style="margin:0;"><label>📦 Ventas del día</label><input type="number" id="at-ventas" placeholder="0" step="1" oninput="calcAtEntry()"></div>
+          <div class="field" style="margin:0;"><label>💵 Precio de Venta</label><input type="number" id="at-precio" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
+          <div class="field" style="margin:0;"><label>📢 Gasto Publicitario</label><input type="number" id="at-pub" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
+          <div class="field" style="margin:0;"><label>🏭 Costo de Producto</label><input type="number" id="at-costo" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
+          <div class="field" style="margin:0;"><label>🏪 Comisión Shopify %</label><input type="number" id="at-shopify-pct" value="5.2" step="0.1" oninput="calcAtEntry()"></div>
+          <!-- Auto preview -->
+          <div style="background:var(--s2);border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Facturación</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--text);" id="at-prev-fact">$0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Utilidad</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:16px;" id="at-prev-util">$0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">CPA Real</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--gold);" id="at-prev-cpa">$0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">ROAS</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--blue);" id="at-prev-roas">—</div>
+            </div>
+          </div>
+          <button onclick="addAtRow()" id="at-save-btn" style="width:100%;padding:10px;border-radius:8px;background:var(--green);color:#070709;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:'Clash Display',sans-serif;">＋ Guardar día</button>
+        </div>
+      </div>
+
+      <!-- Mejor vs Peor -->
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Mejor vs Peor día</div></div></div>
+        <div class="cb" id="at-best-worst"><div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0;">Sin datos aún</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ SEGUIMIENTO FINANCIERO ═══════════════ -->
+<div class="page" id="page-fintrack">
+  <div class="ph">
+    <div class="ph-t">💵 Seguimiento Financiero</div>
+    <div class="ph-s">Registro diario de ventas, gastos y rentabilidad · USD</div>
+  </div>
+
+  <!-- KPI TOTALES -->
+  <div class="krow k5" id="ft-kpis" style="margin-bottom:20px;">
+    <div class="kpi"><div class="kpi-v" id="ft-k-ventas">0</div><div class="kpi-l">Ventas Totales</div></div>
+    <div class="kpi kb"><div class="kpi-v" id="ft-k-fact">$0</div><div class="kpi-l">Facturación</div></div>
+    <div class="kpi ka"><div class="kpi-v" id="ft-k-pub">$0</div><div class="kpi-l">Gasto Publicidad</div></div>
+    <div class="kpi" id="ft-k-gan-card"><div class="kpi-v" id="ft-k-gan">$0</div><div class="kpi-l">Ganancia</div></div>
+    <div class="kpi"><div class="kpi-v" id="ft-k-rent">0%</div><div class="kpi-l">Rentabilidad Prom.</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;">
+    <!-- LEFT: Tabla + Gráficas -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Gráficas -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Tendencias</div></div>
+          <div style="display:flex;gap:6px;">
+            <button onclick="setFtChart('ganancia')" id="ftc-ganancia" style="background:var(--green);color:#070709;border:none;border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Ganancia</button>
+            <button onclick="setFtChart('ventas')" id="ftc-ventas" style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Ventas</button>
+            <button onclick="setFtChart('facturacion')" id="ftc-facturacion" style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Facturación</button>
+            <button onclick="setFtChart('cpa')" id="ftc-cpa" style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">CPA</button>
+            <button onclick="setFtChart('rentabilidad')" id="ftc-rentabilidad" style="background:var(--s2);color:var(--muted);border:1px solid var(--border2);border-radius:5px;padding:3px 10px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">Rentabilidad</button>
+          </div>
+        </div>
+        <div class="cb" style="padding:14px 16px 10px;">
+          <canvas id="ft-chart" style="width:100%;height:240px;max-height:240px;"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabla historial -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><div class="acc"></div><div class="ct">Historial</div></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="badge bg" id="ft-count-badge">0 días</span>
+            <button onclick="exportFtCSV()" style="background:var(--s2);border:1px solid var(--border2);color:var(--dim);border-radius:7px;padding:6px 14px;font-size:10px;font-weight:700;cursor:pointer;font-family:'Clash Display',sans-serif;">⬇ CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+          <table style="width:100%;border-collapse:collapse;min-width:750px;">
+            <thead>
+              <tr style="background:var(--s2);position:sticky;top:0;z-index:1;">
+                <th style="padding:9px 12px;text-align:left;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Fecha</th>
+                <th style="padding:9px 12px;text-align:center;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Ventas</th>
+                <th style="padding:9px 12px;text-align:right;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Facturación</th>
+                <th style="padding:9px 12px;text-align:right;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Gasto Pub.</th>
+                <th style="padding:9px 12px;text-align:right;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Gasto Prod.</th>
+                <th style="padding:9px 12px;text-align:right;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Ingresado</th>
+                <th style="padding:9px 12px;text-align:right;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Ganancia</th>
+                <th style="padding:9px 12px;text-align:center;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Rent.%</th>
+                <th style="padding:9px 12px;text-align:center;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">CPA</th>
+                <th style="padding:9px 12px;text-align:center;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">AOV</th>
+                <th style="padding:9px 8px;border-bottom:1px solid var(--border2);"></th>
+              </tr>
+            </thead>
+            <tbody id="ft-tbody"></tbody>
+          </table>
+        </div>
+        <div id="ft-empty" style="padding:36px;text-align:center;color:var(--muted);font-size:12px;">Sin registros · Agrega un día manualmente o importa un xlsx</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Nuevo registro + Import -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Mode toggle -->
+      <div class="card">
+        <div class="ch">
+          <div class="ch-l"><div class="acc a"></div><div class="ct a">Nuevo Registro</div></div>
+          <div style="display:flex;background:var(--s2);border:1px solid var(--border2);border-radius:7px;padding:2px;gap:2px;">
+            <button id="ftm-manual-btn" onclick="setFtMode('manual')" style="padding:4px 12px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;border:none;background:var(--green);color:#070709;font-family:'Clash Display',sans-serif;">✏️ Manual</button>
+            <button id="ftm-auto-btn" onclick="setFtMode('auto')" style="padding:4px 12px;border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Clash Display',sans-serif;">📂 xlsx</button>
+          </div>
+        </div>
+
+        <!-- MANUAL -->
+        <div id="ft-entry-manual" class="cb" style="display:flex;flex-direction:column;gap:10px;">
+          <div class="field" style="margin:0;"><label>📅 Fecha</label><input type="date" id="ft-fecha" style="padding:8px 10px;font-size:12px;"></div>
+          <div class="field" style="margin:0;"><label>📦 Cantidad de Ventas</label><input type="number" id="ft-ventas" placeholder="0" step="1" oninput="calcFtEntry()"></div>
+          <div class="field" style="margin:0;"><label>💰 Facturación ($)</label><input type="number" id="ft-fact" placeholder="0.00" step="0.01" oninput="calcFtEntry()"></div>
+          <div class="field" style="margin:0;"><label>📢 Gasto Publicitario ($)</label><input type="number" id="ft-pub" placeholder="0.00" step="0.01" oninput="calcFtEntry()"></div>
+          <div class="field" style="margin:0;"><label>🏭 Gasto en Productos ($)</label><input type="number" id="ft-prod" placeholder="0.00" step="0.01" oninput="calcFtEntry()"></div>
+          <div class="field" style="margin:0;"><label>💵 Total Ingresado ($)</label><input type="number" id="ft-ingr" placeholder="0.00" step="0.01" oninput="calcFtEntry()"></div>
+          <!-- Auto-calculated preview -->
+          <div style="background:var(--s2);border-radius:10px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Ganancia</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:18px;" id="ft-preview-gan">$0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">Rentabilidad</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:18px;" id="ft-preview-rent">0%</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">CPA General</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--gold);" id="ft-preview-cpa">$0</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;">AOV</div>
+              <div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--blue);" id="ft-preview-aov">$0</div>
+            </div>
+          </div>
+          <button onclick="addFtRow()" style="width:100%;padding:10px;border-radius:8px;background:var(--green);color:#070709;font-weight:700;font-size:12px;border:none;cursor:pointer;font-family:'Clash Display',sans-serif;" id="ft-save-btn">＋ Guardar día</button>
+        </div>
+
+        <!-- XLSX IMPORT -->
+        <div id="ft-entry-auto" class="cb" style="display:none;">
+          <div id="ft-dropzone" onclick="document.getElementById('ft-file-inp').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleFtDrop(event)"
+            style="border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;">
+            <div style="font-size:28px;margin-bottom:8px;">📂</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">Arrastra tu xlsx aquí</div>
+            <div style="font-size:10px;color:var(--muted);">Formato: Book_X.xlsx</div>
+            <input type="file" id="ft-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleFtFile(this.files[0])">
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen rápido del período -->
+      <div class="card">
+        <div class="ch"><div class="ch-l"><div class="acc b"></div><div class="ct b">Mejor vs Peor día</div></div></div>
+        <div class="cb" id="ft-best-worst">
+          <div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0;">Sin datos aún</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
 <div class="page" id="page-ant">
   <div class="ph"><div class="ph-t">💳 Calculadora Pago Anticipado</div><div class="ph-s">Modelo Prepaid — Comisión Shopify incluida · Selecciona la moneda de trabajo</div></div>
   <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
@@ -1573,6 +1839,722 @@ function saveDayFromXlsx(fecha) {
   return row; // return for async upsert
 }
 
+// ══════════════════════════════════════════════════════════
+// SEGUIMIENTO FINANCIERO
+// ══════════════════════════════════════════════════════════
+let ftData = [];
+let ftChart = null;
+let ftChartMetric = 'ganancia';
+
+const USD = n => isNaN(n)||!isFinite(n) ? '$0' : '$' + Math.abs(n).toFixed(2);
+const USDsigned = n => {
+  if (isNaN(n)||!isFinite(n)) return '$0';
+  return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
+};
+const PCT2 = n => isNaN(n)||!isFinite(n) ? '0%' : n.toFixed(2) + '%';
+
+// ── DB ──────────────────────────────────────────────────
+async function loadFtFromDB() {
+  try {
+    const { data, error } = await _sb.from('fin_track_dias').select('*').order('fecha', { ascending: true });
+    if (error) { console.warn('FT load error:', error.message); return; }
+    ftData = (data || []).map(r => ({
+      id: r.id, fecha: r.fecha,
+      ventas: r.ventas || 0,
+      fact: parseFloat(r.fact) || 0,
+      pub: parseFloat(r.pub) || 0,
+      prod: parseFloat(r.prod) || 0,
+      ingr: parseFloat(r.ingr) || 0,
+      ganancia: parseFloat(r.ganancia) || 0,
+      rentabilidad: parseFloat(r.rentabilidad) || 0,
+      cpa: parseFloat(r.cpa) || 0,
+      aov: parseFloat(r.aov) || 0,
+    }));
+  } catch(e) { console.warn('FT DB error:', e); }
+}
+
+async function upsertFtDay(row) {
+  try {
+    const uid = window._currentUserId;
+    if (!uid) { alert('Sin sesión activa.'); return false; }
+    const payload = {
+      user_id: uid, fecha: row.fecha,
+      ventas: row.ventas, fact: row.fact, pub: row.pub,
+      prod: row.prod, ingr: row.ingr, ganancia: row.ganancia,
+      rentabilidad: row.rentabilidad, cpa: row.cpa, aov: row.aov
+    };
+    const { data: existing } = await _sb.from('fin_track_dias').select('id').eq('user_id', uid).eq('fecha', row.fecha).maybeSingle();
+    let dbError;
+    if (existing) {
+      ({ error: dbError } = await _sb.from('fin_track_dias').update(payload).eq('id', existing.id));
+    } else {
+      payload.id = Date.now();
+      ({ error: dbError } = await _sb.from('fin_track_dias').insert(payload));
+    }
+    if (dbError) { alert('Error al guardar: ' + dbError.message); return false; }
+    return true;
+  } catch(e) { alert('Error: ' + e.message); return false; }
+}
+
+async function deleteFtDay(id) {
+  try { await _sb.from('fin_track_dias').delete().eq('id', id); } catch(e) { console.warn(e); }
+}
+
+// ── CALC ─────────────────────────────────────────────────
+function calcFtFromInputs(ventas, fact, pub, prod, ingr) {
+  const ganancia = ingr - pub - prod;
+  const rentabilidad = fact > 0 ? (ganancia / fact) * 100 : 0;
+  const cpa = ventas > 0 ? pub / ventas : 0;
+  const aov = ventas > 0 ? fact / ventas : 0;
+  return { ganancia, rentabilidad, cpa, aov };
+}
+
+function calcFtEntry() {
+  const ventas = parseFloat(document.getElementById('ft-ventas')?.value) || 0;
+  const fact   = parseFloat(document.getElementById('ft-fact')?.value) || 0;
+  const pub    = parseFloat(document.getElementById('ft-pub')?.value) || 0;
+  const prod   = parseFloat(document.getElementById('ft-prod')?.value) || 0;
+  const ingr   = parseFloat(document.getElementById('ft-ingr')?.value) || 0;
+  const { ganancia, rentabilidad, cpa, aov } = calcFtFromInputs(ventas, fact, pub, prod, ingr);
+  const ganEl = document.getElementById('ft-preview-gan');
+  const rentEl = document.getElementById('ft-preview-rent');
+  if (ganEl) { ganEl.textContent = USDsigned(ganancia); ganEl.style.color = ganancia >= 0 ? 'var(--green)' : 'var(--red)'; }
+  if (rentEl) { rentEl.textContent = PCT2(rentabilidad); rentEl.style.color = rentabilidad >= 0 ? 'var(--green)' : 'var(--red)'; }
+  const cpaEl = document.getElementById('ft-preview-cpa'); if (cpaEl) cpaEl.textContent = USD(cpa);
+  const aovEl = document.getElementById('ft-preview-aov'); if (aovEl) aovEl.textContent = USD(aov);
+}
+
+// ── ADD ROW MANUAL ───────────────────────────────────────
+async function addFtRow() {
+  const fecha  = document.getElementById('ft-fecha')?.value || '';
+  const ventas = parseFloat(document.getElementById('ft-ventas')?.value) || 0;
+  const fact   = parseFloat(document.getElementById('ft-fact')?.value) || 0;
+  const pub    = parseFloat(document.getElementById('ft-pub')?.value) || 0;
+  const prod   = parseFloat(document.getElementById('ft-prod')?.value) || 0;
+  const ingr   = parseFloat(document.getElementById('ft-ingr')?.value) || 0;
+  if (!fecha) { alert('Selecciona una fecha'); return; }
+  const { ganancia, rentabilidad, cpa, aov } = calcFtFromInputs(ventas, fact, pub, prod, ingr);
+  const row = { id: Date.now(), fecha, ventas, fact, pub, prod, ingr, ganancia, rentabilidad, cpa, aov };
+  const existing = ftData.findIndex(r => r.fecha === fecha);
+  if (existing >= 0) ftData[existing] = row; else ftData.push(row);
+  ftData.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const btn = document.getElementById('ft-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  const ok = await upsertFtDay(row);
+  if (btn) { btn.disabled = false; btn.textContent = ok ? '✅ Guardado' : '⚠️ Error'; btn.style.background = ok ? 'var(--s2)' : 'var(--rdim)'; btn.style.color = ok ? 'var(--green)' : 'var(--red)'; setTimeout(() => { btn.textContent = '＋ Guardar día'; btn.style.background = 'var(--green)'; btn.style.color = '#070709'; }, 2000); }
+  // Clear inputs
+  ['ft-ventas','ft-fact','ft-pub','ft-prod','ft-ingr'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  calcFtEntry();
+  renderFt();
+}
+
+async function deleteFtRow(id) {
+  ftData = ftData.filter(r => r.id !== id);
+  await deleteFtDay(id);
+  renderFt();
+}
+
+// ── MODE TOGGLE ──────────────────────────────────────────
+function setFtMode(mode) {
+  const manual = document.getElementById('ft-entry-manual');
+  const auto   = document.getElementById('ft-entry-auto');
+  const btnM   = document.getElementById('ftm-manual-btn');
+  const btnA   = document.getElementById('ftm-auto-btn');
+  if (mode === 'manual') {
+    manual.style.display = 'flex'; auto.style.display = 'none';
+    btnM.style.background = 'var(--green)'; btnM.style.color = '#070709';
+    btnA.style.background = 'transparent'; btnA.style.color = 'var(--muted)';
+  } else {
+    manual.style.display = 'none'; auto.style.display = 'block';
+    btnM.style.background = 'transparent'; btnM.style.color = 'var(--muted)';
+    btnA.style.background = 'var(--green)'; btnA.style.color = '#070709';
+  }
+}
+
+// ── XLSX IMPORT ──────────────────────────────────────────
+function handleFtDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) handleFtFile(file);
+}
+
+async function handleFtFile(file) {
+  if (!file) return;
+  const dz = document.getElementById('ft-dropzone');
+  if (dz) dz.innerHTML = '<div style="font-size:28px;margin-bottom:8px;">⏳</div><div style="font-size:12px;font-weight:700;color:var(--green);">Procesando...</div><input type="file" id="ft-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleFtFile(this.files[0])">';
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      let totalImported = 0;
+
+      for (const sheetName of wb.SheetNames) {
+        if (sheetName === 'CLAIMS') continue; // skip claims sheet
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: null, header: 1 });
+
+        // Find header row (contains 'FECHA')
+        let headerIdx = -1;
+        for (let i = 0; i < rows.length; i++) {
+          if (rows[i] && rows[i].some(v => v && String(v).toUpperCase().includes('FECHA'))) {
+            headerIdx = i; break;
+          }
+        }
+        if (headerIdx < 0) continue;
+
+        // Map columns
+        const headers = rows[headerIdx].map(h => String(h || '').toUpperCase().trim());
+        const col = {
+          fecha:   headers.findIndex(h => h === 'FECHA'),
+          ventas:  headers.findIndex(h => h.includes('CANTIDAD')),
+          fact:    headers.findIndex(h => h.includes('FACTURACION') || h === 'FACTURACIÓN'),
+          pub:     headers.findIndex(h => h.includes('PUBLICITARIO')),
+          prod:    headers.findIndex(h => h.includes('PRODUCTOS')),
+          ingr:    headers.findIndex(h => h.includes('INGRESADO')),
+          gan:     headers.findIndex(h => h.includes('GANANCIA')),
+          rent:    headers.findIndex(h => h.includes('RENTABILIDAD')),
+          cpa:     headers.findIndex(h => h.includes('CPA')),
+          aov:     headers.findIndex(h => h === 'AOV'),
+        };
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || !row[col.fecha]) continue;
+          const rawFecha = row[col.fecha];
+          if (typeof rawFecha === 'string' && rawFecha.toUpperCase().includes('TOTAL')) continue;
+          if (typeof rawFecha === 'string' && rawFecha.toUpperCase().includes('MES')) continue;
+
+          // Parse date
+          let fecha = '';
+          if (rawFecha instanceof Date || (rawFecha && rawFecha.getTime)) {
+            const d = new Date(rawFecha);
+            fecha = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+          } else if (typeof rawFecha === 'number') {
+            // Excel serial date
+            const d = new Date((rawFecha - 25569) * 86400 * 1000);
+            fecha = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+          } else {
+            continue;
+          }
+          if (!fecha || fecha.startsWith('NaN')) continue;
+
+          const ventas = parseFloat(row[col.ventas]) || 0;
+          const fact   = parseFloat(row[col.fact]) || 0;
+          const pub    = parseFloat(row[col.pub]) || 0;
+          const prod   = parseFloat(row[col.prod]) || 0;
+          const ingr   = parseFloat(row[col.ingr]) || 0;
+          let ganancia = parseFloat(row[col.gan]);
+          let rentabilidad = parseFloat(row[col.rent]);
+          let cpa = parseFloat(row[col.cpa]);
+          let aov = parseFloat(row[col.aov]);
+
+          // Recalculate if NaN
+          if (isNaN(ganancia)) ganancia = ingr - pub - prod;
+          if (isNaN(rentabilidad)) rentabilidad = fact > 0 ? (ganancia / fact) * 100 : 0;
+          if (isNaN(cpa)) cpa = ventas > 0 ? pub / ventas : 0;
+          if (isNaN(aov)) aov = ventas > 0 ? fact / ventas : 0;
+
+          const ftRow = { id: Date.now() + totalImported, fecha, ventas, fact, pub, prod, ingr, ganancia, rentabilidad, cpa, aov };
+          const existing = ftData.findIndex(r => r.fecha === fecha);
+          if (existing >= 0) ftData[existing] = ftRow; else ftData.push(ftRow);
+          await upsertFtDay(ftRow);
+          totalImported++;
+        }
+      }
+
+      ftData.sort((a, b) => a.fecha.localeCompare(b.fecha));
+      renderFt();
+
+      if (dz) {
+        dz.style.borderColor = 'var(--green)';
+        dz.innerHTML = '<div style="font-size:24px;margin-bottom:6px;">✅</div><div style="font-size:12px;font-weight:700;color:var(--green);">' + totalImported + ' días importados</div><div style="font-size:10px;color:var(--muted);margin-top:6px;">Clic para cargar otro</div><input type="file" id="ft-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleFtFile(this.files[0])">';
+        dz.onclick = () => document.getElementById('ft-file-inp')?.click();
+      }
+    } catch(err) {
+      if (dz) dz.innerHTML = '<div style="font-size:24px;margin-bottom:6px;">❌</div><div style="font-size:12px;color:var(--red);">' + err.message + '</div><input type="file" id="ft-file-inp" accept=".xlsx,.xls" style="display:none;" onchange="handleFtFile(this.files[0])">';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function renderFt() {
+  const tbody = document.getElementById('ft-tbody');
+  const empty = document.getElementById('ft-empty');
+  const badge = document.getElementById('ft-count-badge');
+
+  if (badge) badge.textContent = ftData.length + ' día' + (ftData.length !== 1 ? 's' : '');
+
+  if (!ftData.length) {
+    if (tbody) tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    renderFtKpis([]);
+    renderFtChart([]);
+    renderFtBestWorst([]);
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const sorted = [...ftData].sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  if (tbody) tbody.innerHTML = sorted.map(r => {
+    const ganColor = r.ganancia >= 0 ? 'var(--green)' : 'var(--red)';
+    const rentColor = r.rentabilidad >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+      <td style="padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);">${r.fecha}</td>
+      <td style="padding:8px 12px;text-align:center;font-size:12px;font-weight:700;color:var(--gold);">${r.ventas}</td>
+      <td style="padding:8px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);">${USD(r.fact)}</td>
+      <td style="padding:8px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);">${USD(r.pub)}</td>
+      <td style="padding:8px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);">${USD(r.prod)}</td>
+      <td style="padding:8px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);">${USD(r.ingr)}</td>
+      <td style="padding:8px 12px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${ganColor};">${USDsigned(r.ganancia)}</td>
+      <td style="padding:8px 12px;text-align:center;"><span style="font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;color:${rentColor};">${PCT2(r.rentabilidad)}</span></td>
+      <td style="padding:8px 12px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);">${USD(r.cpa)}</td>
+      <td style="padding:8px 12px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);">${USD(r.aov)}</td>
+      <td style="padding:8px 6px;text-align:center;"><button onclick="deleteFtRow(${r.id})" style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);color:var(--red);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  renderFtKpis(ftData);
+  renderFtChart(ftData);
+  renderFtBestWorst(ftData);
+}
+
+function renderFtKpis(data) {
+  if (!data.length) {
+    ['ft-k-ventas','ft-k-fact','ft-k-pub','ft-k-gan','ft-k-rent'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent = id.includes('rent') ? '0%' : '$0'; });
+    return;
+  }
+  const totVentas = data.reduce((s,r)=>s+r.ventas,0);
+  const totFact   = data.reduce((s,r)=>s+r.fact,0);
+  const totPub    = data.reduce((s,r)=>s+r.pub,0);
+  const totGan    = data.reduce((s,r)=>s+r.ganancia,0);
+  const avgRent   = data.reduce((s,r)=>s+r.rentabilidad,0) / data.length;
+  const ganEl = document.getElementById('ft-k-gan');
+  const ganCard = document.getElementById('ft-k-gan-card');
+  if (document.getElementById('ft-k-ventas')) document.getElementById('ft-k-ventas').textContent = totVentas.toLocaleString();
+  if (document.getElementById('ft-k-fact'))   document.getElementById('ft-k-fact').textContent = '$' + totFact.toFixed(0);
+  if (document.getElementById('ft-k-pub'))    document.getElementById('ft-k-pub').textContent = '$' + totPub.toFixed(0);
+  if (ganEl) { ganEl.textContent = USDsigned(totGan); ganEl.style.color = totGan >= 0 ? 'var(--green)' : 'var(--red)'; }
+  if (ganCard) { ganCard.className = 'kpi' + (totGan < 0 ? ' kr' : ''); }
+  if (document.getElementById('ft-k-rent'))   document.getElementById('ft-k-rent').textContent = PCT2(avgRent);
+}
+
+function renderFtBestWorst(data) {
+  const el = document.getElementById('ft-best-worst');
+  if (!el) return;
+  if (!data.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0;">Sin datos aún</div>'; return; }
+  const best  = [...data].sort((a,b)=>b.ganancia-a.ganancia)[0];
+  const worst = [...data].sort((a,b)=>a.ganancia-b.ganancia)[0];
+  el.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:6px;">🏆 Mejor día</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">${best.fecha}</div>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <span style="font-size:10px;background:var(--gdim);border-radius:5px;padding:2px 7px;color:var(--green);">💰 ${USDsigned(best.ganancia)}</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--dim);">📦 ${best.ventas} ventas</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--gold);">${PCT2(best.rentabilidad)}</span>
+      </div>
+    </div>
+    <div class="dv" style="margin:10px 0;"></div>
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:6px;">📉 Peor día</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">${worst.fecha}</div>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <span style="font-size:10px;background:var(--rdim);border-radius:5px;padding:2px 7px;color:var(--red);">💰 ${USDsigned(worst.ganancia)}</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--dim);">📦 ${worst.ventas} ventas</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--red);">${PCT2(worst.rentabilidad)}</span>
+      </div>
+    </div>`;
+}
+
+function setFtChart(metric) {
+  ftChartMetric = metric;
+  ['ganancia','ventas','facturacion','cpa','rentabilidad'].forEach(m => {
+    const el = document.getElementById('ftc-' + m);
+    if (!el) return;
+    const on = m === metric;
+    el.style.background = on ? 'var(--green)' : 'var(--s2)';
+    el.style.color = on ? '#070709' : 'var(--muted)';
+    el.style.borderColor = on ? 'var(--green)' : 'var(--border2)';
+    el.style.border = on ? 'none' : '1px solid var(--border2)';
+  });
+  renderFtChart(ftData);
+}
+
+function renderFtChart(data) {
+  const canvas = document.getElementById('ft-chart');
+  if (!canvas) return;
+  if (ftChart) { ftChart.destroy(); ftChart = null; }
+  if (!data.length) return;
+
+  const sorted = [...data].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const labels = sorted.map(r => { const d = new Date(r.fecha + 'T00:00:00'); return d.toLocaleDateString('es', {day:'2-digit',month:'2-digit'}); });
+
+  const cfgMap = {
+    ganancia:     { data: sorted.map(r=>r.ganancia),     color:'#00E5A0', label:'Ganancia ($)', yFmt: v=>'$'+v.toFixed(2) },
+    ventas:       { data: sorted.map(r=>r.ventas),       color:'#FFB547', label:'Ventas', yFmt: v=>v },
+    facturacion:  { data: sorted.map(r=>r.fact),         color:'#4A8FFF', label:'Facturación ($)', yFmt: v=>'$'+v.toFixed(2) },
+    cpa:          { data: sorted.map(r=>r.cpa),          color:'#FFB547', label:'CPA ($)', yFmt: v=>'$'+v.toFixed(2) },
+    rentabilidad: { data: sorted.map(r=>r.rentabilidad), color:'#9B6DFF', label:'Rentabilidad (%)', yFmt: v=>v.toFixed(1)+'%' },
+  };
+  const cfg = cfgMap[ftChartMetric] || cfgMap.ganancia;
+  const isGanancia = ftChartMetric === 'ganancia';
+
+  ftChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: cfg.label,
+        data: cfg.data,
+        backgroundColor: cfg.data.map(v => isGanancia ? (v >= 0 ? 'rgba(0,229,160,.5)' : 'rgba(255,69,103,.5)') : cfg.color + '80'),
+        borderColor: cfg.data.map(v => isGanancia ? (v >= 0 ? '#00E5A0' : '#FF4567') : cfg.color),
+        borderWidth: 1.5, borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor:'#0D0D12', borderColor:'#2A2A3E', borderWidth:1, titleColor:'#E8E8F0', bodyColor:'#8888A8', padding:10, cornerRadius:8,
+          callbacks: { label: ctx => cfg.yFmt(ctx.parsed.y) }
+        }
+      },
+      scales: {
+        x: { grid: { color:'rgba(255,255,255,.04)' }, ticks: { color:'#5A5A78', font:{ size:9 }, maxTicksLimit: 20 } },
+        y: { grid: { color:'rgba(255,255,255,.04)' }, ticks: { color:'#5A5A78', font:{ size:9 }, callback: cfg.yFmt } }
+      }
+    }
+  });
+}
+
+function exportFtCSV() {
+  if (!ftData.length) { alert('Sin datos para exportar'); return; }
+  const headers = ['Fecha','Ventas','Facturación','Gasto Pub.','Gasto Prod.','Total Ingresado','Ganancia','Rentabilidad%','CPA','AOV'];
+  const sorted = [...ftData].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const rows = sorted.map(r=>[r.fecha,r.ventas,r.fact,r.pub,r.prod,r.ingr,r.ganancia.toFixed(2),r.rentabilidad.toFixed(2),r.cpa.toFixed(2),r.aov.toFixed(2)]);
+  const csv = [headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href=url;
+  a.download='seguimiento_financiero_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+async function initFinTrack() {
+  await loadFtFromDB();
+  const today = new Date().toISOString().split('T')[0];
+  const ftFecha = document.getElementById('ft-fecha');
+  if (ftFecha) ftFecha.value = today;
+  renderFt();
+}
+
+// ══════════════════════════════════════════════════════════
+// SEGUIMIENTO PAGO ANTICIPADO
+// ══════════════════════════════════════════════════════════
+let atData = [];
+let atChart = null;
+let atChartMetric = 'utilidad';
+let atCurr = 'USD';
+
+function setAtCurr(curr) {
+  atCurr = curr;
+  const usd = document.getElementById('at-curr-usd');
+  const mxn = document.getElementById('at-curr-mxn');
+  const val = document.getElementById('at-curr-val');
+  if (usd) { usd.style.background = curr==='USD'?'var(--green)':'transparent'; usd.style.color = curr==='USD'?'#070709':'var(--muted)'; }
+  if (mxn) { mxn.style.background = curr==='MXN'?'var(--green)':'transparent'; mxn.style.color = curr==='MXN'?'#070709':'var(--muted)'; }
+  if (val) val.value = curr;
+  calcAtEntry();
+}
+
+function fmtAt(n) {
+  if (isNaN(n)||!isFinite(n)) return '$0.00';
+  return (n<0?'-$':'$') + Math.abs(n).toFixed(2);
+}
+function fmtAtK(n) {
+  const abs = Math.abs(n);
+  const s = n<0?'-':'';
+  if (abs>=1000) return s+'$'+(Math.abs(n)/1000).toFixed(1)+'K';
+  return fmtAt(n);
+}
+
+// ── DB ──────────────────────────────────────────────────
+async function loadAtFromDB() {
+  try {
+    const { data, error } = await _sb.from('ant_track_dias').select('*').order('fecha', { ascending: true });
+    if (error) { console.warn('AT load error:', error.message); return; }
+    atData = (data||[]).map(r => ({
+      id: r.id, fecha: r.fecha,
+      producto: r.producto || '',
+      curr: r.curr || 'USD',
+      ventas: r.ventas || 0,
+      precio: parseFloat(r.precio)||0,
+      fact: parseFloat(r.fact)||0,
+      pub: parseFloat(r.pub)||0,
+      costo: parseFloat(r.costo)||0,
+      shopifyPct: parseFloat(r.shopify_pct)||5.2,
+      shopifyFee: parseFloat(r.shopify_fee)||0,
+      utilidad: parseFloat(r.utilidad)||0,
+      cpaReal: parseFloat(r.cpa_real)||0,
+      roas: parseFloat(r.roas)||0,
+    }));
+  } catch(e) { console.warn('AT DB error:', e); }
+}
+
+async function upsertAtDay(row) {
+  try {
+    const uid = window._currentUserId;
+    if (!uid) { alert('Sin sesión activa.'); return false; }
+    const payload = {
+      user_id: uid, fecha: row.fecha,
+      producto: row.producto||'', curr: row.curr||'USD',
+      ventas: row.ventas, precio: row.precio, fact: row.fact,
+      pub: row.pub, costo: row.costo,
+      shopify_pct: row.shopifyPct, shopify_fee: row.shopifyFee,
+      utilidad: row.utilidad, cpa_real: row.cpaReal, roas: row.roas
+    };
+    const { data: existing } = await _sb.from('ant_track_dias').select('id').eq('user_id',uid).eq('fecha',row.fecha).maybeSingle();
+    let dbErr;
+    if (existing) {
+      ({error:dbErr} = await _sb.from('ant_track_dias').update(payload).eq('id',existing.id));
+    } else {
+      payload.id = Date.now();
+      ({error:dbErr} = await _sb.from('ant_track_dias').insert(payload));
+    }
+    if (dbErr) { alert('Error: '+dbErr.message); return false; }
+    return true;
+  } catch(e) { alert('Error: '+e.message); return false; }
+}
+
+async function deleteAtDay(id) {
+  try { await _sb.from('ant_track_dias').delete().eq('id',id); } catch(e) {}
+}
+
+// ── CALC ─────────────────────────────────────────────────
+function calcAtEntry() {
+  const ventas = parseFloat(document.getElementById('at-ventas')?.value)||0;
+  const precio = parseFloat(document.getElementById('at-precio')?.value)||0;
+  const pub    = parseFloat(document.getElementById('at-pub')?.value)||0;
+  const costo  = parseFloat(document.getElementById('at-costo')?.value)||0;
+  const shopPct= parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
+
+  const fact = ventas * precio;
+  const shopFee = fact * (shopPct/100);
+  const utilidad = fact - pub - costo * ventas - shopFee;
+  const cpaReal = ventas>0 ? pub/ventas : 0;
+  const roas = pub>0 ? fact/pub : 0;
+
+  const setEl = (id, val, color) => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = val; if(color) el.style.color = color; }
+  };
+
+  setEl('at-prev-fact', fmtAt(fact));
+  setEl('at-prev-util', fmtAt(utilidad), utilidad>=0?'var(--green)':'var(--red)');
+  setEl('at-prev-cpa', fmtAt(cpaReal));
+  setEl('at-prev-roas', isNaN(roas)||!isFinite(roas)||roas===0?'—':roas.toFixed(2)+'x');
+
+  return { fact, shopFee, utilidad, cpaReal, roas };
+}
+
+// ── ADD ROW ──────────────────────────────────────────────
+async function addAtRow() {
+  const fecha    = document.getElementById('at-fecha')?.value||'';
+  const producto = document.getElementById('at-producto')?.value.trim()||'';
+  const curr     = document.getElementById('at-curr-val')?.value||'USD';
+  const ventas   = parseFloat(document.getElementById('at-ventas')?.value)||0;
+  const precio   = parseFloat(document.getElementById('at-precio')?.value)||0;
+  const pub      = parseFloat(document.getElementById('at-pub')?.value)||0;
+  const costo    = parseFloat(document.getElementById('at-costo')?.value)||0;
+  const shopPct  = parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
+
+  if (!fecha) { alert('Selecciona una fecha'); return; }
+  if (ventas===0 && precio===0) { alert('Ingresa al menos ventas y precio'); return; }
+
+  const { fact, shopFee, utilidad, cpaReal, roas } = calcAtEntry();
+
+  const row = { id: Date.now(), fecha, producto, curr, ventas, precio, fact, pub, costo, shopifyPct: shopPct, shopifyFee: shopFee, utilidad, cpaReal, roas };
+  const existing = atData.findIndex(r => r.fecha === fecha);
+  if (existing >= 0) atData[existing] = row; else atData.push(row);
+  atData.sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+  const btn = document.getElementById('at-save-btn');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Guardando...'; }
+  const ok = await upsertAtDay(row);
+  if (btn) {
+    btn.disabled=false; btn.textContent=ok?'✅ Guardado':'⚠️ Error';
+    btn.style.background=ok?'var(--s2)':'var(--rdim)'; btn.style.color=ok?'var(--green)':'var(--red)';
+    setTimeout(()=>{ btn.textContent='＋ Guardar día'; btn.style.background='var(--green)'; btn.style.color='#070709'; },2000);
+  }
+  ['at-ventas','at-precio','at-pub','at-costo','at-producto'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  calcAtEntry();
+  renderAt();
+}
+
+async function deleteAtRow(id) {
+  atData = atData.filter(r => r.id!==id);
+  await deleteAtDay(id);
+  renderAt();
+}
+
+// ── RENDER ───────────────────────────────────────────────
+function renderAt() {
+  const tbody = document.getElementById('at-tbody');
+  const empty = document.getElementById('at-empty');
+  const badge = document.getElementById('at-count-badge');
+
+  if (badge) badge.textContent = atData.length + ' día' + (atData.length!==1?'s':'');
+
+  if (!atData.length) {
+    if (tbody) tbody.innerHTML=''; if (empty) empty.style.display='block';
+    renderAtKpis([]); renderAtChart([]); renderAtBestWorst([]); return;
+  }
+  if (empty) empty.style.display='none';
+
+  const sorted = [...atData].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  if (tbody) tbody.innerHTML = sorted.map(r => {
+    const uColor = r.utilidad>=0?'var(--green)':'var(--red)';
+    const roasStr = r.roas>0?r.roas.toFixed(2)+'x':'—';
+    return `<tr style="border-bottom:1px solid rgba(255,255,255,.04);">
+      <td style="padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);">${r.fecha}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--dim);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.producto}">${r.producto||'—'}</td>
+      <td style="padding:8px 8px;text-align:center;"><span style="font-size:9px;background:var(--s2);border-radius:5px;padding:2px 6px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${r.curr}</span></td>
+      <td style="padding:8px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--gold);">${r.ventas}</td>
+      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);">${fmtAt(r.precio)}</td>
+      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);">${fmtAt(r.fact)}</td>
+      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);">${fmtAt(r.pub)}</td>
+      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);">${fmtAt(r.cpaReal)}</td>
+      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${uColor};">${fmtAt(r.utilidad)}</td>
+      <td style="padding:8px 8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);">${roasStr}</td>
+      <td style="padding:8px 6px;"><button onclick="deleteAtRow(${r.id})" style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);color:var(--red);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  renderAtKpis(atData);
+  renderAtChart(atData);
+  renderAtBestWorst(atData);
+}
+
+function renderAtKpis(data) {
+  if (!data.length) {
+    ['at-k-dias','at-k-ventas','at-k-fact','at-k-cpa','at-k-util','at-k-roas'].forEach(id=>{ const e=document.getElementById(id); if(e)e.textContent=id.includes('roas')?'—':'$0'; });
+    return;
+  }
+  const totVentas = data.reduce((s,r)=>s+r.ventas,0);
+  const totFact   = data.reduce((s,r)=>s+r.fact,0);
+  const totUtil   = data.reduce((s,r)=>s+r.utilidad,0);
+  const avgCpa    = data.filter(r=>r.cpaReal>0).reduce((s,r,_,a)=>s+r.cpaReal/a.length,0);
+  const avgRoas   = data.filter(r=>r.roas>0).reduce((s,r,_,a)=>s+r.roas/a.length,0);
+
+  const set = (id,v) => { const e=document.getElementById(id); if(e)e.textContent=v; };
+  set('at-k-dias', data.length);
+  set('at-k-ventas', totVentas.toLocaleString());
+  set('at-k-fact', fmtAtK(totFact));
+  set('at-k-cpa', fmtAt(avgCpa));
+  const utilEl = document.getElementById('at-k-util');
+  if (utilEl) { utilEl.textContent=fmtAtK(totUtil); utilEl.style.color=totUtil>=0?'var(--green)':'var(--red)'; }
+  const utilCard = document.getElementById('at-k-util-card');
+  if (utilCard) utilCard.className = 'kpi'+(totUtil<0?' kr':'');
+  set('at-k-roas', avgRoas>0?avgRoas.toFixed(2)+'x':'—');
+}
+
+function renderAtBestWorst(data) {
+  const el = document.getElementById('at-best-worst');
+  if (!el) return;
+  if (!data.length) { el.innerHTML='<div style="text-align:center;color:var(--muted);font-size:12px;padding:12px 0;">Sin datos aún</div>'; return; }
+  const best  = [...data].sort((a,b)=>b.utilidad-a.utilidad)[0];
+  const worst = [...data].sort((a,b)=>a.utilidad-b.utilidad)[0];
+  el.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:6px;">🏆 Mejor día</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">${best.fecha}${best.producto?' · '+best.producto.substring(0,25):''}</div>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <span style="font-size:10px;background:var(--gdim);border-radius:5px;padding:2px 7px;color:var(--green);">💰 ${fmtAt(best.utilidad)}</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--gold);">${best.ventas} ventas</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--blue);">${best.roas>0?best.roas.toFixed(2)+'x ROAS':'—'}</span>
+      </div>
+    </div>
+    <div class="dv" style="margin:8px 0;"></div>
+    <div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:6px;">📉 Peor día</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">${worst.fecha}${worst.producto?' · '+worst.producto.substring(0,25):''}</div>
+      <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+        <span style="font-size:10px;background:var(--rdim);border-radius:5px;padding:2px 7px;color:var(--red);">💰 ${fmtAt(worst.utilidad)}</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--gold);">${worst.ventas} ventas</span>
+        <span style="font-size:10px;background:var(--s2);border-radius:5px;padding:2px 7px;color:var(--gold);">CPA ${fmtAt(worst.cpaReal)}</span>
+      </div>
+    </div>`;
+}
+
+function setAtChart(metric) {
+  atChartMetric = metric;
+  ['utilidad','ventas','roas','cpa','facturacion'].forEach(m => {
+    const el = document.getElementById('atc-'+m); if(!el)return;
+    const on = m===metric;
+    el.style.background=on?'var(--green)':'var(--s2)'; el.style.color=on?'#070709':'var(--muted)';
+    el.style.border=on?'none':'1px solid var(--border2)';
+  });
+  renderAtChart(atData);
+}
+
+function renderAtChart(data) {
+  const canvas = document.getElementById('at-chart');
+  const empty  = document.getElementById('at-chart-empty');
+  if (!canvas) return;
+  if (atChart) { atChart.destroy(); atChart=null; }
+  if (!data.length) { canvas.style.display='none'; if(empty)empty.style.display='block'; return; }
+  canvas.style.display='block'; if(empty)empty.style.display='none';
+
+  const sorted = [...data].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const labels = sorted.map(r=>{ const d=new Date(r.fecha+'T00:00:00'); return d.toLocaleDateString('es',{day:'2-digit',month:'2-digit'}); });
+
+  const cfgMap = {
+    utilidad:    { data:sorted.map(r=>r.utilidad),  label:'Utilidad',      yFmt:v=>fmtAt(v), colored:true },
+    ventas:      { data:sorted.map(r=>r.ventas),    label:'Ventas',        color:'#FFB547',  yFmt:v=>v },
+    roas:        { data:sorted.map(r=>r.roas),      label:'ROAS',          color:'#4A8FFF',  yFmt:v=>v.toFixed(2)+'x' },
+    cpa:         { data:sorted.map(r=>r.cpaReal),   label:'CPA Real',      color:'#FFB547',  yFmt:v=>fmtAt(v) },
+    facturacion: { data:sorted.map(r=>r.fact),      label:'Facturación',   color:'#4A8FFF',  yFmt:v=>fmtAt(v) },
+  };
+  const cfg = cfgMap[atChartMetric]||cfgMap.utilidad;
+
+  atChart = new Chart(canvas, {
+    type:'bar',
+    data:{ labels, datasets:[{
+      label:cfg.label, data:cfg.data,
+      backgroundColor: cfg.colored ? cfg.data.map(v=>v>=0?'rgba(0,229,160,.5)':'rgba(255,69,103,.5)') : (cfg.color||'#00E5A0')+'80',
+      borderColor:     cfg.colored ? cfg.data.map(v=>v>=0?'#00E5A0':'#FF4567') : (cfg.color||'#00E5A0'),
+      borderWidth:1.5, borderRadius:4
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#0D0D12',borderColor:'#2A2A3E',borderWidth:1,titleColor:'#E8E8F0',bodyColor:'#8888A8',padding:10,cornerRadius:8,callbacks:{label:ctx=>cfg.yFmt(ctx.parsed.y)}} },
+      scales:{ x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#5A5A78',font:{size:9},maxTicksLimit:20}}, y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#5A5A78',font:{size:9},callback:cfg.yFmt}} }
+    }
+  });
+}
+
+function exportAtCSV() {
+  if (!atData.length) { alert('Sin datos'); return; }
+  const headers = ['Fecha','Producto','Moneda','Ventas','Precio Venta','Facturación','Gasto Pub.','Costo Prod.','Comisión Shopify','Utilidad','CPA Real','ROAS'];
+  const sorted = [...atData].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const rows = sorted.map(r=>[r.fecha,r.producto||'',r.curr,r.ventas,r.precio.toFixed(2),r.fact.toFixed(2),r.pub.toFixed(2),r.costo.toFixed(2),r.shopifyFee.toFixed(2),r.utilidad.toFixed(2),r.cpaReal.toFixed(2),r.roas.toFixed(2)]);
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url;
+  a.download='seguimiento_anticipado_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+async function initAntiTrack() {
+  await loadAtFromDB();
+  const today = new Date().toISOString().split('T')[0];
+  const atFecha = document.getElementById('at-fecha');
+  if (atFecha) atFecha.value = today;
+  renderAt();
+}
+
 function initApp() {
   loadAdminCats();
   renderAdminCats();
@@ -1584,6 +2566,8 @@ function initApp() {
   renderAntSavedProducts();
   cA();
   initMetaSliders();
+  initAntiTrack();
+  initFinTrack();
   initSliders();
   cC();
   cFF();
@@ -1605,7 +2589,7 @@ function goTab(k){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('on'));
   document.getElementById('page-'+k)?.classList.add('on');
-  const m={admin:0,col:1,prov:2,ant:3,track:4};
+  const m={admin:0,col:1,prov:2,ant:3,track:4,anttrack:5,fintrack:6};
   if(m[k]!=null) document.querySelectorAll('.ntab')[m[k]]?.classList.add('on');
 }
 

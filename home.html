@@ -233,7 +233,16 @@ const ADMIN_EMAILS = ['ltolentinocamacho@gmail.com','castellonricardo2@gmail.com
 
     document.getElementById('loading').classList.add('hidden');
 
-  } catch(e) { window.location.replace('./login.html'); }
+  } catch(e) {
+    console.error('home.html error:', e);
+    // Don't redirect on error — show the page anyway to avoid redirect loop
+    document.getElementById('user-email').textContent = 'usuario';
+    document.getElementById('loading').classList.add('hidden');
+    // Show only scout for safety
+    document.getElementById('wip-overlay').style.display = 'flex';
+    document.getElementById('card-logistic').style.cursor = 'default';
+    document.getElementById('card-creativa').style.display = 'none';
+  }
 })();
 
 function openLogistic() {

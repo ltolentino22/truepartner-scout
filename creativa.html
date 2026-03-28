@@ -202,6 +202,15 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
   <div class="hdr-r">
     <span class="hdr-pill" id="clock">—</span>
+    <!-- Presence selector — only visible for employee -->
+    <div id="presence-widget" style="display:none;align-items:center;gap:6px;">
+      <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;" id="presence-dot" style="background:var(--muted);"></div>
+      <select id="presence-select" onchange="updatePresence(this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:4px 10px;font-size:11px;outline:none;font-family:'Cabinet Grotesk',sans-serif;cursor:pointer;">
+        <option value="online">🟢 En línea</option>
+        <option value="lunch">🍽 Almorzando</option>
+        <option value="offline">🔴 Fuera de línea</option>
+      </select>
+    </div>
     <span class="hdr-user" id="hdr-user">—</span>
     <button class="hdr-btn" onclick="handleLogout()">⎋ Salir</button>
   </div>
@@ -223,7 +232,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         <span class="week-label" id="week-nav-label">Semana —</span>
         <button class="week-nav-btn" onclick="changeWeek(1)">›</button>
       </div>
-      <button onclick="openAddTask()" style="background:var(--green);color:#070709;border:none;border-radius:9px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;">+ Nueva tarea</button>
+      <button onclick="openAddTask()" id="btn-nueva-tarea" style="background:var(--green);color:#070709;border:none;border-radius:9px;padding:9px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;">+ Nueva tarea</button>
     </div>
   </div>
 
@@ -287,6 +296,14 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
         </div>
       </div>
 
+      <!-- Presence card — admin sees employee status -->
+      <div class="card" id="presence-card" style="display:none;">
+        <div class="card-head"><span class="card-title">👤 Equipo</span></div>
+        <div class="card-body" id="presence-list">
+          <div style="text-align:center;color:var(--muted);font-size:12px;">Cargando...</div>
+        </div>
+      </div>
+
       <!-- Legend -->
       <div class="card">
         <div class="card-head"><span class="card-title">🏷 Leyenda</span></div>
@@ -314,6 +331,30 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   </div>
 
 </div>
+</div>
+
+<!-- STATUS UPDATE MODAL (employee only) -->
+<div class="modal-overlay" id="status-modal">
+  <div class="modal" style="max-width:360px;">
+    <button class="modal-close" onclick="document.getElementById('status-modal').classList.remove('open')">✕</button>
+    <div class="modal-title" id="sm-title">Actualizar tarea</div>
+    <div class="modal-sub" id="sm-sub">Cambia el estado de esta tarea</div>
+    <div style="background:var(--s2);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--dim);" id="sm-task-info"></div>
+    <div class="field">
+      <label>Estado</label>
+      <select id="sm-status" onchange="onSmStatusChange(this.value)">
+        <option value="pending">⏳ Pendiente</option>
+        <option value="done">✅ Completada</option>
+        <option value="review">🔍 En revisión</option>
+      </select>
+    </div>
+    <div class="field" id="sm-link-field" style="display:none;">
+      <label>🔗 Link entregable <span style="color:var(--red);font-size:9px;">* requerido para completar</span></label>
+      <input type="url" id="sm-link" placeholder="https://drive.google.com/...">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">Drive, Figma, Dropbox, etc.</div>
+    </div>
+    <button class="modal-btn" onclick="saveStatusUpdate()">Guardar estado</button>
+  </div>
 </div>
 
 <!-- TASK MODAL -->
@@ -433,11 +474,14 @@ let isAdmin = false;
   document.getElementById('main-app').style.display = 'block';
   document.getElementById('loading').classList.add('hidden');
 
+  initUI();
   await loadTasks();
   renderWeek();
   renderKpis();
   renderTaskList();
   renderActivity();
+  await initPresence();
+  await initNotifications();
 })();
 
 async function handleLogout() {
@@ -706,12 +750,14 @@ let preSelectedDay = null;
 let preSelectedHour = null;
 
 function cellClick(dayIdx, hour) {
+  if (!isAdmin) return; // employees can't add tasks
   preSelectedDay = dayIdx;
   preSelectedHour = hour;
   openAddTask();
 }
 
 function openAddTask() {
+  if (!isAdmin) return;
   editingTaskId = null;
   document.getElementById('modal-title').textContent = 'Nueva Tarea';
   document.getElementById('modal-sub').textContent = 'Agrega una tarea al horario semanal';
@@ -731,6 +777,11 @@ function openAddTask() {
 function editTask(id) {
   const task = tasks.find(t => t.id === id);
   if (!task) return;
+  if (!isAdmin) {
+    // Employee: open read-only status update modal instead
+    openStatusUpdate(task);
+    return;
+  }
   editingTaskId = id;
   document.getElementById('modal-title').textContent = 'Editar Tarea';
   document.getElementById('modal-sub').textContent = `${DAYS[task.day_index]} · ${task.hour}:00`;
@@ -809,13 +860,16 @@ async function saveTask() {
   if (btn) { btn.disabled = false; btn.textContent = 'Guardar tarea'; }
 
   if (ok) {
-    if (!editingTaskId) tasks.unshift(task);
+    const isNew = !editingTaskId;
+    if (isNew) tasks.unshift(task);
     else { const idx = tasks.findIndex(t => t.id === task.id); if(idx>=0) tasks[idx] = task; }
     closeModal();
     renderWeek();
     renderKpis();
     renderTaskList();
     renderActivity();
+    // Notify employees when admin creates a new task
+    if (isNew && isAdmin) sendNotificationToEmployee(task);
   }
 }
 
@@ -833,6 +887,212 @@ async function deleteCurrentTask() {
 document.getElementById('task-modal').addEventListener('click', e => {
   if (e.target === document.getElementById('task-modal')) closeModal();
 });
+
+// ── PRESENCE ─────────────────────────────────────────────
+let presenceChannel = null;
+
+async function initPresence() {
+  if (isAdmin) {
+    // Admin: show presence card and subscribe to realtime updates
+    const pc = document.getElementById('presence-card');
+    if (pc) pc.style.display = 'block';
+    await loadPresence();
+    // Realtime subscription
+    presenceChannel = _sb
+      .channel('presence-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employee_presence' }, () => {
+        loadPresence();
+      })
+      .subscribe();
+  } else {
+    // Employee: show presence selector and set initial status
+    const pw = document.getElementById('presence-widget');
+    if (pw) pw.style.display = 'flex';
+    // Load current status
+    const { data } = await _sb.from('employee_presence').select('status').eq('user_id', currentUserId).maybeSingle();
+    const sel = document.getElementById('presence-select');
+    if (sel && data?.status) sel.value = data.status;
+    updatePresenceDot(data?.status || 'offline');
+    // Upsert presence row
+    await _sb.from('employee_presence').upsert({ user_id: currentUserId, email: (await _sb.auth.getSession()).data.session.user.email, status: data?.status || 'online', updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  }
+}
+
+async function updatePresence(status) {
+  updatePresenceDot(status);
+  await _sb.from('employee_presence').upsert({ user_id: currentUserId, status, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+}
+
+function updatePresenceDot(status) {
+  const dot = document.getElementById('presence-dot');
+  if (!dot) return;
+  const colors = { online: '#00E5A0', lunch: '#FFB547', offline: '#FF4567' };
+  dot.style.background = colors[status] || '#5A5A78';
+}
+
+async function loadPresence() {
+  const el = document.getElementById('presence-list');
+  if (!el) return;
+  const { data } = await _sb.from('employee_presence').select('*').order('updated_at', { ascending: false });
+  if (!data || !data.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:8px 0;">Sin empleados conectados</div>'; return; }
+  const statusInfo = {
+    online: { label: 'En línea', color: '#00E5A0', bg: 'rgba(0,229,160,.1)' },
+    lunch:  { label: 'Almorzando', color: '#FFB547', bg: 'rgba(255,181,71,.1)' },
+    offline:{ label: 'Fuera de línea', color: '#FF4567', bg: 'rgba(255,69,103,.1)' },
+  };
+  el.innerHTML = data.map(p => {
+    const s = statusInfo[p.status] || statusInfo.offline;
+    const mins = Math.floor((Date.now() - new Date(p.updated_at).getTime()) / 60000);
+    const timeStr = mins < 1 ? 'ahora mismo' : mins < 60 ? `hace ${mins}m` : `hace ${Math.floor(mins/60)}h`;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="width:9px;height:9px;border-radius:50%;background:${s.color};flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:600;color:var(--text);">${p.email||'Empleado'}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:1px;">${timeStr}</div>
+      </div>
+      <span style="font-size:10px;font-weight:700;background:${s.bg};color:${s.color};border-radius:99px;padding:2px 8px;">${s.label}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────
+let notifChannel = null;
+
+async function initNotifications() {
+  if (isAdmin) return; // admins don't receive task notifications here
+  // Request browser notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+  // Subscribe to realtime notifications for this user
+  notifChannel = _sb
+    .channel('notif-' + currentUserId)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'notifications',
+      filter: 'user_id=eq.' + currentUserId
+    }, payload => {
+      const n = payload.new;
+      showBrowserNotification(n.title, n.body);
+      showInAppNotification(n.title, n.body);
+    })
+    .subscribe();
+}
+
+function showBrowserNotification(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    const n = new Notification(title, {
+      body,
+      icon: 'https://true-partner.shop/favicon.ico',
+      badge: 'https://true-partner.shop/favicon.ico',
+      tag: 'task-notif',
+      requireInteraction: true
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  }
+}
+
+function showInAppNotification(title, body) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--s1);border:1px solid rgba(0,229,160,.3);border-radius:14px;padding:16px 20px;max-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:slideInNotif .3s ease;';
+  el.innerHTML = `
+    <div style="display:flex;align-items:flex-start;gap:12px;">
+      <div style="font-size:20px;flex-shrink:0;">🔔</div>
+      <div>
+        <div style="font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${title}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5;">${body}</div>
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;flex-shrink:0;">✕</button>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+async function sendNotificationToEmployee(task) {
+  // Find employee user_id
+  const { data: emp } = await _sb.from('employee_presence').select('user_id,email').limit(10);
+  if (!emp || !emp.length) return;
+  // Send to all employees
+  const notifs = emp.map(e => ({
+    id: Date.now() + Math.floor(Math.random()*1000),
+    user_id: e.user_id,
+    title: '📋 Nueva tarea asignada',
+    body: `${getTypeEmoji(task.type)} ${task.title} · ${DAYS[task.day_index]} ${task.hour}:00`,
+    read: false
+  }));
+  await _sb.from('notifications').insert(notifs);
+}
+
+// ── EMPLOYEE STATUS UPDATE MODAL ─────────────────────────
+let statusUpdateTaskId = null;
+
+function openStatusUpdate(task) {
+  statusUpdateTaskId = task.id;
+  document.getElementById('sm-title').textContent = getTypeEmoji(task.type) + ' ' + (task.title || getTypeLabel(task.type));
+  document.getElementById('sm-sub').textContent = DAYS[task.day_index] + ' · ' + task.hour + ':00';
+  document.getElementById('sm-task-info').textContent = task.notes || 'Sin notas adicionales';
+  document.getElementById('sm-status').value = task.status || 'pending';
+  const lnk = document.getElementById('sm-link');
+  if (lnk) lnk.value = task.link || '';
+  onSmStatusChange(task.status || 'pending');
+  document.getElementById('status-modal').classList.add('open');
+}
+
+function onSmStatusChange(status) {
+  const lf = document.getElementById('sm-link-field');
+  if (lf) lf.style.display = (status === 'done' || status === 'review') ? 'block' : 'none';
+}
+
+async function saveStatusUpdate() {
+  const status = document.getElementById('sm-status').value;
+  const link = document.getElementById('sm-link')?.value.trim() || '';
+  if (status === 'done' && !link) {
+    alert('Para marcar como ✅ Completada debes incluir el link del entregable.');
+    document.getElementById('sm-link')?.focus();
+    return;
+  }
+  const task = tasks.find(t => t.id === statusUpdateTaskId);
+  if (!task) return;
+
+  const btn = document.querySelector('#status-modal .modal-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+
+  const payload = { status };
+  if (link) payload.link = link;
+
+  const { error } = await _sb.from('creative_tasks').update(payload).eq('id', statusUpdateTaskId);
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar estado'; }
+
+  if (error) { alert('Error: ' + error.message); return; }
+
+  // Update local
+  const idx = tasks.findIndex(t => t.id === statusUpdateTaskId);
+  if (idx >= 0) { tasks[idx].status = status; if (link) tasks[idx].link = link; }
+
+  document.getElementById('status-modal').classList.remove('open');
+  renderWeek(); renderKpis(); renderTaskList(); renderActivity();
+}
+
+// ── INIT UI BY ROLE ───────────────────────────────────────
+function initUI() {
+  if (!isAdmin) {
+    // Hide admin-only elements
+    const btnNueva = document.getElementById('btn-nueva-tarea');
+    if (btnNueva) btnNueva.style.display = 'none';
+    // Week grid cells not clickable (handled in cellClick)
+    // Show tooltip hint
+    const hint = document.createElement('div');
+    hint.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:100;background:var(--s1);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;font-size:11px;color:var(--muted);max-width:240px;';
+    hint.innerHTML = '💡 Haz clic en una tarea para actualizar su estado';
+    document.body.appendChild(hint);
+    setTimeout(() => hint.remove(), 5000);
+  }
+}
+
+// Add CSS for notification animation
+const notifStyle = document.createElement('style');
+notifStyle.textContent = '@keyframes slideInNotif{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}';
+document.head.appendChild(notifStyle);
 </script>
 </body>
 </html>

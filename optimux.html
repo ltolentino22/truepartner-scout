@@ -661,7 +661,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
                 <th style="padding:9px 12px;text-align:left;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Producto</th>
                 <th style="padding:9px 8px;text-align:center;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Curr.</th>
                 <th style="padding:9px 8px;text-align:center;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Ventas</th>
-                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Precio V.</th>
+                <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Fact. Shopify</th>
                 <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Fact.</th>
                 <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">Gasto Pub.</th>
                 <th style="padding:9px 8px;text-align:right;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:var(--green);border-bottom:1px solid var(--border2);font-family:'Clash Display',sans-serif;">CPA Real</th>
@@ -694,8 +694,29 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
             <input type="hidden" id="at-curr-val" value="USD">
           </div>
           <div class="field" style="margin:0;"><label>📦 Ventas del día</label><input type="number" id="at-ventas" placeholder="0" step="1" oninput="calcAtEntry()"></div>
-          <div class="field" style="margin:0;"><label>💵 Precio de Venta</label><input type="number" id="at-precio" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
-          <div class="field" style="margin:0;"><label>📢 Gasto Publicitario</label><input type="number" id="at-pub" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
+          <div class="field" style="margin:0;"><label>🏪 Facturación en Shopify</label><input type="number" id="at-fact-shopify" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
+          <!-- FB Ads CSV Upload -->
+          <div style="margin:0 0 10px;">
+            <label style="display:block;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">📊 Importar Pauta (FB Ads CSV)</label>
+            <div id="fbads-dropzone" onclick="document.getElementById('fbads-file-inp').click()" ondragover="event.preventDefault();this.style.borderColor='var(--green)'" ondragleave="this.style.borderColor='var(--border2)'" ondrop="handleFbAdsDrop(event)"
+              style="border:1.5px dashed var(--border2);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--s2);">
+              <div style="font-size:18px;margin-bottom:4px;">📂</div>
+              <div style="font-size:10px;font-weight:600;color:var(--dim);">Arrastra CSV de FB Ads aquí</div>
+              <div style="font-size:9px;color:var(--muted);margin-top:2px;">o haz clic para seleccionar</div>
+              <input type="file" id="fbads-file-inp" accept=".csv" style="display:none;" onchange="handleFbAdsFile(this.files[0])">
+            </div>
+            <div id="fbads-result" style="display:none;margin-top:6px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:8px;padding:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">Gasto Total</div><div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--red);" id="fbads-gasto-display">$0</div></div>
+                <div style="text-align:right;"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;">ROAS FB</div><div style="font-family:'Clash Display',sans-serif;font-size:16px;color:var(--blue);" id="fbads-roas-display">—</div></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+                <span style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="fbads-campaigns">0 campañas</span>
+                <button onclick="clearFbAdsImport()" style="background:var(--rdim);border:1px solid rgba(255,69,103,.2);color:var(--red);border-radius:5px;padding:2px 8px;font-size:9px;cursor:pointer;">✕ Limpiar</button>
+              </div>
+            </div>
+          </div>
+          <div class="field" style="margin:0;"><label>📢 Gasto Publicitario</label><input type="number" id="at-pub" placeholder="0.00 (auto desde FB Ads)" step="0.01" oninput="calcAtEntry()"></div>
           <div class="field" style="margin:0;"><label>🏭 Costo de Producto</label><input type="number" id="at-costo" placeholder="0.00" step="0.01" oninput="calcAtEntry()"></div>
           <div class="field" style="margin:0;"><label>🏪 Comisión Shopify %</label><input type="number" id="at-shopify-pct" value="5.2" step="0.1" oninput="calcAtEntry()"></div>
           <!-- Auto preview -->
@@ -1788,52 +1809,41 @@ async function deleteAtDay(id) {
 
 // ── CALC ─────────────────────────────────────────────────
 function calcAtEntry() {
-  const ventas = parseFloat(document.getElementById('at-ventas')?.value)||0;
-  const precio = parseFloat(document.getElementById('at-precio')?.value)||0;
-  const pub    = parseFloat(document.getElementById('at-pub')?.value)||0;
-  const costo  = parseFloat(document.getElementById('at-costo')?.value)||0;
-  const shopPct= parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
-
-  const fact = ventas * precio;
+  const ventas  = parseFloat(document.getElementById('at-ventas')?.value)||0;
+  const fact    = parseFloat(document.getElementById('at-fact-shopify')?.value)||0;
+  const pub     = parseFloat(document.getElementById('at-pub')?.value)||0;
+  const costo   = parseFloat(document.getElementById('at-costo')?.value)||0;
+  const shopPct = parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
   const shopFee = fact * (shopPct/100);
-  const utilidad = fact - pub - costo * ventas - shopFee;
+  const utilidad = fact - pub - (costo * ventas) - shopFee;
   const cpaReal = ventas>0 ? pub/ventas : 0;
   const roas = pub>0 ? fact/pub : 0;
-
-  const setEl = (id, val, color) => {
-    const el = document.getElementById(id);
-    if (el) { el.textContent = val; if(color) el.style.color = color; }
-  };
-
+  const setEl = (id, val, color) => { const el = document.getElementById(id); if (el) { el.textContent = val; if(color) el.style.color = color; } };
   setEl('at-prev-fact', fmtAt(fact));
   setEl('at-prev-util', fmtAt(utilidad), utilidad>=0?'var(--green)':'var(--red)');
   setEl('at-prev-cpa', fmtAt(cpaReal));
   setEl('at-prev-roas', isNaN(roas)||!isFinite(roas)||roas===0?'—':roas.toFixed(2)+'x');
-
   return { fact, shopFee, utilidad, cpaReal, roas };
 }
 
 // ── ADD ROW ──────────────────────────────────────────────
 async function addAtRow() {
-  const fecha    = document.getElementById('at-fecha')?.value||'';
-  const producto = document.getElementById('at-producto')?.value.trim()||'';
-  const curr     = document.getElementById('at-curr-val')?.value||'USD';
-  const ventas   = parseFloat(document.getElementById('at-ventas')?.value)||0;
-  const precio   = parseFloat(document.getElementById('at-precio')?.value)||0;
-  const pub      = parseFloat(document.getElementById('at-pub')?.value)||0;
-  const costo    = parseFloat(document.getElementById('at-costo')?.value)||0;
-  const shopPct  = parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
-
+  const fecha       = document.getElementById('at-fecha')?.value||'';
+  const producto    = document.getElementById('at-producto')?.value.trim()||'';
+  const curr        = document.getElementById('at-curr-val')?.value||'USD';
+  const ventas      = parseFloat(document.getElementById('at-ventas')?.value)||0;
+  const factShopify = parseFloat(document.getElementById('at-fact-shopify')?.value)||0;
+  const pub         = parseFloat(document.getElementById('at-pub')?.value)||0;
+  const costo       = parseFloat(document.getElementById('at-costo')?.value)||0;
+  const shopPct     = parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
   if (!fecha) { alert('Selecciona una fecha'); return; }
-  if (ventas===0 && precio===0) { alert('Ingresa al menos ventas y precio'); return; }
-
+  if (ventas===0 && factShopify===0) { alert('Ingresa al menos ventas y facturación'); return; }
   const { fact, shopFee, utilidad, cpaReal, roas } = calcAtEntry();
-
+  const precio = ventas > 0 ? factShopify / ventas : 0;
   const row = { id: Date.now(), fecha, producto, curr, ventas, precio, fact, pub, costo, shopifyPct: shopPct, shopifyFee: shopFee, utilidad, cpaReal, roas };
   const existing = atData.findIndex(r => r.fecha === fecha);
   if (existing >= 0) atData[existing] = row; else atData.push(row);
   atData.sort((a,b) => a.fecha.localeCompare(b.fecha));
-
   const btn = document.getElementById('at-save-btn');
   if (btn) { btn.disabled=true; btn.textContent='⏳ Guardando...'; }
   const ok = await upsertAtDay(row);
@@ -1842,7 +1852,8 @@ async function addAtRow() {
     btn.style.background=ok?'var(--s2)':'var(--rdim)'; btn.style.color=ok?'var(--green)':'var(--red)';
     setTimeout(()=>{ btn.textContent='＋ Guardar día'; btn.style.background='var(--green)'; btn.style.color='#070709'; },2000);
   }
-  ['at-ventas','at-precio','at-pub','at-costo','at-producto'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['at-ventas','at-fact-shopify','at-pub','at-costo','at-producto'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  clearFbAdsImport();
   calcAtEntry();
   renderAt();
 }
@@ -1876,7 +1887,7 @@ function renderAt() {
       <td style="padding:8px 10px;font-size:11px;color:var(--dim);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.producto}">${r.producto||'—'}</td>
       <td style="padding:8px 8px;text-align:center;"><span style="font-size:9px;background:var(--s2);border-radius:5px;padding:2px 6px;color:var(--muted);font-family:'JetBrains Mono',monospace;">${r.curr}</span></td>
       <td style="padding:8px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--gold);">${r.ventas}</td>
-      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);">${fmtAt(r.precio)}</td>
+      <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);">${fmtAt(r.fact)}</td>
       <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);">${fmtAt(r.fact)}</td>
       <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--red);">${fmtAt(r.pub)}</td>
       <td style="padding:8px 8px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);">${fmtAt(r.cpaReal)}</td>
@@ -1999,6 +2010,77 @@ function exportAtCSV() {
   const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url;
   a.download='seguimiento_anticipado_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click(); URL.revokeObjectURL(url);
+}
+
+function handleFbAdsDrop(e) {
+  e.preventDefault();
+  document.getElementById('fbads-dropzone').style.borderColor = 'var(--border2)';
+  const file = e.dataTransfer.files[0];
+  if (file) handleFbAdsFile(file);
+}
+
+function handleFbAdsFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => { try { parseFbAdsCsv(e.target.result); } catch(err) { alert('Error al procesar CSV: ' + err.message); } };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseFbAdsCsv(csvText) {
+  const lines = csvText.split('\n').filter(l => l.trim());
+  if (lines.length < 2) { alert('CSV vacío o sin datos'); return; }
+  const parseCSVLine = (line) => {
+    const result = []; let current = ''; let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQuotes = !inQuotes; }
+      else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+      else { current += ch; }
+    }
+    result.push(current.trim()); return result;
+  };
+  const headers = parseCSVLine(lines[0]);
+  const gastoIdx = headers.findIndex(h => h.includes('Importe gastado') || h.includes('Amount spent') || h.includes('Spend'));
+  const roasIdx  = headers.findIndex(h => h.includes('ROAS') || h.includes('Purchase ROAS'));
+  if (gastoIdx === -1) { alert('No se encontró la columna de gasto en el CSV.\nAsegúrate de exportar desde Facebook Ads Manager.'); return; }
+  let totalGasto = 0, totalRevenue = 0, totalGastoConRoas = 0, campaignCount = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCSVLine(lines[i]);
+    if (cols.length <= gastoIdx) continue;
+    const gasto = parseFloat(cols[gastoIdx]) || 0;
+    const roasVal = roasIdx !== -1 ? (parseFloat(cols[roasIdx]) || 0) : 0;
+    if (gasto > 0) {
+      totalGasto += gasto; campaignCount++;
+      if (roasVal > 0) { totalRevenue += gasto * roasVal; totalGastoConRoas += gasto; }
+    }
+  }
+  const avgRoas = totalGastoConRoas > 0 ? totalRevenue / totalGastoConRoas : 0;
+  const pubField = document.getElementById('at-pub');
+  if (pubField) pubField.value = totalGasto.toFixed(2);
+  const resultPanel = document.getElementById('fbads-result');
+  if (resultPanel) resultPanel.style.display = 'block';
+  const gd = document.getElementById('fbads-gasto-display'); if(gd) gd.textContent = '$' + totalGasto.toFixed(2);
+  const rd = document.getElementById('fbads-roas-display');  if(rd) rd.textContent = avgRoas > 0 ? avgRoas.toFixed(2)+'x' : '—';
+  const ci = document.getElementById('fbads-campaigns');     if(ci) ci.textContent = campaignCount + ' campaña' + (campaignCount!==1?'s':'') + ' con gasto';
+  const dz = document.getElementById('fbads-dropzone');
+  if (dz) {
+    dz.style.borderColor = 'var(--green)'; dz.style.background = 'rgba(0,229,160,.06)';
+    dz.innerHTML = '<div style="font-size:14px;">✅</div><div style="font-size:10px;font-weight:600;color:var(--green);">CSV cargado · '+campaignCount+' campañas</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">Clic para cambiar</div><input type="file" id="fbads-file-inp" accept=".csv" style="display:none;" onchange="handleFbAdsFile(this.files[0])">';
+    dz.onclick = () => document.getElementById('fbads-file-inp')?.click();
+  }
+  calcAtEntry();
+}
+
+function clearFbAdsImport() {
+  const pubField = document.getElementById('at-pub'); if (pubField) pubField.value = '';
+  const rp = document.getElementById('fbads-result'); if (rp) rp.style.display = 'none';
+  const dz = document.getElementById('fbads-dropzone');
+  if (dz) {
+    dz.style.borderColor = 'var(--border2)'; dz.style.background = 'var(--s2)';
+    dz.innerHTML = '<div style="font-size:18px;margin-bottom:4px;">📂</div><div style="font-size:10px;font-weight:600;color:var(--dim);">Arrastra CSV de FB Ads aquí</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">o haz clic para seleccionar</div><input type="file" id="fbads-file-inp" accept=".csv" style="display:none;" onchange="handleFbAdsFile(this.files[0])">';
+    dz.onclick = () => document.getElementById('fbads-file-inp')?.click();
+  }
+  calcAtEntry();
 }
 
 async function initAntiTrack() {

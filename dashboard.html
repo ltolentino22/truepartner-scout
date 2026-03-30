@@ -1028,6 +1028,128 @@ body::after {
 }
 .prod-to-creative-btn:hover { background: rgba(77,158,255,.15); border-color: rgba(77,158,255,.35); }
 
+
+/* ═══ ANIMATED BG ═══ */
+@keyframes bgShift {
+  0%   { background-position: 0% 0%; }
+  50%  { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 800px 400px at 20% 0%, rgba(0,255,179,.025) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 300px at 80% 100%, rgba(77,158,255,.02) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: bgShift 20s ease-in-out infinite;
+}
+
+/* ═══ VIDEO GRID — DEFINITIVE FIX ═══ */
+#vid-grid-container {
+  width: 100%;
+  min-width: 0;
+}
+.video-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+@media(max-width: 1300px) { .video-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important; } }
+@media(max-width: 900px)  { .video-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+@media(max-width: 600px)  { .video-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+@media(max-width: 380px)  { .video-grid { grid-template-columns: 1fr !important; } }
+
+/* ═══ REC CARDS — FIXED ═══ */
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.rec-card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.rec-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.rec-card.high::before  { background: var(--green); }
+.rec-card.medium::before { background: var(--gold); }
+.rec-card.low::before   { background: var(--blue); }
+.rec-card:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+.rec-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+.rec-body { flex: 1; min-width: 0; }
+.rec-priority {
+  font-size: 8px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+  margin-bottom: 5px; font-family: var(--font-display);
+}
+.high  .rec-priority { color: var(--green); }
+.medium .rec-priority { color: var(--gold); }
+.low   .rec-priority { color: var(--blue); }
+.rec-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.rec-text  { font-size: 11px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+.rec-metrics { display: flex; gap: 6px; flex-wrap: wrap; }
+.rec-metric {
+  font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 5px;
+  background: var(--s2); color: var(--dim); border: 1px solid var(--border2);
+  font-family: var(--font-display);
+}
+
+/* ═══ PRODUCTS TABLE — DEFINITIVE FIX ═══ */
+.prod-table-cols { 
+  grid-template-columns: 36px 46px 1fr 90px 80px 90px 85px 100px 34px !important; 
+}
+.prod-header-row {
+  display: grid;
+  grid-template-columns: 36px 46px 1fr 90px 80px 90px 85px 100px 34px;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--border);
+}
+.prod-data-row {
+  display: grid;
+  grid-template-columns: 36px 46px 1fr 90px 80px 90px 85px 100px 34px;
+  gap: 8px;
+  padding: 10px 16px;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  transition: background .15s;
+}
+.prod-data-row:hover { background: rgba(255,255,255,.02); }
+
+/* ═══ CONVERSION PANEL ═══ */
+.conv-section-panel { display: block; }
+.conv-section-panel.hidden { display: none; }
+
+/* ═══ SAFE RENDER PLACEHOLDER ═══ */
+.render-error {
+  padding: 32px; text-align: center; color: var(--muted);
+  background: var(--rdim); border: 1px solid rgba(255,59,107,.2);
+  border-radius: 12px; font-size: 12px;
+}
+.render-empty {
+  padding: 48px; text-align: center; color: var(--muted);
+  font-size: 12px; line-height: 1.8;
+}
+.render-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .5; }
 </style>
 </head>
 <body>
@@ -1507,7 +1629,7 @@ function processCreator(rawProds, rawVids) {
       if (!name && r['Owned Store Name']) name = r['Owned Store Name'];
       products.push({
         name: r['Product Name'] || '',
-        category: r['Product Category'] || 'Sin categoría',
+        category: normalizeCategory(r['Product Category'] || 'Sin categoría'),
         store: r['Owned Store Name'] || '',
         price, units, gmv,
         commission: parsePct(r['Commission Rate']),
@@ -1702,8 +1824,21 @@ function renderAllTabs(creator) {
   renderFavorites(creator);
 }
 
+
+// ── SAFE RENDER HELPERS ──────────────────────────────────
+function safeRenderEmpty(tabId, msg, icon) {
+  const el = document.getElementById('tab-' + tabId);
+  if (!el) return;
+  el.innerHTML = `<div class="render-empty"><div class="render-empty-icon">${icon||'📭'}</div>${msg}</div>`;
+}
+function safeRenderError(tabId, msg) {
+  const el = document.getElementById('tab-' + tabId);
+  if (!el) return;
+  el.innerHTML = `<div class="render-error">⚠️ Error al renderizar: ${msg||'Error desconocido'}</div>`;
+}
 // ── OVERVIEW ──────────────────────────────────────────────────────────────
 function renderOverview(creator) {
+  if (!creator || !creator.products) { safeRenderEmpty('overview', 'Sin datos'); return; }
   const prods = creator.products.filter(p => p.units > 0);
   const totalUnits = prods.reduce((s,p) => s + p.units, 0);
   const totalGMV = prods.reduce((s,p) => s + p.gmv, 0);
@@ -1782,6 +1917,9 @@ function renderOverview(creator) {
 
 // ── CONVERSION ────────────────────────────────────────────────────────────
 function renderConversion(creator) {
+  if (!creator || !creator.products) { safeRenderEmpty('conversion', 'Sin datos'); return; }
+  try {
+
   const vids = creator.videos;
   if (!vids.length) {
     document.getElementById('tab-conversion').innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px;margin-bottom:12px">🎬</div>Sube el archivo de creativos para ver conversión.</div>';
@@ -1842,16 +1980,12 @@ function renderConversion(creator) {
     const convProdHTML = buildConvProducts(creator);
     const cpEl = document.getElementById('conv-prod-section'); if(cpEl) cpEl.innerHTML = convProdHTML;
   }, 50);
+  } catch(err) {
+    console.error('renderConversion:', err);
+    safeRenderError('conversion', err.message);
+  }
 }
 
-// ── VIDEOS ────────────────────────────────────────────────────────────────
-let vidSort='conv', vidNiche='Todos', vidResult='todos', vidPeriod='todos';
-
-// video filter state
-let vidDateFilter = 'todos'; // todos | 7 | 14 | 28 | mes | custom
-let vidDateFrom = '';
-let vidDateTo = '';
-let vidProductFilter = 'todos';
 
 function renderVideos(creator) {
   const vids = creator.videos;
@@ -2013,6 +2147,21 @@ function buildConvProducts(creator) {
   </div><div id="conv-prod-section-inner"></div>`;
 }
 
+
+// ── CATEGORY NORMALIZER ──────────────────────────────────
+function normalizeCategory(cat) {
+  if (!cat) return 'Other';
+  const t = cat.toLowerCase();
+  if (t.includes('health') || t.includes('supplement') || t.includes('vitamin') || t.includes('wellness')) return 'Health & Wellness';
+  if (t.includes('beauty') || t.includes('skin') || t.includes('care') || t.includes('cosmetic')) return 'Beauty & Skincare';
+  if (t.includes('fashion') || t.includes('cloth') || t.includes('wear') || t.includes('apparel') || t.includes('jeans') || t.includes('dress')) return 'Fashion';
+  if (t.includes('fitness') || t.includes('sport') || t.includes('gym') || t.includes('workout')) return 'Fitness & Sports';
+  if (t.includes('bag') || t.includes('purse') || t.includes('accessory') || t.includes('jewelry')) return 'Accessories';
+  if (t.includes('home') || t.includes('kitchen') || t.includes('house')) return 'Home & Living';
+  if (t.includes('tech') || t.includes('electronic') || t.includes('gadget')) return 'Tech & Gadgets';
+  if (t.includes('food') || t.includes('drink') || t.includes('snack') || t.includes('nutrition')) return 'Food & Nutrition';
+  return cat; // keep original if no match
+}
 function getCatClass(cat) {
   if(!cat) return 'cat-other';
   const t = cat.toLowerCase();
@@ -2135,6 +2284,8 @@ function toggleVidStats(id){
 // ── PRODUCTS ──────────────────────────────────────────────────────────────
 let activeFilter = 'Todos';
 function renderProducts(creator) {
+  if (!creator || !creator.products) { safeRenderEmpty('products', 'Sin datos'); return; }
+  try {
   const prods = creator.products.filter(p => p.units > 0);
   const cats = ['Todos', ...new Set(prods.map(p=>p.category))];
   const monthMap={};
@@ -2145,15 +2296,32 @@ function renderProducts(creator) {
   document.getElementById('tab-products').innerHTML =
     `<div class="tag-scroll" id="cat-filter">${cats.map(c=>`<span class="tag${c===activeFilter?' active':''}" onclick="filterCat('${c.replace(/'/g,"\\'")}',this)">${c}</span>`).join('')}</div>` +
     `<div class="charts-2" style="margin-bottom:24px;"><div class="chart-box"><div class="chart-ttl">Unidades por mes</div><div class="chart-wrap"><canvas id="ch-monthly-units"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Facturación por mes</div><div class="chart-wrap"><canvas id="ch-monthly-gmv"></canvas></div></div></div>` +
-    `<div class="sec-label">Todos los Productos</div><div class="card"><div style="display:grid;grid-template-columns:40px 42px 1fr 100px 80px 95px 85px 100px 36px;gap:8px;padding:10px 18px;background:var(--s3);border-bottom:1px solid var(--border2);"><span class="th"></span><span class="th"></span><span class="th">Producto</span><span class="th" style="text-align:center">Mejor Mes</span><span class="th" style="text-align:center">Precio</span><span class="th" style="text-align:center">Unidades</span><span class="th" style="text-align:center">Facturación</span><span class="th" style="text-align:center">Comisión</span><span class="th"></span></div><div id="all-products-card"></div></div>`;
+    `<div class="sec-label">Todos los Productos</div>
+     <div class="card">
+       <div class="prod-header-row">
+         <span class="th">#</span>
+         <span class="th"></span>
+         <span class="th">Producto</span>
+         <span class="th" style="text-align:center">Mejor Mes</span>
+         <span class="th" style="text-align:right">Precio</span>
+         <span class="th" style="text-align:center">Unidades</span>
+         <span class="th" style="text-align:right">Facturación</span>
+         <span class="th" style="text-align:center">Comisión</span>
+         <span class="th"></span>
+       </div>
+       <div id="all-products-card"></div>
+     </div>`;
 
   setTimeout(() => {
     CHT.bar('ch-monthly-units',monthLabels,months.map(m=>monthMap[m].units),'#00E5A0',v=>` ${fmtInt(v)} uds`);
     CHT.bar('ch-monthly-gmv',monthLabels,months.map(m=>monthMap[m].gmv),'#FFB547',v=>` ${fmtNum(v)}`);
     renderProductTable(prods, creator);
   }, 50);
+  } catch(err) {
+    console.error('renderProducts:', err);
+    safeRenderError('products', err.message);
+  }
 }
-
 function filterCat(cat, el) {
   activeFilter = cat;
   document.querySelectorAll('#cat-filter .tag').forEach(t => t.classList.toggle('active', t.textContent === cat));
@@ -2203,7 +2371,7 @@ function renderProductTable(prods, creator) {
     const catClass = getCatClass(p.category);
     const catEmoji = getCatEmoji(p.category);
     return `<div>
-      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.04);display:grid;grid-template-columns:36px 46px 1fr 80px 80px 90px 85px 90px auto;gap:8px;align-items:center;">
+      <div class="prod-data-row">
         <div class="rank-${i<3?i+1:'n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
         <div class="prod-visual-thumb ${catClass}">${catEmoji}</div>
         <div>
@@ -2234,6 +2402,8 @@ function renderProductTable(prods, creator) {
 
 // ── NICHES ────────────────────────────────────────────────────────────────
 function renderNiches(creator) {
+  if (!creator || !creator.products) { safeRenderEmpty('niches', 'Sin datos'); return; }
+  try {
   const prods = creator.products.filter(p=>p.units>0);
   const catMap={};
   for(const p of prods){if(!catMap[p.category])catMap[p.category]={units:0,gmv:0,count:0,commissions:[],prices:[]};const c=catMap[p.category];c.units+=p.units;c.gmv+=p.gmv;c.count++;c.commissions.push(p.commission);c.prices.push(p.price);}
@@ -2253,10 +2423,15 @@ function renderNiches(creator) {
       CHT.hbar('ch-niche-count',labels,cats.map(([,d])=>d.count),cats.map((_,i)=>colors[i%colors.length]+'88'));
     },50);
   },50);
+  } catch(err) {
+    console.error('renderNiches:', err);
+    safeRenderError('niches', err.message);
+  }
 }
 
 // ── TIMELINE ──────────────────────────────────────────────────────────────
 function renderTimeline(creator) {
+  if (!creator || !creator.products) { safeRenderEmpty('timeline', 'Sin datos'); return; }
   const vids = creator.videos;
   if(!vids.length){document.getElementById('tab-timeline').innerHTML='<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px">📅</div><br>Sin creativos para mostrar timeline.</div>';return;}
   const allItems=[];
@@ -2305,6 +2480,9 @@ function renderAI(creator) {
 
 // ── RECOMMENDATIONS ───────────────────────────────────────────────────────
 function renderRecommendations(creator) {
+  if (!creator || !creator.products) { safeRenderEmpty('recommendations', 'Sin datos'); return; }
+  try {
+
   const prods = creator.products.filter(p=>p.units>0);
   const vids = creator.videos;
   const recs = [];
@@ -2340,13 +2518,30 @@ function renderRecommendations(creator) {
 
   const recsHTML = recs.length ? recs.map(r=>`<div class="rec-card ${r.priority}"><div style="flex:1"><div class="rec-priority ${r.priority}">${r.priority==='high'?'🔥 Alta prioridad':r.priority==='medium'?'⚡ Media prioridad':'💡 Sugerencia'}</div><div class="rec-title">${r.title}</div><div class="rec-text">${r.text}</div><div class="rec-metrics">${(r.metrics||[]).map(m=>`<span class="rec-metric">${m}</span>`).join('')}</div></div></div>`).join('') : '<div style="text-align:center;padding:32px;color:var(--muted)">Sube más datos para obtener recomendaciones personalizadas.</div>';
 
+  const recCards = recs.length ? recs.map(r => `
+    <div class="rec-card ${r.priority}">
+      <div class="rec-icon">${r.icon||'💡'}</div>
+      <div class="rec-body">
+        <div class="rec-priority">${r.priority==='high'?'🔥 Alta prioridad':r.priority==='medium'?'⚡ Media':'💡 Sugerencia'}</div>
+        <div class="rec-title">${r.title}</div>
+        <div class="rec-text">${r.text}</div>
+        <div class="rec-metrics">${(r.metrics||[]).map(m=>`<span class="rec-metric">${m}</span>`).join('')}</div>
+      </div>
+    </div>`).join('') : `<div class="render-empty"><div class="render-empty-icon">💡</div>Sin recomendaciones disponibles</div>`;
+
   document.getElementById('tab-recommendations').innerHTML =
-    `<div class="sec-label">Recomendaciones para ${creator.name}</div>` +
-    `<div style="background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.12);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--dim);">💡 Recomendaciones generadas automáticamente basadas en los datos del creador.</div>` +
-    recsHTML;
+    `<div style="margin-bottom:20px;">
+       <div style="font-family:var(--font-display);font-size:18px;font-weight:800;margin-bottom:6px;">Recomendaciones Estratégicas</div>
+       <div style="font-size:12px;color:var(--muted);">Análisis automático basado en los datos de ${creator.name}</div>
+     </div>` +
+    `<div class="rec-grid">${recCards}</div>`;
+  } catch(err) {
+    console.error('renderRecommendations:', err);
+    safeRenderError('recommendations', err.message);
+  }
 }
 
-// ── COMPARE ───────────────────────────────────────────────────────────────
+
 function renderCompareTab() {
   const creators = window._compareIds.map(id => window._creators.find(c=>c.id===id)).filter(Boolean);
   if(creators.length<2){document.getElementById('tab-compare').innerHTML='<div style="text-align:center;padding:48px;color:var(--muted)">Selecciona al menos 2 creadores para comparar.</div>';return;}

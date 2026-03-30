@@ -578,6 +578,7 @@ body::after {
   transform: translateY(-3px);
   box-shadow: 0 12px 35px rgba(0,0,0,.5);
 }
+.vid-card:hover .vid-play-btn { transform: translate(-50%,-50%) scale(1) !important; }
 .vid-card.top-performer {
   border-color: rgba(0,255,179,.2);
   box-shadow: 0 0 25px rgba(0,255,179,.06);
@@ -935,6 +936,98 @@ body::after {
   .charts-2 { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: repeat(2,1fr); }
 }
+
+/* ═══ INSIGHT CARDS ═══ */
+.insights-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; margin-bottom: 20px; }
+.insight { background: var(--s1); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; transition: all .2s; }
+.insight:hover { border-color: var(--border2); transform: translateY(-1px); }
+.insight-good { border-left: 2px solid var(--green); }
+.insight-warn { border-left: 2px solid var(--gold); }
+.insight-info { border-left: 2px solid var(--blue); }
+.insight-bad  { border-left: 2px solid var(--red); }
+.insight-icon { font-size: 22px; flex-shrink: 0; }
+.insight-title { font-family: var(--font-display); font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.insight-text  { font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+/* ═══ SCORE RING ═══ */
+.score-ring-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: var(--s1); border: 1px solid var(--border); border-radius: 16px; }
+.score-ring { position: relative; width: 100px; height: 100px; }
+.score-ring svg { transform: rotate(-90deg); }
+.score-ring-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 28px; font-weight: 800; }
+.score-ring-lbl { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+
+/* ═══ VIDEO GRID — FIXED ═══ */
+.video-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); 
+  gap: 14px; 
+  width: 100%;
+}
+@media(max-width:1200px){ .video-grid { grid-template-columns: repeat(auto-fill, minmax(170px,1fr)); } }
+@media(max-width:700px)  { .video-grid { grid-template-columns: repeat(2,1fr); } }
+@media(max-width:480px)  { .video-grid { grid-template-columns: 1fr; } }
+
+/* ═══ COLLAPSIBLE FILTER PANEL ═══ */
+.filter-toggle-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 9px;
+  background: var(--s1); border: 1px solid var(--border2);
+  color: var(--muted); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all .2s; font-family: var(--font-body);
+}
+.filter-toggle-btn:hover { border-color: var(--border3); color: var(--text2); }
+.filter-toggle-btn.active { background: var(--gdim); border-color: rgba(0,255,179,.25); color: var(--green); }
+.filter-toggle-btn .filter-count {
+  background: var(--green); color: var(--bg);
+  border-radius: 99px; font-size: 9px; font-weight: 800;
+  padding: 1px 6px; font-family: var(--font-display);
+}
+
+.filter-panel-wrap { overflow: hidden; transition: max-height .3s ease, opacity .3s ease; max-height: 0; opacity: 0; }
+.filter-panel-wrap.open { max-height: 300px; opacity: 1; }
+
+/* Active filter chips */
+.active-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.active-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 99px;
+  background: var(--gdim); border: 1px solid rgba(0,255,179,.2);
+  color: var(--green); font-size: 10px; font-weight: 600;
+  font-family: var(--font-display);
+}
+.active-chip button { background: none; border: none; color: var(--green); cursor: pointer; font-size: 11px; padding: 0; line-height: 1; }
+
+/* ═══ CONVERSION TOGGLE ═══ */
+.conv-toggle { display: flex; background: var(--s2); border: 1px solid var(--border2); border-radius: 9px; padding: 3px; gap: 2px; }
+.conv-toggle-btn {
+  padding: 5px 16px; border-radius: 6px; font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  cursor: pointer; border: none; background: transparent;
+  color: var(--muted); transition: all .2s; font-family: var(--font-display);
+}
+.conv-toggle-btn.active { background: var(--s1); color: var(--green); box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+
+/* ═══ PRODUCT CARD VISUAL ═══ */
+.prod-visual-thumb {
+  width: 46px; height: 46px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0; border: 1px solid var(--border2);
+}
+.cat-health    { background: linear-gradient(135deg, rgba(0,255,179,.1), rgba(0,212,255,.05)); }
+.cat-beauty    { background: linear-gradient(135deg, rgba(176,109,255,.1), rgba(255,59,107,.05)); }
+.cat-fashion   { background: linear-gradient(135deg, rgba(255,208,96,.1), rgba(255,122,61,.05)); }
+.cat-fitness   { background: linear-gradient(135deg, rgba(77,158,255,.1), rgba(0,255,179,.05)); }
+.cat-other     { background: linear-gradient(135deg, rgba(96,96,160,.1), rgba(96,96,160,.05)); }
+
+/* ═══ PRODUCT CLICK TO CREATIVE ═══ */
+.prod-to-creative-btn {
+  font-size: 9px; font-weight: 700; padding: 3px 9px; border-radius: 5px;
+  background: var(--bdim); color: var(--blue); border: 1px solid rgba(77,158,255,.2);
+  cursor: pointer; transition: all .15s; font-family: var(--font-display);
+  white-space: nowrap;
+}
+.prod-to-creative-btn:hover { background: rgba(77,158,255,.15); border-color: rgba(77,158,255,.35); }
+
 </style>
 </head>
 <body>
@@ -1666,7 +1759,17 @@ function renderOverview(creator) {
 
   document.getElementById('tab-overview').innerHTML = scoreHTML +
     `<div class="sec-label">KPIs Generales</div><div class="kpi-grid">${kpis}</div>` +
-    `<div class="sec-label">Insights Automáticos</div><div class="insights-row">${ins.map(({type,icon,title,text})=>`<div class="insight insight-${type}"><div class="insight-icon">${icon}</div><div class="insight-title">${title}</div><div class="insight-text">${text}</div></div>`).join('')}</div>` +
+    `<div class="sec-label">Insights del Creador</div>
+     <div class="insights-row">
+       ${ins.slice(0,6).map(({type,icon,title,text})=>`
+         <div class="insight insight-${type}">
+           <div class="insight-icon">${icon}</div>
+           <div style="flex:1;min-width:0;">
+             <div class="insight-title">${title}</div>
+             <div class="insight-text">${text}</div>
+           </div>
+         </div>`).join('')}
+     </div>` +
     `<div class="charts-2"><div class="chart-box"><div class="chart-ttl">Unidades por período</div><div class="chart-wrap"><canvas id="ch-units"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Facturación por período</div><div class="chart-wrap"><canvas id="ch-gmv"></canvas></div></div></div>` +
     `<div class="sec-label">Top 10 Productos</div><div class="card"><div class="card-head"><div class="card-title">Top 10 Productos</div></div><div class="tbl-head" style="grid-template-columns:${cols}"><span class="th">#</span><span class="th"></span><span class="th">Producto</span><span class="th">Categoría</span><span class="th">Precio</span><span class="th">Unidades</span><span class="th">Facturación</span><span class="th">Comisión</span></div>${top10.map((p,i)=>`<div class="tbl-row" style="grid-template-columns:${cols}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div style="width:40px;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);">🛍️</div><div><div class="td-name">${p.name.substring(0,55)}${p.name.length>55?'…':''}</div><div class="td-sub">${p.store}</div></div><div><span class="chip chip-cat">${p.category.substring(0,18)}</span></div><div class="td td-blue">$${p.price.toFixed(2)}</div><div class="td td-gold td-num">${fmtInt(p.units)}</div><div class="td td-green">${fmtNum(p.gmv)}</div><div class="td"><span class="conv-badge ${p.commission>=20?'conv-great':p.commission>=15?'conv-good':p.commission>=10?'conv-avg':'conv-low'}">${p.commission}%</span></div></div>`).join('')}</div>`;
 
@@ -1705,7 +1808,20 @@ function renderConversion(creator) {
   const cols7 = '40px 1fr 90px 75px 75px 90px 100px';
 
   document.getElementById('tab-conversion').innerHTML =
-    `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:16px;"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:4px;">Escala:</span><span style="font-size:11px;color:var(--green);">🔥 <strong>Viral</strong> &gt;0.30%</span><span style="font-size:11px;color:var(--blue);">✅ <strong>Bueno</strong> 0.15–0.30%</span><span style="font-size:11px;color:var(--gold);">⚡ <strong>Normal</strong> 0.05–0.15%</span><span style="font-size:11px;color:var(--muted);">❄️ <strong>Frío</strong> &lt;0.05%</span></div>` +
+    // Toggle + scale bar
+    `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+      <div class="conv-toggle" id="conv-toggle">
+        <button class="conv-toggle-btn active" onclick="setConvView('videos',this)">🎬 Creativos</button>
+        <button class="conv-toggle-btn" onclick="setConvView('products',this)">🛍️ Productos</button>
+        <button class="conv-toggle-btn" onclick="setConvView('both',this)">⚡ Ambos</button>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:10px;color:var(--green);font-family:var(--font-display);">🔥 Viral &gt;0.30%</span>
+        <span style="font-size:10px;color:var(--blue);font-family:var(--font-display);">✅ Bueno 0.15–0.30%</span>
+        <span style="font-size:10px;color:var(--gold);font-family:var(--font-display);">⚡ Normal 0.05–0.15%</span>
+        <span style="font-size:10px;color:var(--muted);font-family:var(--font-display);">❄️ Frío &lt;0.05%</span>
+      </div>
+    </div>` +
     `<div class="sec-label">Métricas</div><div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">${[
       {l:'Rendimiento General',v:rendLabel(overallConv).label,s:'conv. '+fmtPct(overallConv)},
       {l:'Mejor Creativo',v:rendLabel(sorted[0]?.convRate||0).label,s:(sorted[0]?.title||'').substring(0,28)+'…'},
@@ -1713,7 +1829,7 @@ function renderConversion(creator) {
       {l:'Facturación via Creativo',v:fmtNum(totalGMV),s:`${fmtInt(totalViews)} vistas totales`},
     ].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('')}</div>` +
     `<div class="charts-2"><div class="chart-box"><div class="chart-ttl">Conv. Rate Top 20</div><div class="chart-wrap"><canvas id="ch-conv-bar"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Vistas vs Unidades</div><div class="chart-wrap"><canvas id="ch-scatter"></canvas></div></div></div>` +
-    `<div class="sec-label">Ranking por Conversión</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta" style="display:flex;gap:8px;align-items:center;"><span>top 20</span><span style="font-size:9px;color:var(--muted);background:var(--s2);padding:2px 8px;border-radius:5px;">mín. 500 vistas · 5 ventas</span></div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div>`;
+    `<div id="conv-vid-section" style="display:${convView==='products' ? 'none' : 'block'}"><div class="sec-label">Ranking por Conversión · Creativos</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta" style="display:flex;gap:8px;align-items:center;"><span>top 20</span><span style="font-size:9px;color:var(--muted);background:var(--s2);padding:2px 8px;border-radius:5px;">mín. 500 vistas · 5 ventas</span></div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div>`;
 
   setTimeout(() => {
     if(CHARTS['ch-conv-bar'])CHARTS['ch-conv-bar'].destroy();
@@ -1722,6 +1838,9 @@ function renderConversion(creator) {
     if(window._userPlan==='pro'){cbOpts.onClick=(evt,els)=>{if(els.length&&top20[els[0].index]){const v=top20[els[0].index];const url=v.tiktokLink||v.fastmossLink;if(url)window.open(url,'_blank');}};cbOpts.plugins.tooltip.callbacks={label:ctx=>{const v=top20[ctx.dataIndex];return[`Conv: ${fmtPct(v.convRate)}`,`${v.title.substring(0,45)}…`,`${fmtInt(v.views)} vistas · ${v.units} uds`];}};}
     CHARTS['ch-conv-bar'] = new Chart(document.getElementById('ch-conv-bar'),{type:'bar',data:{labels:top20.map((_,i)=>`V${i+1}`),datasets:[{data:top20.map(v=>v.convRate),backgroundColor:top20.map(v=>v.convRate>=0.30?'#00E5A050':v.convRate>=0.15?'#4A8FFF50':'#FFB54750'),borderColor:top20.map(v=>v.convRate>=0.30?'#00E5A0':v.convRate>=0.15?'#4A8FFF':'#FFB547'),borderWidth:1.5,borderRadius:4}]},options:cbOpts});
     CHT.scatter('ch-scatter', vids.map(v=>({x:v.views,y:v.units})));
+    // Add top products by volume to conversion view
+    const convProdHTML = buildConvProducts(creator);
+    const cpEl = document.getElementById('conv-prod-section'); if(cpEl) cpEl.innerHTML = convProdHTML;
   }, 50);
 }
 
@@ -1764,25 +1883,59 @@ function renderVideos(creator) {
     const d=new Date(v.publishDate); return isNaN(d)?null:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
   }).filter(Boolean))].sort().reverse();
 
+  // Count active filters
+  const activeFilterCount = [
+    vidSort !== 'conv' ? 1 : 0,
+    vidDateFilter !== 'todos' ? 1 : 0,
+    vidNiche !== 'Todos' ? 1 : 0,
+    vidResult !== 'todos' ? 1 : 0,
+    vidProductFilter !== 'todos' ? 1 : 0
+  ].reduce((a,b)=>a+b,0);
+
+  // Build active filter chips
+  const activeChips = [];
+  if(vidSort!=='conv') activeChips.push(`<span class="active-chip">${sortOpts.find(o=>o.v===vidSort)?.l||vidSort} <button onclick="setVidFilter('sort','conv')">✕</button></span>`);
+  if(vidDateFilter!=='todos') activeChips.push(`<span class="active-chip">${dateOpts.find(o=>o.v===vidDateFilter)?.l||vidDateFilter} <button onclick="setVidFilter('date','todos')">✕</button></span>`);
+  if(vidNiche!=='Todos') activeChips.push(`<span class="active-chip">Nicho: ${vidNiche} <button onclick="setVidFilter('niche','Todos')">✕</button></span>`);
+  if(vidResult!=='todos') activeChips.push(`<span class="active-chip">${resultOpts.find(o=>o.v===vidResult)?.l||vidResult} <button onclick="setVidFilter('result','todos')">✕</button></span>`);
+  if(vidProductFilter!=='todos') activeChips.push(`<span class="active-chip">Prod: ${vidProductFilter.substring(0,20)} <button onclick="setVidFilter('product','todos')">✕</button></span>`);
+
   document.getElementById('tab-videos').innerHTML =
     `<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">${kpis}</div>` +
-    `<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:20px;">` +
-    // Row 1: Sort + Result
-    `<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">` +
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--green);font-weight:600;white-space:nowrap;">Ordenar</span>${sortOpts.map(o=>`<button class="tag${vidSort===o.v?' active':''}" onclick="setVidFilter('sort','${o.v}')">${o.l}</button>`).join('')}</div>` +
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Resultado</span>${resultOpts.map(o=>`<button class="tag${vidResult===o.v?' active':''}" onclick="setVidFilter('result','${o.v}')">${o.l}</button>`).join('')}</div>` +
-    `</div>` +
-    // Row 2: Date filter
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Período</span>${dateOpts.map(o=>`<button class="tag${vidDateFilter===o.v?' active':''}" onclick="setVidFilter('date','${o.v}')">${o.l}</button>`).join('')}` +
-    `<div id="vid-month-sel" style="display:${vidDateFilter==='mes'?'flex':'none'};gap:4px;align-items:center;"><select onchange="setVidFilter('month',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;">${months.map(m=>`<option value="${m}" ${vidDateFilter==='mes'&&vidDateFrom===m?'selected':''}>${m}</option>`).join('')}</select></div>` +
-    `<div id="vid-custom-sel" style="display:${vidDateFilter==='custom'?'flex':'none'};gap:4px;align-items:center;"><input type="date" value="${vidDateFrom}" onchange="setVidFilter('from',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;color-scheme:dark;"><span style="color:var(--muted);font-size:11px;">→</span><input type="date" value="${vidDateTo}" onchange="setVidFilter('to',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;color-scheme:dark;"></div>` +
-    `</div>` +
-    // Row 3: Nicho + Producto
-    `<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">` +
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Nicho</span>${niches.map(n=>`<button class="tag${vidNiche===n?' active':''}" onclick="setVidFilter('niche','${n}')">${n}</button>`).join('')}</div>` +
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Producto</span><select onchange="setVidFilter('product',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 10px;font-size:11px;outline:none;max-width:280px;"><option value="todos">Todos los productos</option>${creator.products.filter(p=>p.units>0).map(p=>`<option value="${p.name.replace(/"/g,'&quot;')}" ${vidProductFilter===p.name?'selected':''}>${p.name.substring(0,50)}</option>`).join('')}</select></div>` +
-    `</div>` +
-    `</div>` +
+    // Collapsible filter panel
+    `<div style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="filter-toggle-btn${activeFilterCount>0?' active':''}" onclick="toggleVidFilters()" id="vid-filter-toggle-btn">
+          ⚙ Filtros ${activeFilterCount>0?`<span class="filter-count">${activeFilterCount}</span>`:''}
+        </button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${sortOpts.map(o=>`<button class="tag${vidSort===o.v?' active':''}" onclick="setVidFilter('sort','${o.v}')" style="font-size:10px;padding:4px 10px;">${o.l}</button>`).join('')}
+        </div>
+        ${activeChips.length?`<div class="active-filters">${activeChips.join('')}</div>`:''}
+      </div>
+      <div class="filter-panel-wrap" id="vid-filter-panel">
+        <div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:10px;display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);white-space:nowrap;font-family:var(--font-display);">Período</span>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
+              ${dateOpts.map(o=>`<button class="tag${vidDateFilter===o.v?' active':''}" onclick="setVidFilter('date','${o.v}')" style="font-size:10px;">${o.l}</button>`).join('')}
+            </div>
+            <div id="vid-month-sel" style="display:${vidDateFilter==='mes'?'flex':'none'};gap:4px;"><select onchange="setVidFilter('month',this.value)" class="sel-input" style="padding:4px 8px;font-size:11px;">${months.map(m=>`<option value="${m}" ${vidDateFrom===m?'selected':''}>${m}</option>`).join('')}</select></div>
+            <div id="vid-custom-sel" style="display:${vidDateFilter==='custom'?'flex':'none'};gap:4px;align-items:center;"><input type="date" value="${vidDateFrom}" onchange="setVidFilter('from',this.value)" class="date-input"><span style="color:var(--muted);">→</span><input type="date" value="${vidDateTo}" onchange="setVidFilter('to',this.value)" class="date-input"></div>
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-family:var(--font-display);">Resultado</span>
+              ${resultOpts.map(o=>`<button class="tag${vidResult===o.v?' active':''}" onclick="setVidFilter('result','${o.v}')" style="font-size:10px;">${o.l}</button>`).join('')}
+            </div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+              <span style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-family:var(--font-display);">Nicho</span>
+              ${niches.map(n=>`<button class="tag${vidNiche===n?' active':''}" onclick="setVidFilter('niche','${n}')" style="font-size:10px;">${n}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>` +
     `<div id="vid-grid-container"></div>`;
 
   renderVideoGrid(creator);
@@ -1827,6 +1980,82 @@ function getFilteredVideos(creator) {
   return vids;
 }
 
+
+
+
+
+function goToCreativeWithProduct(productName) {
+  // Set the product filter in creativos
+  vidProductFilter = productName;
+  // Navigate to creativos tab
+  const tabBtn = document.getElementById('tab-btn-videos');
+  showTab('videos', tabBtn);
+  // Re-render with filter applied
+  const creator = window._creators?.find(c=>c.id===window._activeCreatorId);
+  if (creator) renderVideos(creator);
+}
+function buildConvProducts(creator) {
+  const prods = creator.products.filter(p=>p.units>0).sort((a,b)=>b.units-a.units).slice(0,10);
+  if (!prods.length) return '<div style="padding:24px;text-align:center;color:var(--muted);">Sin datos de productos</div>';
+  const cols = '40px 46px 1fr 90px 90px 100px';
+  return `<div class="sec-label" style="margin-top:20px;">Ranking · Productos</div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">Top Productos por Volumen</div><div class="card-meta">${prods.length} activos</div></div>
+    <div class="tbl-head" style="grid-template-columns:${cols}"><span class="th">#</span><span class="th"></span><span class="th">Producto</span><span class="th" style="text-align:center">Unidades</span><span class="th" style="text-align:right">Facturación</span><span class="th" style="text-align:center">Comisión</span></div>
+    ${prods.map((p,i)=>`<div class="tbl-row" style="grid-template-columns:${cols}">
+      <div class="rank-${i<3?i+1:'n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <div class="prod-visual-thumb ${getCatClass(p.category)}">${getCatEmoji(p.category)}</div>
+      <div><div class="td-name" style="font-size:11px">${p.name.substring(0,55)}</div><div style="font-size:9px;color:var(--muted)">${p.category}</div></div>
+      <div style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--gold)">${fmtInt(p.units)}</div>
+      <div style="text-align:right" class="td-green">${fmtNum(p.gmv)}</div>
+      <div style="text-align:center"><span class="conv-badge ${p.commission>=20?'conv-great':p.commission>=15?'conv-good':p.commission>=10?'conv-avg':'conv-low'}">${p.commission}%</span></div>
+    </div>`).join('')}
+  </div><div id="conv-prod-section-inner"></div>`;
+}
+
+function getCatClass(cat) {
+  if(!cat) return 'cat-other';
+  const t = cat.toLowerCase();
+  if(t.includes('health')||t.includes('supplement')||t.includes('wellness')) return 'cat-health';
+  if(t.includes('beauty')||t.includes('skin')||t.includes('care')) return 'cat-beauty';
+  if(t.includes('fashion')||t.includes('cloth')||t.includes('wear')) return 'cat-fashion';
+  if(t.includes('fitness')||t.includes('sport')||t.includes('gym')) return 'cat-fitness';
+  return 'cat-other';
+}
+
+function getCatEmoji(cat) {
+  if(!cat) return '📦';
+  const t = cat.toLowerCase();
+  if(t.includes('health')||t.includes('supplement')) return '💊';
+  if(t.includes('beauty')||t.includes('skin')) return '✨';
+  if(t.includes('fashion')||t.includes('cloth')) return '👗';
+  if(t.includes('fitness')||t.includes('sport')) return '💪';
+  return '🛍️';
+}
+let convView = 'videos'; // videos | products | both
+
+function setConvView(view, btn) {
+  convView = view;
+  // Update buttons
+  document.querySelectorAll('.conv-toggle-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Re-render relevant sections
+  const creator = window._creators?.find(c=>c.id===window._activeCreatorId);
+  if (!creator) return;
+  // Show/hide ranking sections
+  const vidSection = document.getElementById('conv-vid-section');
+  const prodSection = document.getElementById('conv-prod-section');
+  if (vidSection) vidSection.style.display = (view === 'products') ? 'none' : 'block';
+  if (prodSection) prodSection.style.display = (view === 'videos') ? 'none' : 'block';
+}
+function toggleVidFilters() {
+  const panel = document.getElementById('vid-filter-panel');
+  const btn = document.getElementById('vid-filter-toggle-btn');
+  if (!panel) return;
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  if (btn) btn.textContent = (isOpen ? '⚙ Filtros' : '✕ Cerrar filtros');
+}
 function setVidFilter(type, val) {
   if(type==='sort')vidSort=val;
   if(type==='niche')vidNiche=val;
@@ -1850,16 +2079,22 @@ function renderVideoGrid(creator) {
   container.innerHTML = '<div class="video-grid">' + vids.map((v,idx)=>{
     const id='v'+idx;
     const isTop=v.convRate>=0.15;
-    const thumbBg=`background:var(--s3);display:flex;align-items:center;justify-content:center;`;
+    const nicheColors = {'Ropa / Moda':'135deg,rgba(255,208,96,.12),rgba(255,122,61,.06)','Belleza / Skincare':'135deg,rgba(176,109,255,.12),rgba(255,59,107,.06)','Salud / Fitness':'135deg,rgba(77,158,255,.12),rgba(0,255,179,.06)','Accesorios':'135deg,rgba(0,212,255,.12),rgba(77,158,255,.06)'};
+    const thumbGrad = nicheColors[v.niche] || '135deg,rgba(96,96,160,.1),rgba(96,96,160,.05)';
+    const thumbBg=`background:linear-gradient(${thumbGrad});display:flex;align-items:center;justify-content:center;position:relative;`;
+    const thumbEmoji = {'Ropa / Moda':'👗','Belleza / Skincare':'✨','Salud / Fitness':'💪','Accesorios':'💍'}[v.niche] || '🎬';
     // No product-video link in FastMoss data — show niche tag instead (honest)
     const nicheLabel = v.niche || '';
 
     return `<div class="vid-card ${isTop?'top-performer':''}">
       <div style="position:relative;border-radius:10px;overflow:hidden;margin-bottom:10px;height:140px;cursor:pointer;${thumbBg}" onclick="toggleVidStats('${id}')">
-        <span style="font-size:28px">🎬</span>
+        <span style="font-size:32px;position:relative;z-index:1;">${thumbEmoji}</span>
         <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,7,9,.88) 0%,transparent 50%);"></div>
-        <div style="position:absolute;bottom:8px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-end;">
-          <span class="conv-badge ${convClass(v.convRate)}" style="font-size:11px;padding:3px 9px;font-weight:800">${fmtPct(v.convRate)} conv.</span>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(4,4,10,.9) 0%,transparent 55%);"></div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);transition:transform .2s;width:36px;height:36px;background:rgba(0,255,179,.15);border:1px solid rgba(0,255,179,.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;" class="vid-play-btn">▶</div>
+        <div style="position:absolute;bottom:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-end;z-index:2;">
+          <span class="conv-badge ${convClass(v.convRate)}" style="font-size:10px;padding:2px 8px;">${fmtPct(v.convRate)} conv.</span>
+          <span style="font-family:var(--font-mono);font-size:9px;color:rgba(255,255,255,.6);">${fmtInt(v.views)}v</span>
         </div>
         ${isTop?'<div style="position:absolute;top:8px;right:8px;font-size:15px">🔥</div>':''}
       </div>
@@ -1894,7 +2129,7 @@ function toggleVidStats(id){
   if(!panel)return;
   const isOpen=panel.classList.contains('open');
   panel.classList.toggle('open',!isOpen);
-  if(btn){btn.textContent=isOpen?'Stats':'✕';btn.classList.toggle('open',!isOpen);}
+  if(btn){btn.textContent=isOpen?'Stats':'✕ Cerrar';btn.classList.toggle('open',!isOpen);}
 }
 
 // ── PRODUCTS ──────────────────────────────────────────────────────────────
@@ -1965,21 +2200,33 @@ function renderProductTable(prods, creator) {
         </div>
       </div>` : '';
 
+    const catClass = getCatClass(p.category);
+    const catEmoji = getCatEmoji(p.category);
     return `<div>
-      <div style="padding:12px 18px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:40px 42px 1fr 100px 80px 95px 85px 100px 36px;gap:8px;align-items:center;">
-        <div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
-        <div style="width:44px;height:44px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:18px;">🛍️</div>
-        <div><div class="td-name" style="font-size:11px">${p.name.substring(0,75)}${p.name.length>75?'…':''}</div><div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;"><span class="chip chip-cat" style="font-size:9px">${p.category.substring(0,18)}</span>${p.tiktokLink?`<a href="${p.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}</div></div>
-        <div style="text-align:center;font-size:11px;color:var(--muted)">${p.month||'—'}</div>
-        <div class="td td-blue" style="text-align:center">$${p.price.toFixed(2)}</div>
-        <div style="text-align:center;font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;color:var(--gold)">${fmtInt(p.units)}</div>
-        <div class="td-green" style="text-align:center;font-weight:600">${fmtNum(p.gmv)}</div>
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.04);display:grid;grid-template-columns:36px 46px 1fr 80px 80px 90px 85px 90px auto;gap:8px;align-items:center;">
+        <div class="rank-${i<3?i+1:'n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+        <div class="prod-visual-thumb ${catClass}">${catEmoji}</div>
+        <div>
+          <div class="td-name" style="font-size:11px">${p.name.substring(0,65)}${p.name.length>65?'…':''}</div>
+          <div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;align-items:center;">
+            <span class="chip chip-cat" style="font-size:8px">${p.category.substring(0,20)}</span>
+            ${p.tiktokLink?`<a href="${p.tiktokLink}" target="_blank" style="font-size:8px;padding:2px 6px;border-radius:5px;background:var(--rdim);color:var(--red);border:1px solid rgba(255,59,107,.2);text-decoration:none;font-weight:700;">▶ TikTok</a>`:''}
+            <button class="prod-to-creative-btn" onclick="goToCreativeWithProduct('${p.name.replace(/'/g,"\\'")}')">🎬 Ver creativos</button>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:10px;color:var(--muted);font-family:var(--font-mono)">${p.month||'—'}</div>
+        <div class="td-blue" style="text-align:center;font-family:var(--font-mono)">$${p.price.toFixed(2)}</div>
+        <div style="text-align:center;font-family:var(--font-display);font-weight:800;font-size:16px;color:var(--gold)">${fmtInt(p.units)}</div>
+        <div class="td-green" style="text-align:center;font-weight:700;font-family:var(--font-mono)">${fmtNum(p.gmv)}</div>
         <div style="text-align:center"><span class="conv-badge ${p.commission>=20?'conv-great':p.commission>=15?'conv-good':p.commission>=10?'conv-avg':'conv-low'}">${p.commission}%</span></div>
         <button class="expand-btn" id="btn_${uid}" onclick="toggleMonthly('${uid}')">▾</button>
       </div>
       <div class="monthly-panel" id="panel_${uid}">
         ${top3html}
-        <div style="padding:12px 18px;font-size:12px;color:var(--muted);line-height:1.6;">${p.name}<br><span style="color:var(--green)">${fmtNum(p.gmv)}</span> · ${fmtInt(p.units)} unidades · ${p.commission}% comisión${matchVids.length?'':' · Sin videos coincidentes'}</div>
+        <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+          <div style="font-size:11px;color:var(--muted);">${p.name.substring(0,60)}<br><span style="color:var(--green);font-family:var(--font-mono)">${fmtNum(p.gmv)}</span> · <span style="color:var(--gold);font-family:var(--font-mono)">${fmtInt(p.units)}</span> uds · ${p.commission}% comisión</div>
+          <button class="fav-btn${isFavorited(p.name,'product')?' saved':''}" onclick="openFavModal({type:'product',title:'${p.name.replace(/'/g,"\\'")}',units:${p.units},price:${p.price},link:'${p.tiktokLink||''}'})" title="Guardar en favoritos" style="flex-shrink:0;">${isFavorited(p.name,'product')?'★':'☆'}</button>
+        </div>
       </div>
     </div>`;
   }).join('');

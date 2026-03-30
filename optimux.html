@@ -1837,6 +1837,7 @@ async function addAtRow() {
   const costo       = parseFloat(document.getElementById('at-costo')?.value)||0;
   const shopPct     = parseFloat(document.getElementById('at-shopify-pct')?.value)||5.2;
   if (!fecha) { alert('Selecciona una fecha'); return; }
+  // Allow 0 values for ventas and facturacion (e.g. days with only ad spend)
   const { fact, shopFee, utilidad, cpaReal, roas } = calcAtEntry();
   const precio = ventas > 0 ? factShopify / ventas : 0;
   const row = { id: Date.now(), fecha, producto, curr, ventas, precio, fact, pub, costo, shopifyPct: shopPct, shopifyFee: shopFee, utilidad, cpaReal, roas };
@@ -2011,6 +2012,49 @@ function exportAtCSV() {
   a.click(); URL.revokeObjectURL(url);
 }
 
+// ── EXCHANGE RATE (COP → USD/MXN) ────────────────────────
+let exchangeRates = { USD: null, MXN: null, timestamp: 0 };
+const RATE_CACHE_MS = 30 * 60 * 1000; // 30 min cache
+
+async function fetchExchangeRate(targetCurr) {
+  const now = Date.now();
+  if (exchangeRates[targetCurr] && (now - exchangeRates.timestamp) < RATE_CACHE_MS) {
+    return exchangeRates[targetCurr];
+  }
+  try {
+    // Primary: exchangerate-api (free, no key needed)
+    const res = await fetch('https://open.er-api.com/v6/latest/COP');
+    const data = await res.json();
+    if (data && data.rates) {
+      exchangeRates.USD = data.rates.USD || null;
+      exchangeRates.MXN = data.rates.MXN || null;
+      exchangeRates.timestamp = now;
+      return exchangeRates[targetCurr];
+    }
+  } catch(e) {
+    console.warn('Exchange rate API error:', e);
+  }
+  // Fallback: try alternative API
+  try {
+    const res2 = await fetch(`https://api.exchangerate.host/latest?base=COP&symbols=USD,MXN`);
+    const data2 = await res2.json();
+    if (data2 && data2.rates) {
+      exchangeRates.USD = data2.rates.USD || null;
+      exchangeRates.MXN = data2.rates.MXN || null;
+      exchangeRates.timestamp = now;
+      return exchangeRates[targetCurr];
+    }
+  } catch(e2) {
+    console.warn('Fallback exchange rate API error:', e2);
+  }
+  return null;
+}
+
+function convertCOPto(amount, targetCurr, rate) {
+  if (!rate || !amount) return amount;
+  return amount * rate;
+}
+
 function handleFbAdsDrop(e) {
   e.preventDefault();
   document.getElementById('fbads-dropzone').style.borderColor = 'var(--border2)';
@@ -2021,11 +2065,11 @@ function handleFbAdsDrop(e) {
 function handleFbAdsFile(file) {
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (e) => { try { parseFbAdsCsv(e.target.result); } catch(err) { alert('Error al procesar CSV: ' + err.message); } };
+  reader.onload = async (e) => { try { await parseFbAdsCsv(e.target.result); } catch(err) { alert('Error al procesar CSV: ' + err.message); } };
   reader.readAsText(file, 'UTF-8');
 }
 
-function parseFbAdsCsv(csvText) {
+async function parseFbAdsCsv(csvText) {
   const lines = csvText.split('\n').filter(l => l.trim());
   if (lines.length < 2) { alert('CSV vacío o sin datos'); return; }
   const parseCSVLine = (line) => {
@@ -2042,13 +2086,48 @@ function parseFbAdsCsv(csvText) {
   const gastoIdx = headers.findIndex(h => h.includes('Importe gastado') || h.includes('Amount spent') || h.includes('Spend'));
   const roasIdx  = headers.findIndex(h => h.includes('ROAS') || h.includes('Purchase ROAS'));
   if (gastoIdx === -1) { alert('No se encontró la columna de gasto en el CSV.\nAsegúrate de exportar desde Facebook Ads Manager.'); return; }
+
+  // Detect if CSV values are in COP (check header for "(COP)")
+  const gastoHeader = headers[gastoIdx] || '';
+  const isCOP = gastoHeader.includes('(COP)') || gastoHeader.includes('COP');
+  const targetCurr = document.getElementById('at-curr-val')?.value || 'USD';
+
+  // If CSV is in COP and target currency is different, fetch exchange rate
+  let copRate = null;
+  let didConvert = false;
+  if (isCOP && (targetCurr === 'USD' || targetCurr === 'MXN')) {
+    // Show loading state on dropzone
+    const dz = document.getElementById('fbads-dropzone');
+    if (dz) {
+      dz.style.borderColor = 'var(--gold)'; dz.style.background = 'rgba(255,181,71,.06)';
+      dz.innerHTML = '<div style="font-size:14px;">⏳</div><div style="font-size:10px;font-weight:600;color:var(--gold);">Obteniendo tasa COP → '+targetCurr+'...</div>';
+    }
+    copRate = await fetchExchangeRate(targetCurr);
+    if (copRate) {
+      didConvert = true;
+    } else {
+      // Rate not available — ask user to enter manually
+      const manualRate = prompt(
+        `No se pudo obtener la tasa COP → ${targetCurr} automáticamente.\n` +
+        `Ingresa la tasa de cambio manualmente.\n` +
+        `Ej: Si 1 USD = 4,200 COP, ingresa 4200`
+      );
+      if (manualRate && parseFloat(manualRate) > 0) {
+        copRate = 1 / parseFloat(manualRate);
+        didConvert = true;
+      }
+    }
+  }
+
   let totalGasto = 0, totalRevenue = 0, totalGastoConRoas = 0, campaignCount = 0;
   for (let i = 1; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i]);
     if (cols.length <= gastoIdx) continue;
-    const gasto = parseFloat(cols[gastoIdx]) || 0;
+    let gasto = parseFloat(cols[gastoIdx]) || 0;
     const roasVal = roasIdx !== -1 ? (parseFloat(cols[roasIdx]) || 0) : 0;
     if (gasto > 0) {
+      // Convert COP to target currency if applicable
+      if (didConvert && copRate) { gasto = convertCOPto(gasto, targetCurr, copRate); }
       totalGasto += gasto; campaignCount++;
       if (roasVal > 0) { totalRevenue += gasto * roasVal; totalGastoConRoas += gasto; }
     }
@@ -2060,11 +2139,18 @@ function parseFbAdsCsv(csvText) {
   if (resultPanel) resultPanel.style.display = 'block';
   const gd = document.getElementById('fbads-gasto-display'); if(gd) gd.textContent = '$' + totalGasto.toFixed(2);
   const rd = document.getElementById('fbads-roas-display');  if(rd) rd.textContent = avgRoas > 0 ? avgRoas.toFixed(2)+'x' : '—';
-  const ci = document.getElementById('fbads-campaigns');     if(ci) ci.textContent = campaignCount + ' campaña' + (campaignCount!==1?'s':'') + ' con gasto';
+  // Show conversion info
+  let campLabel = campaignCount + ' campaña' + (campaignCount!==1?'s':'') + ' con gasto';
+  if (didConvert && copRate) {
+    const inverseRate = (1 / copRate).toFixed(0);
+    campLabel += ` · COP→${targetCurr} (1 ${targetCurr} = ${Number(inverseRate).toLocaleString('es-CO')} COP)`;
+  }
+  const ci = document.getElementById('fbads-campaigns'); if(ci) ci.textContent = campLabel;
   const dz = document.getElementById('fbads-dropzone');
   if (dz) {
     dz.style.borderColor = 'var(--green)'; dz.style.background = 'rgba(0,229,160,.06)';
-    dz.innerHTML = '<div style="font-size:14px;">✅</div><div style="font-size:10px;font-weight:600;color:var(--green);">CSV cargado · '+campaignCount+' campañas</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">Clic para cambiar</div><input type="file" id="fbads-file-inp" accept=".csv" style="display:none;" onchange="handleFbAdsFile(this.files[0])">';
+    const convertBadge = didConvert ? ' · COP→'+targetCurr : '';
+    dz.innerHTML = '<div style="font-size:14px;">✅</div><div style="font-size:10px;font-weight:600;color:var(--green);">CSV cargado · '+campaignCount+' campañas'+convertBadge+'</div><div style="font-size:9px;color:var(--muted);margin-top:2px;">Clic para cambiar</div><input type="file" id="fbads-file-inp" accept=".csv" style="display:none;" onchange="handleFbAdsFile(this.files[0])">';
     dz.onclick = () => document.getElementById('fbads-file-inp')?.click();
   }
   calcAtEntry();

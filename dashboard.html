@@ -7,28 +7,37 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#070709;--s1:#0D0D12;--s2:#13131A;--s3:#1A1A24;
-  --border:#1F1F2E;--border2:#2A2A3E;
-  --text:#E8E8F0;--muted:#5A5A78;--dim:#8888A8;
-  --green:#00E5A0;--red:#FF4567;--gold:#FFB547;
-  --blue:#4A8FFF;--purple:#9B6DFF;--teal:#00C9D4;--orange:#FF7A3D;
+  --bg:#060608;--s1:#0C0C11;--s2:#111118;--s3:#17171F;
+  --border:#1A1A28;--border2:#252536;
+  --text:#EEEEF8;--muted:#525270;--dim:#8080A8;
+  --green:#00DFA0;--green2:#00B880;--gdim:rgba(0,223,160,.1);
+  --red:#FF3D6B;--rdim:rgba(255,61,107,.1);
+  --gold:#FFBA3B;--adim:rgba(255,186,59,.1);
+  --blue:#4D91FF;--bdim:rgba(77,145,255,.1);
+  --purple:#A06DFF;--pdim:rgba(160,109,255,.1);
+  --teal:#00C9D4;--orange:#FF7A3D;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.018) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+.app-shell{position:relative;z-index:1;}
 
 /* LAYOUT */
 .app-shell{display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;min-height:100vh;}
-.app-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--s1);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
-.sidebar{background:var(--s1);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:56px;height:calc(100vh - 56px);}
-.main-content{overflow-y:auto;min-width:0;}
+.app-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 20px;background:rgba(13,13,18,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.sidebar{background:var(--bg);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:56px;height:calc(100vh - 56px);}
+.main-content{overflow-y:auto;min-width:0;background:var(--bg);}
 
 /* HEADER */
-.hdr-logo{font-family:'Clash Display',sans-serif;font-size:13px;font-weight:700;color:var(--text);letter-spacing:3px;}
-.hdr-logo span{color:var(--green);}
+.hdr-logo{display:flex;align-items:center;gap:10px;}
+.hdr-logo-icon{width:30px;height:30px;border-radius:8px;background:rgba(0,229,160,.12);border:1px solid rgba(0,229,160,.25);display:flex;align-items:center;justify-content:center;}
+.hdr-logo-text{font-family:'Clash Display',sans-serif;font-size:12px;font-weight:700;color:var(--text);letter-spacing:2.5px;}
+.hdr-logo-text span{color:var(--green);}
+.hdr-logo-badge{font-size:8px;font-weight:700;letter-spacing:.15em;color:var(--green);background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:99px;padding:2px 7px;text-transform:uppercase;}
 .hdr-account{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);flex:1;margin-left:16px;}
 .hdr-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
 .hdr-btn{font-size:11px;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Cabinet Grotesk',sans-serif;white-space:nowrap;}
@@ -41,9 +50,9 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 
 /* SIDEBAR */
 .sidebar-section{padding:14px 12px 8px;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
-.creator-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-radius:10px;margin:2px 8px;transition:all .15s;position:relative;}
-.creator-item:hover{background:var(--s2);}
-.creator-item.active{background:var(--s2);border:1px solid var(--border2);}
+.creator-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-radius:10px;margin:2px 8px;transition:all .15s;position:relative;border:1px solid transparent;}
+.creator-item:hover{background:var(--s1);border-color:var(--border);}
+.creator-item.active{background:var(--s1);border-color:rgba(0,223,160,.25);box-shadow:0 0 20px rgba(0,223,160,.05);}
 .creator-avatar{width:34px;height:34px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--border2);}
 .creator-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.2;}
 .creator-meta{font-size:10px;color:var(--muted);margin-top:1px;}
@@ -68,10 +77,10 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 .btn-compare:hover{opacity:.85;}
 
 /* NAV TABS */
-.nav-tabs{display:flex;gap:4px;padding:12px 24px;background:var(--s1);border-bottom:1px solid var(--border);overflow-x:auto;}.content{padding:24px;max-width:1400px;margin:0 auto;}
-.nav-tab{font-family:'Clash Display',sans-serif;font-size:11px;font-weight:600;letter-spacing:.05em;padding:7px 16px;border-radius:8px;border:none;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s;}
-.nav-tab:hover{color:var(--text);background:var(--s2);}
-.nav-tab.active{background:var(--s2);color:var(--green);border:1px solid var(--border2);}
+.nav-tabs{display:flex;gap:4px;padding:10px 24px;background:rgba(12,12,17,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:56px;z-index:50;}.content{padding:24px;max-width:1400px;margin:0 auto;}
+.nav-tab{font-family:'Clash Display',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .18s;}
+.nav-tab:hover{color:var(--text);background:var(--s2);border-color:var(--border);}
+.nav-tab.active{background:rgba(0,229,160,.08);color:var(--green);border-color:rgba(0,229,160,.25);box-shadow:0 0 12px rgba(0,229,160,.08);}
 
 /* EMPTY STATE */
 .empty-dashboard{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);text-align:center;padding:40px;}
@@ -87,14 +96,14 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 .tab-panel.active{display:block;}
 .sec-label{font-family:'Clash Display',sans-serif;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;margin-top:4px;}
 
-.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px;}
-.card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px;transition:border-color .2s;}
+.card-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.01);}
 .card-title{font-family:'Clash Display',sans-serif;font-weight:600;font-size:14px;}
 .card-meta{font-size:11px;color:var(--muted);}
 
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
-.kpi{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px;animation:fadeUp .4s ease both;}
-.kpi-lbl{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px 18px;animation:fadeUp .4s ease both;transition:all .2s;position:relative;overflow:hidden;}.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,223,160,.18),transparent);}.kpi:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.kpi-lbl{font-size:9px;color:var(--muted);letter-spacing:.14em;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
 .kpi-val{font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px;color:var(--text);margin-bottom:4px;}
 .kpi-sub{font-size:10px;color:var(--muted);}
 
@@ -116,7 +125,7 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 
 .tbl-head{display:grid;padding:10px 20px;background:var(--s3);border-bottom:1px solid var(--border2);}
 .tbl-row{display:grid;padding:12px 20px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;}
-.tbl-row:hover{background:var(--s2);}
+.tbl-row:hover{background:rgba(255,255,255,.02);}
 .tbl-row:last-child{border-bottom:none;}
 .th{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
 .td{font-size:12px;}.td-name{font-size:12px;font-weight:600;color:var(--text);}
@@ -142,9 +151,9 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
 .tag.active{font-weight:600;}
 
 .video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
-.vid-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;transition:border-color .2s;}
-.vid-card:hover{border-color:var(--border2);}
-.vid-card.top-performer{border-color:rgba(0,229,160,.3);}
+.vid-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;transition:all .2s;}
+.vid-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.vid-card.top-performer{border-color:rgba(0,223,160,.25);box-shadow:0 0 20px rgba(0,223,160,.06);}
 .vid-title{font-size:11px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:8px;}
 .vid-footer{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;}
 .vid-stats-panel{display:none;margin:10px 0;background:var(--s3);border-radius:10px;padding:12px;border:1px solid var(--border2);}
@@ -269,10 +278,20 @@ input[type=file]{display:none;}
 
   <!-- HEADER -->
   <header class="app-header">
-    <div class="hdr-logo">TRUE <span>PARTNER</span></div>
+    <div class="hdr-logo">
+      <div class="hdr-logo-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="7" cy="7" r="4" stroke="#00E5A0" stroke-width="1.5"/>
+          <path d="M10.5 10.5L13.5 13.5" stroke="#00E5A0" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7" cy="7" r="1.5" fill="#00E5A0" fill-opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="hdr-logo-text">TRUE PARTNER <span>SCOUT</span></div>
+      <div class="hdr-logo-badge">Analytics</div>
+    </div>
     <div class="hdr-account"><div class="hdr-dot"></div><span id="hdr-account-name">—</span><span class="plan-badge free" id="plan-badge">FREE</span></div>
     <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-      <button class="hdr-btn add" onclick="openAddModal()">➕ Añadir creador</button>
+      <button class="hdr-btn add" onclick="openAddModal()" style="padding:7px 18px;letter-spacing:.03em;">＋ Añadir creador</button>
       <button class="hdr-btn" id="btn-compare-mode" onclick="toggleCompareMode()" style="display:none">⚡ Comparar</button>
       <button class="hdr-btn" onclick="handleLogout()" style="border-color:rgba(255,69,103,.3);color:#ff8fa3;">⎋ Salir</button>
     </div>
@@ -296,10 +315,12 @@ input[type=file]{display:none;}
 
     <!-- EMPTY STATE -->
     <div class="empty-dashboard" id="empty-state">
-      <div class="big">🔍</div>
+      <div style="width:80px;height:80px;border-radius:22px;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);display:flex;align-items:center;justify-content:center;margin-bottom:24px;">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="16" cy="16" r="9" stroke="#00E5A0" stroke-width="2"/><path d="M23 23L31 31" stroke="#00E5A0" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="3.5" fill="#00E5A0" fill-opacity="0.4"/></svg>
+      </div>
       <h2>Encuentra las joyas antes que todos</h2>
       <p>Sube los archivos de FastMoss de cualquier creador de TikTok Shop y descubre qué creativos venden, qué productos dominan y dónde están las oportunidades.</p>
-      <button class="btn-primary" onclick="openAddModal()">➕ Añadir primer creador</button>
+      <button class="btn-primary" onclick="openAddModal()">＋ Añadir primer creador</button>
     </div>
 
     <!-- DASHBOARD -->
@@ -507,7 +528,7 @@ function parsePct(v){if(!v)return 0;return parseFloat(String(v).replace('%','').
 function fmtNum(n){if(!n)return '$0';if(n>=1000000)return '$'+(n/1000000).toFixed(2)+'M';if(n>=1000)return '$'+(n/1000).toFixed(1)+'K';return '$'+n.toFixed(2);}
 function fmtInt(n){return(n||0).toLocaleString();}
 function fmtPct(n,d=3){return(n||0).toFixed(d)+'%';}
-function getQuarter(d){if(!d)return null;const dt=new Date(d);if(isNaN(dt))return null;return `${dt.getFullYear()}-Q${Math.ceil((dt.getMonth()+1)/3)}`;}
+function getQuarter(d){if(!d)return null;const dt=new Date(d);if(isNaN(dt))return null;return dt.getFullYear()+'-Q'+Math.ceil((dt.getMonth()+1)/3);}
 function getMonthKey(d){if(!d)return '';const dt=new Date(d);if(isNaN(dt))return '';return dt.toISOString().substring(0,7);}
 function getMonthLabel(d){if(!d)return '—';const dt=new Date(d);if(isNaN(dt))return '—';return dt.toLocaleString('es',{month:'long',year:'numeric'});}
 function sortQ(arr){return[...new Set(arr)].sort();}
@@ -518,7 +539,7 @@ function rendLabel(r){
   if(r>=0.05)return{label:'⚡ Normal',color:'#FFB547',bg:'rgba(255,181,71,.1)',border:'rgba(255,181,71,.2)'};
   return{label:'❄️ Frío',color:'#5A5A78',bg:'rgba(90,90,120,.1)',border:'rgba(90,90,120,.2)'};
 }
-function rendBadge(r){const l=rendLabel(r);return `<span style="display:inline-block;font-size:10px;padding:3px 10px;border-radius:99px;font-weight:700;background:${l.bg};color:${l.color};border:1px solid ${l.border}">${l.label}</span>`;}
+function rendBadge(r){const l=rendLabel(r);return '<span style="display:inline-block;font-size:10px;padding:3px 10px;border-radius:99px;font-weight:700;background:'+l.bg+';color:'+l.color+';border:1px solid '+l.border+'">'+l.label+'</span>';}
 function rendimiento(r){
   var p=Math.round(r*10);
   if(r===0)return '<span class="conv-badge conv-zero">— Sin ventas</span>';
@@ -945,9 +966,20 @@ function renderConversion(creator) {
   const totalUnits = vids.reduce((s,v)=>s+v.units,0);
   const totalGMV = vids.reduce((s,v)=>s+v.gmv,0);
   const overallConv = totalViews > 0 ? totalUnits/totalViews*100 : 0;
-  const sorted = [...vids].sort((a,b)=>b.convRate-a.convRate);
+  // Quality filter: mínimo 1000 vistas Y 10 unidades para señal real de conversión
+  // Score combinado: convRate * log(units+1) para balancear % vs volumen real
+  const qualityVids = vids.filter(v => v.views >= 1000 && v.units >= 10);
+  const fallbackVids = vids.filter(v => v.views >= 300 && v.units >= 3);
+  const sortSource = qualityVids.length >= 5 ? qualityVids : (fallbackVids.length >= 3 ? fallbackVids : vids.filter(v=>v.units>0&&v.views>0));
+  // Sort by convRate but weighted by volume
+  const weightedSort = (a,b) => {
+    const scoreA = a.convRate * Math.log10(a.units + 1);
+    const scoreB = b.convRate * Math.log10(b.units + 1);
+    return scoreB - scoreA;
+  };
+  const sorted = [...sortSource].sort(weightedSort);
   const vidWithSales = vids.filter(v=>v.units>0).length;
-  const top20 = vids.filter(v=>v.views>0).sort((a,b)=>b.convRate-a.convRate).slice(0,20);
+  const top20 = [...sortSource].sort(weightedSort).slice(0,20);
   const cols7 = '40px 1fr 90px 75px 75px 90px 100px';
 
   document.getElementById('tab-conversion').innerHTML =
@@ -959,7 +991,7 @@ function renderConversion(creator) {
       {l:'Facturación via Creativo',v:fmtNum(totalGMV),s:`${fmtInt(totalViews)} vistas totales`},
     ].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('')}</div>` +
     `<div class="charts-2"><div class="chart-box"><div class="chart-ttl">Conv. Rate Top 20</div><div class="chart-wrap"><canvas id="ch-conv-bar"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Vistas vs Unidades</div><div class="chart-wrap"><canvas id="ch-scatter"></canvas></div></div></div>` +
-    `<div class="sec-label">Ranking por Conversión</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta">top 20</div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div>`;
+    `<div class="sec-label">Ranking por Conversión</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta" style="display:flex;gap:8px;align-items:center;"><span>top 20</span><span style="font-size:9px;color:var(--muted);background:var(--s2);padding:2px 8px;border-radius:5px;">mín. 500 vistas · 5 ventas</span></div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div>`;
 
   setTimeout(() => {
     if(CHARTS['ch-conv-bar'])CHARTS['ch-conv-bar'].destroy();
@@ -1050,15 +1082,18 @@ function getFilteredVideos(creator) {
       vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); return !isNaN(d)&&d>=from&&d<=to; });
     }
   }
-  // Product filter — match videos to products by niche/name similarity
+  // Product filter removed — FastMoss doesn't link videos to products
+  // Filtering by niche instead when vidProductFilter is set
   if (vidProductFilter !== 'todos') {
     const prod = creator.products.find(p=>p.name===vidProductFilter);
     if (prod) {
-      // Match by niche or by partial name overlap
-      vids = vids.filter(v => v.niche === prod.category || v.niche === prod.niche ||
-        (prod.name && v.title && prod.name.split(' ').slice(0,3).some(w=>w.length>3&&v.title.toLowerCase().includes(w.toLowerCase()))));
-      // If too strict (no results), show by niche only
-      if (!vids.length) vids = creator.videos.filter(v=>v.niche===prod.category);
+      // Use inferred niche as best approximation
+      const inferredNiche = prod.category;
+      vids = vids.filter(v => v.niche && (
+        inferredNiche.toLowerCase().includes(v.niche.toLowerCase()) ||
+        v.niche.toLowerCase().includes(inferredNiche.toLowerCase().split('/')[0].trim())
+      ));
+      if (!vids.length) vids = creator.videos; // fallback: show all if no match
     }
   }
   // Result filter
@@ -1094,12 +1129,8 @@ function renderVideoGrid(creator) {
     const id='v'+idx;
     const isTop=v.convRate>=0.15;
     const thumbBg=`background:var(--s3);display:flex;align-items:center;justify-content:center;`;
-    // Find matching product for this video
-    const matchProd = creator.products.filter(p=>p.units>0).find(p=>
-      p.category === v.niche ||
-      (p.name && v.title && p.name.split(' ').slice(0,3).some(w=>w.length>3&&v.title.toLowerCase().includes(w.toLowerCase())))
-    );
-    const prodLabel = matchProd ? matchProd.name.substring(0,32)+(matchProd.name.length>32?'…':'') : (v.niche||'');
+    // No product-video link in FastMoss data — show niche tag instead (honest)
+    const nicheLabel = v.niche || '';
 
     return `<div class="vid-card ${isTop?'top-performer':''}">
       <div style="position:relative;border-radius:10px;overflow:hidden;margin-bottom:10px;height:140px;cursor:pointer;${thumbBg}" onclick="toggleVidStats('${id}')">
@@ -1110,7 +1141,1159 @@ function renderVideoGrid(creator) {
         </div>
         ${isTop?'<div style="position:absolute;top:8px;right:8px;font-size:15px">🔥</div>':''}
       </div>
-      ${prodLabel?`<div style="font-size:10px;font-weight:600;color:var(--purple);background:rgba(155,109,255,.1);border:1px solid rgba(155,109,255,.2);border-radius:6px;padding:3px 8px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${matchProd?matchProd.name:v.niche}">📦 ${prodLabel}</div>`:''}
+      ${nicheLabel?`<div style="font-size:9px;font-weight:700;color:var(--muted);background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;margin-bottom:6px;display:inline-block;letter-spacing:.05em;text-transform:uppercase;">${nicheLabel}</div>`:''}
+      <div class="vid-title" onclick="toggleVidStats('${id}')" style="cursor:pointer">${v.title.substring(0,88)}${v.title.length>88?'…':''}</div>
+      <div class="vid-stats-panel" id="vsp_${id}">
+        <div class="vsp-grid">
+          <div class="vsp-cell"><div class="vsp-lbl">Vistas</div><div class="vsp-val">${fmtInt(v.views)}</div></div>
+          <div class="vsp-cell"><div class="vsp-lbl">Likes</div><div class="vsp-val">${fmtInt(v.likes)}</div></div>
+          <div class="vsp-cell"><div class="vsp-lbl">Unidades</div><div class="vsp-val" style="color:var(--gold)">${v.units}</div></div>
+          <div class="vsp-cell"><div class="vsp-lbl">Facturación</div><div class="vsp-val" style="color:var(--green);font-size:14px">${fmtNum(v.gmv)}</div></div>
+        </div>
+        TYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>True Partner Scout — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060608;--s1:#0C0C11;--s2:#111118;--s3:#17171F;
+  --border:#1A1A28;--border2:#252536;
+  --text:#EEEEF8;--muted:#525270;--dim:#8080A8;
+  --green:#00DFA0;--green2:#00B880;--gdim:rgba(0,223,160,.1);
+  --red:#FF3D6B;--rdim:rgba(255,61,107,.1);
+  --gold:#FFBA3B;--adim:rgba(255,186,59,.1);
+  --blue:#4D91FF;--bdim:rgba(77,145,255,.1);
+  --purple:#A06DFF;--pdim:rgba(160,109,255,.1);
+  --teal:#00C9D4;--orange:#FF7A3D;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.018) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
+.app-shell{position:relative;z-index:1;}
+
+/* LAYOUT */
+.app-shell{display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;min-height:100vh;}
+.app-header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:0 20px;background:rgba(13,13,18,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.sidebar{background:var(--bg);border-right:1px solid var(--border);overflow-y:auto;position:sticky;top:56px;height:calc(100vh - 56px);}
+.main-content{overflow-y:auto;min-width:0;background:var(--bg);}
+
+/* HEADER */
+.hdr-logo{display:flex;align-items:center;gap:10px;}
+.hdr-logo-icon{width:30px;height:30px;border-radius:8px;background:rgba(0,229,160,.12);border:1px solid rgba(0,229,160,.25);display:flex;align-items:center;justify-content:center;}
+.hdr-logo-text{font-family:'Clash Display',sans-serif;font-size:12px;font-weight:700;color:var(--text);letter-spacing:2.5px;}
+.hdr-logo-text span{color:var(--green);}
+.hdr-logo-badge{font-size:8px;font-weight:700;letter-spacing:.15em;color:var(--green);background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);border-radius:99px;padding:2px 7px;text-transform:uppercase;}
+.hdr-account{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);flex:1;margin-left:16px;}
+.hdr-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.hdr-btn{font-size:11px;padding:6px 14px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;font-family:'Cabinet Grotesk',sans-serif;white-space:nowrap;}
+.hdr-btn:hover{border-color:var(--green);color:var(--green);}
+.hdr-btn.add{background:var(--green);color:#070709;border-color:var(--green);font-weight:700;}
+.hdr-btn.add:hover{opacity:.88;}
+.plan-badge{font-size:9px;padding:2px 8px;border-radius:99px;font-weight:700;letter-spacing:.05em;}
+.plan-badge.free{background:rgba(90,90,120,.2);color:var(--muted);border:1px solid rgba(90,90,120,.3);}
+.plan-badge.pro{background:rgba(0,229,160,.1);color:var(--green);border:1px solid rgba(0,229,160,.25);}
+
+/* SIDEBAR */
+.sidebar-section{padding:14px 12px 8px;font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);}
+.creator-item{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-radius:10px;margin:2px 8px;transition:all .15s;position:relative;border:1px solid transparent;}
+.creator-item:hover{background:var(--s1);border-color:var(--border);}
+.creator-item.active{background:var(--s1);border-color:rgba(0,223,160,.25);box-shadow:0 0 20px rgba(0,223,160,.05);}
+.creator-avatar{width:34px;height:34px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--border2);}
+.creator-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.2;}
+.creator-meta{font-size:10px;color:var(--muted);margin-top:1px;}
+.creator-score{font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;margin-left:auto;flex-shrink:0;}
+.score-a{color:var(--green);}
+.score-b{color:var(--gold);}
+.score-c{color:var(--orange);}
+.score-d{color:var(--red);}
+.creator-del{position:absolute;right:8px;top:50%;transform:translateY(-50%);opacity:0;font-size:11px;color:var(--muted);background:var(--s3);border:1px solid var(--border);border-radius:5px;padding:2px 6px;cursor:pointer;transition:all .15s;}
+.creator-item:hover .creator-del{opacity:1;}
+.creator-del:hover{color:var(--red);border-color:var(--red);}
+
+.sidebar-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7;}
+.sidebar-empty .icon{font-size:28px;margin-bottom:8px;}
+
+.compare-bar{margin:8px;padding:10px 12px;background:rgba(74,143,255,.06);border:1px solid rgba(74,143,255,.2);border-radius:10px;display:none;}
+.compare-bar.show{display:block;}
+.compare-bar-title{font-size:10px;font-weight:700;color:var(--blue);margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase;}
+.compare-selected{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.compare-chip{font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(74,143,255,.1);color:var(--blue);border:1px solid rgba(74,143,255,.2);}
+.btn-compare{width:100%;padding:8px;border-radius:8px;background:var(--blue);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-compare:hover{opacity:.85;}
+
+/* NAV TABS */
+.nav-tabs{display:flex;gap:4px;padding:10px 24px;background:rgba(12,12,17,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:56px;z-index:50;}.content{padding:24px;max-width:1400px;margin:0 auto;}
+.nav-tab{font-family:'Clash Display',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .18s;}
+.nav-tab:hover{color:var(--text);background:var(--s2);border-color:var(--border);}
+.nav-tab.active{background:rgba(0,229,160,.08);color:var(--green);border-color:rgba(0,229,160,.25);box-shadow:0 0 12px rgba(0,229,160,.08);}
+
+/* EMPTY STATE */
+.empty-dashboard{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 120px);text-align:center;padding:40px;}
+.empty-dashboard .big{font-size:56px;margin-bottom:20px;}
+.empty-dashboard h2{font-family:'Clash Display',sans-serif;font-size:28px;font-weight:700;margin-bottom:10px;}
+.empty-dashboard p{color:var(--muted);font-size:14px;max-width:420px;line-height:1.7;margin-bottom:28px;}
+.btn-primary{background:var(--green);color:#070709;font-size:14px;font-weight:700;padding:14px 32px;border-radius:12px;border:none;cursor:pointer;transition:all .2s;font-family:'Cabinet Grotesk',sans-serif;}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,229,160,.25);}
+
+/* CONTENT */
+.content{padding:24px;max-width:1400px;margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.sec-label{font-family:'Clash Display',sans-serif;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;margin-top:4px;}
+
+.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px;transition:border-color .2s;}
+.card-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.01);}
+.card-title{font-family:'Clash Display',sans-serif;font-weight:600;font-size:14px;}
+.card-meta{font-size:11px;color:var(--muted);}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.kpi{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px 18px;animation:fadeUp .4s ease both;transition:all .2s;position:relative;overflow:hidden;}.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,223,160,.18),transparent);}.kpi:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3);}
+.kpi-lbl{font-size:9px;color:var(--muted);letter-spacing:.14em;font-weight:700;text-transform:uppercase;margin-bottom:6px;}
+.kpi-val{font-family:'Clash Display',sans-serif;font-weight:700;font-size:24px;color:var(--text);margin-bottom:4px;}
+.kpi-sub{font-size:10px;color:var(--muted);}
+
+.charts-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.charts-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;}
+.chart-box{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px;}.chart-box.clickable canvas{cursor:pointer;}
+.chart-ttl{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;}
+.chart-wrap{height:180px;position:relative;}
+
+.insights-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px;}
+.insight{padding:14px 16px;border-radius:12px;border:1px solid var(--border);}
+.insight-good{background:rgba(0,229,160,.05);border-color:rgba(0,229,160,.15);}
+.insight-warn{background:rgba(255,181,71,.05);border-color:rgba(255,181,71,.15);}
+.insight-bad{background:rgba(255,69,103,.05);border-color:rgba(255,69,103,.15);}
+.insight-info{background:rgba(74,143,255,.05);border-color:rgba(74,143,255,.15);}
+.insight-icon{font-size:18px;margin-bottom:6px;}
+.insight-title{font-size:12px;font-weight:700;margin-bottom:4px;}
+.insight-text{font-size:11px;color:var(--muted);line-height:1.5;}
+
+.tbl-head{display:grid;padding:10px 20px;background:var(--s3);border-bottom:1px solid var(--border2);}
+.tbl-row{display:grid;padding:12px 20px;border-bottom:1px solid var(--border);align-items:center;transition:background .15s;}
+.tbl-row:hover{background:rgba(255,255,255,.02);}
+.tbl-row:last-child{border-bottom:none;}
+.th{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;}
+.td{font-size:12px;}.td-name{font-size:12px;font-weight:600;color:var(--text);}
+.td-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.td-green{color:var(--green);font-weight:600;font-size:12px;}
+.td-gold{color:var(--gold);}
+.td-blue{color:var(--blue);}
+.td-num{font-family:'Clash Display',sans-serif;font-weight:600;}
+.rank{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.rank-1{background:rgba(255,181,71,.15);}.rank-2{background:rgba(200,200,200,.1);}.rank-3{background:rgba(205,127,50,.1);}
+.rank-n{font-size:11px;color:var(--muted);font-family:'Clash Display',sans-serif;font-weight:600;}
+
+.conv-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;letter-spacing:.04em;}
+.conv-great{background:rgba(0,229,160,.15);color:var(--green);border:1px solid rgba(0,229,160,.3);}
+.conv-good{background:rgba(74,143,255,.12);color:var(--blue);border:1px solid rgba(74,143,255,.25);}
+.conv-avg{background:rgba(255,181,71,.12);color:var(--gold);border:1px solid rgba(255,181,71,.25);}
+.conv-low{background:rgba(255,69,103,.12);color:var(--red);border:1px solid rgba(255,69,103,.2);}
+.conv-zero{background:var(--s3);color:var(--muted);border:1px solid var(--border);}
+
+.tag-scroll{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.tag{font-size:11px;padding:5px 12px;border-radius:99px;border:1px solid var(--border2);background:var(--s2);color:var(--muted);cursor:pointer;transition:all .15s;}
+.tag:hover,.tag.active{border-color:var(--green);color:var(--green);background:rgba(0,229,160,.06);}
+.tag.active{font-weight:600;}
+
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
+.vid-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;transition:all .2s;}
+.vid-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.vid-card.top-performer{border-color:rgba(0,223,160,.25);box-shadow:0 0 20px rgba(0,223,160,.06);}
+.vid-title{font-size:11px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:8px;}
+.vid-footer{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.vid-stats-panel{display:none;margin:10px 0;background:var(--s3);border-radius:10px;padding:12px;border:1px solid var(--border2);}
+.vid-stats-panel.open{display:block;}
+.vsp-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.vsp-cell{text-align:center;padding:8px;background:var(--s2);border-radius:8px;}
+.vsp-lbl{font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+.vsp-val{font-family:'Clash Display',sans-serif;font-weight:700;font-size:16px;}
+.vsp-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--s2);border-radius:8px;margin-bottom:6px;font-size:10px;}
+.vsp-row-lbl{color:var(--muted);}
+.vsp-links{display:flex;gap:6px;margin-top:6px;}
+.vsp-link{flex:1;text-align:center;font-size:11px;padding:7px;border-radius:8px;text-decoration:none;font-weight:700;transition:opacity .15s;}
+.vsp-link:hover{opacity:.8;}
+.vsp-link-tt{background:rgba(255,69,103,.12);color:var(--red);border:1px solid rgba(255,69,103,.2);}
+.vsp-link-fm{background:var(--s2);color:var(--dim);border:1px solid var(--border);}
+.stats-toggle-btn{font-size:9px;padding:4px 10px;border-radius:6px;background:var(--s3);color:var(--dim);border:1px solid var(--border);cursor:pointer;font-weight:600;transition:all .15s;font-family:'Cabinet Grotesk',sans-serif;}
+.stats-toggle-btn:hover,.stats-toggle-btn.open{border-color:var(--green);color:var(--green);}
+
+.niche-pill{display:inline-block;font-size:9px;padding:2px 7px;border-radius:99px;font-weight:600;background:rgba(155,109,255,.1);color:var(--purple);border:1px solid rgba(155,109,255,.2);}
+.niche-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:24px;}
+.niche-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.niche-name{font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;margin-bottom:12px;}
+.niche-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11px;}
+.niche-key{color:var(--muted);}
+
+.chip{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;}
+.chip-cat{background:var(--s3);color:var(--dim);border:1px solid var(--border);}
+
+.expand-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:var(--s3);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .2s;flex-shrink:0;}
+.expand-btn:hover{border-color:var(--green);color:var(--green);}
+.expand-btn.open{background:rgba(0,229,160,.08);border-color:var(--green);color:var(--green);}
+.monthly-panel{display:none;border-top:1px solid var(--border);background:var(--s2);padding:14px 20px;animation:fadeIn .2s ease;}
+.monthly-panel.open{display:block;}
+.month-grid{display:flex;gap:8px;flex-wrap:wrap;}
+.month-pill{background:var(--s3);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;min-width:100px;text-align:left;position:relative;overflow:hidden;}
+.month-pill.best{border-color:rgba(0,229,160,.35);background:rgba(0,229,160,.05);}
+.month-pill-bar{position:absolute;bottom:0;left:0;height:3px;background:var(--green);border-radius:0;}
+.month-pill-label{font-size:9px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.month-pill-units{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;}
+.month-pill-gmv{font-size:9px;color:var(--muted);margin-top:2px;}
+
+.timeline{display:flex;flex-direction:column;}
+.tl-item{display:grid;grid-template-columns:80px 20px 1fr;gap:12px;align-items:flex-start;}
+.tl-date{font-size:10px;color:var(--muted);padding-top:4px;text-align:right;}
+.tl-line{display:flex;flex-direction:column;align-items:center;}
+.tl-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.tl-line-bar{flex:1;width:1px;background:var(--border);min-height:24px;}
+.tl-content{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.tl-content-title{font-size:12px;font-weight:600;margin-bottom:4px;}
+.tl-content-meta{font-size:10px;color:var(--muted);}
+
+/* SCORE RING */
+.score-ring{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:50%;font-family:'Clash Display',sans-serif;font-weight:800;font-size:16px;border:3px solid;}
+.score-ring.a{border-color:var(--green);color:var(--green);}
+.score-ring.b{border-color:var(--gold);color:var(--gold);}
+.score-ring.c{border-color:var(--orange);color:var(--orange);}
+.score-ring.d{border-color:var(--red);color:var(--red);}
+
+/* COMPARE */
+.compare-grid{display:grid;gap:16px;margin-bottom:24px;}
+.compare-col{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.compare-col.highlight{border-color:rgba(0,229,160,.3);background:linear-gradient(160deg,rgba(0,229,160,.04) 0%,var(--s1) 60%);}
+.compare-name{font-family:'Clash Display',sans-serif;font-weight:700;font-size:15px;margin-bottom:4px;}
+.compare-metric{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.compare-metric:last-child{border-bottom:none;}
+.compare-metric-lbl{color:var(--muted);}
+.compare-metric-val{font-weight:700;}
+.compare-metric-val.best{color:var(--green);}
+
+/* RECOMMENDATIONS */
+.rec-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;display:flex;gap:16px;align-items:flex-start;}
+.rec-card.high{border-color:rgba(0,229,160,.25);}
+.rec-card.medium{border-color:rgba(255,181,71,.2);}
+.rec-card.low{border-color:rgba(90,90,120,.2);}
+.rec-priority{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:5px;margin-bottom:8px;display:inline-block;}
+.rec-priority.high{background:rgba(0,229,160,.1);color:var(--green);}
+.rec-priority.medium{background:rgba(255,181,71,.1);color:var(--gold);}
+.rec-priority.low{background:rgba(90,90,120,.1);color:var(--muted);}
+.rec-title{font-weight:700;font-size:13px;margin-bottom:6px;}
+.rec-text{font-size:12px;color:var(--muted);line-height:1.6;}
+.rec-metrics{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.rec-metric{font-size:10px;padding:3px 9px;border-radius:5px;background:var(--s2);border:1px solid var(--border);color:var(--dim);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:999;background:rgba(7,7,9,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:18px;padding:32px;width:min(560px,92vw);max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Clash Display',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6;}
+.modal-close{position:absolute;top:16px;right:16px;background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.drop-zone{background:var(--s2);border:1.5px dashed var(--border2);border-radius:12px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .3s;}
+.drop-zone:hover,.drop-zone.active{border-color:var(--green);}
+.drop-zone.has-file{border-color:var(--green);border-style:solid;background:rgba(0,229,160,.04);}
+.dz-icon{font-size:24px;}
+.dz-label{font-weight:600;font-size:13px;}
+.dz-hint{font-size:10px;color:var(--muted);}
+.dz-filename{font-size:10px;color:var(--green);font-weight:600;word-break:break-all;text-align:center;}
+input[type=file]{display:none;}
+.modal-btn{width:100%;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--green);color:#070709;transition:all .2s;margin-top:8px;}
+.modal-btn:hover{opacity:.88;}
+.modal-btn:disabled{opacity:.4;cursor:not-allowed;}
+.creator-name-input{width:100%;padding:10px 14px;border-radius:10px;background:var(--s2);border:1px solid var(--border2);color:var(--text);font-size:13px;font-family:'Cabinet Grotesk',sans-serif;margin-bottom:14px;outline:none;}
+.creator-name-input:focus{border-color:var(--green);}
+
+/* UPGRADE MODAL */
+.upgrade-modal{background:var(--s1);border:1px solid rgba(0,229,160,.3);border-radius:18px;padding:40px;max-width:420px;width:90%;text-align:center;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+@media(max-width:768px){
+  .app-shell{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .charts-2,.charts-3{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="hdr-logo">
+      <div class="hdr-logo-icon">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="7" cy="7" r="4" stroke="#00E5A0" stroke-width="1.5"/>
+          <path d="M10.5 10.5L13.5 13.5" stroke="#00E5A0" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="7" cy="7" r="1.5" fill="#00E5A0" fill-opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="hdr-logo-text">TRUE PARTNER <span>SCOUT</span></div>
+      <div class="hdr-logo-badge">Analytics</div>
+    </div>
+    <div class="hdr-account"><div class="hdr-dot"></div><span id="hdr-account-name">—</span><span class="plan-badge free" id="plan-badge">FREE</span></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+      <button class="hdr-btn add" onclick="openAddModal()" style="padding:7px 18px;letter-spacing:.03em;">＋ Añadir creador</button>
+      <button class="hdr-btn" id="btn-compare-mode" onclick="toggleCompareMode()" style="display:none">⚡ Comparar</button>
+      <button class="hdr-btn" onclick="handleLogout()" style="border-color:rgba(255,69,103,.3);color:#ff8fa3;">⎋ Salir</button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">Creadores analizados</div>
+    <div id="creator-list">
+      <div class="sidebar-empty"><div class="icon">👤</div>Aún no has añadido ningún creador.<br>Clic en "Añadir creador" para empezar.</div>
+    </div>
+    <div class="compare-bar" id="compare-bar">
+      <div class="compare-bar-title">Comparando</div>
+      <div class="compare-selected" id="compare-selected"></div>
+      <button class="btn-compare" onclick="runCompare()">Ver comparación →</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content" id="main-content">
+
+    <!-- EMPTY STATE -->
+    <div class="empty-dashboard" id="empty-state">
+      <div style="width:80px;height:80px;border-radius:22px;background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);display:flex;align-items:center;justify-content:center;margin-bottom:24px;">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="16" cy="16" r="9" stroke="#00E5A0" stroke-width="2"/><path d="M23 23L31 31" stroke="#00E5A0" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="16" r="3.5" fill="#00E5A0" fill-opacity="0.4"/></svg>
+      </div>
+      <h2>Encuentra las joyas antes que todos</h2>
+      <p>Sube los archivos de FastMoss de cualquier creador de TikTok Shop y descubre qué creativos venden, qué productos dominan y dónde están las oportunidades.</p>
+      <button class="btn-primary" onclick="openAddModal()">＋ Añadir primer creador</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard-content" style="display:none;">
+      <div class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" onclick="showTab('overview',this)">📊 Overview</button>
+        <button class="nav-tab" onclick="showTab('conversion',this)">⚡ Conversión</button>
+        <button class="nav-tab" onclick="showTab('videos',this)" id="tab-btn-videos">🎬 Creativos</button>
+        <button class="nav-tab" onclick="showTab('products',this)" id="tab-btn-products">🛍️ Productos</button>
+        <button class="nav-tab" onclick="showTab('niches',this)" id="tab-btn-niches">🎯 Nichos</button>
+        <button class="nav-tab" onclick="showTab('timeline',this)" id="tab-btn-timeline">📅 Timeline</button>
+        <button class="nav-tab" onclick="showTab('recommendations',this)" id="tab-btn-recs">💡 Recomendaciones</button>
+        <button class="nav-tab" onclick="showTab('ai',this)" id="tab-btn-ai">🤖 Análisis IA</button>
+        <button class="nav-tab" onclick="showTab('compare',this)" id="tab-btn-compare" style="display:none">⚡ Comparar</button>
+      </div>
+
+      <div class="content">
+        <div class="tab-panel active" id="tab-overview"></div>
+        <div class="tab-panel" id="tab-conversion"></div>
+        <div class="tab-panel" id="tab-videos"></div>
+        <div class="tab-panel" id="tab-products"></div>
+        <div class="tab-panel" id="tab-niches"></div>
+        <div class="tab-panel" id="tab-timeline"></div>
+        <div class="tab-panel" id="tab-recommendations"></div>
+        <div class="tab-panel" id="tab-ai"></div>
+        <div class="tab-panel" id="tab-compare"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ADD CREATOR MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closeAddModal()">✕</button>
+    <div class="modal-title">Añadir creador</div>
+    <div class="modal-sub">Sube los archivos de FastMoss del creador que quieres analizar.</div>
+    <input type="text" class="creator-name-input" id="creator-name-input" placeholder="Nombre del creador (opcional)">
+    <div class="upload-grid">
+      <div class="drop-zone" id="dz-products" onclick="document.getElementById('inp-products').click()">
+        <div class="dz-icon">🛍️</div>
+        <div class="dz-label">Productos</div>
+        <div class="dz-hint">Goods for Sale List .xlsx</div>
+        <div class="dz-filename" id="fn-products" style="display:none"></div>
+      </div>
+      <div class="drop-zone" id="dz-videos" onclick="document.getElementById('inp-videos').click()">
+        <div class="dz-icon">🎬</div>
+        <div class="dz-label">Creativos</div>
+        <div class="dz-hint">Video List .xlsx</div>
+        <div class="dz-filename" id="fn-videos" style="display:none"></div>
+      </div>
+    </div>
+    <input type="file" id="inp-products" accept=".xlsx,.xls">
+    <input type="file" id="inp-videos" accept=".xlsx,.xls">
+    <button class="modal-btn" id="btn-analyze" onclick="runAnalysis()" disabled>Analizar creador →</button>
+  </div>
+</div>
+
+<!-- UPGRADE MODAL -->
+<div class="modal-overlay" id="upgrade-modal">
+  <div class="upgrade-modal">
+    <div style="font-size:36px;margin-bottom:16px;">🔒</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:10px;">Función exclusiva Pro</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.6;">Desbloquea todos los tabs, analiza hasta 5 creadores y accede a reportes completos.</div>
+    <a href="./precios.html" style="display:block;background:var(--green);color:#070709;font-weight:700;font-size:14px;padding:13px;border-radius:10px;text-decoration:none;margin-bottom:12px;">Ver planes Pro →</a>
+    <button onclick="document.getElementById('upgrade-modal').classList.remove('open')" style="background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer;">Cerrar</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+(async () => {
+  if (window.location.pathname.includes('index')) return;
+  const { createClient } = supabase;
+  const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let session = null;
+  try { const r = await _sb.auth.getSession(); session = r.data.session; } catch(e) { return; }
+  if (!session) { window.location.replace(window.location.origin + '/login.html'); return; }
+  // Store that user accessed dashboard directly — fine to stay here
+  window._sb = _sb;
+  window._session = session;
+  window._userPlan = 'free';
+  try {
+    const { data: profile } = await _sb.from('profiles').select('plan').eq('id', session.user.id).single();
+    if (profile && profile.plan) window._userPlan = profile.plan;
+  } catch(e) {}
+  const applyWhenReady = () => {
+    const el = document.getElementById('hdr-account-name');
+    if (el) el.textContent = session.user.email;
+    const badge = document.getElementById('plan-badge');
+    if (badge) { badge.textContent = window._userPlan.toUpperCase(); badge.className = 'plan-badge ' + window._userPlan; }
+    applyPlanRestrictions(window._userPlan);
+    loadCreatorsFromStorage();
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyWhenReady);
+  else applyWhenReady();
+})();
+
+// ── PLAN RESTRICTIONS ─────────────────────────────────────────────────────
+function applyPlanRestrictions(plan) {
+  window._plan = plan;
+  if (plan === 'pro') return;
+  // Lock tabs for free users
+  const proTabIds = ['tab-btn-videos','tab-btn-products','tab-btn-niches','tab-btn-timeline'];
+  proTabIds.forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn || btn.dataset.locked) return;
+    btn.dataset.locked = '1';
+    btn.innerHTML = btn.innerHTML + ' 🔒';
+    btn.style.opacity = '.45';
+    btn.onclick = e => { e.stopPropagation(); showUpgradeModal(); return false; };
+  });
+}
+
+function showUpgradeModal() { document.getElementById('upgrade-modal').classList.add('open'); }
+
+// ── STORAGE ───────────────────────────────────────────────────────────────
+// Creators stored in localStorage as array of {id, name, products, videos, analyzedAt}
+function saveCreatorsToStorage() {
+  try {
+    var _uid = window._session?.user?.id || 'anonymous';
+    localStorage.removeItem('tps_' + _uid);
+    var data = window._creators.filter(c=>!c._metaOnly).map(c => ({
+      id:c.id, name:c.name, analyzedAt:c.analyzedAt,
+      score:c.score, gmv:c.gmv, units:c.units, convRate:c.convRate,
+      prodCount:c.prodCount, vidCount:c.vidCount,
+      products: (c.products||[]).map(p=>({
+        name:p.name,category:p.category,store:p.store,price:p.price,
+        units:p.units,gmv:p.gmv,commission:p.commission,launchDate:p.launchDate,
+        quarter:p.quarter,monthKey:p.monthKey,month:p.month,
+        tiktokLink:p.tiktokLink,fastmossLink:p.fastmossLink,cover:p.cover
+      })),
+      videos: (c.videos||[]).map(v=>({
+        title:v.title,publishDate:v.publishDate,quarter:v.quarter,
+        duration:v.duration,type:v.type,units:v.units,views:v.views,
+        gmv:v.gmv,likes:v.likes,convRate:v.convRate,interRate:v.interRate,
+        fastmossLink:v.fastmossLink,tiktokLink:v.tiktokLink,cover:v.cover,niche:v.niche
+      }))
+    }));
+    localStorage.setItem('tps_' + _uid, JSON.stringify(data));
+  } catch(e) {
+    console.warn('Storage error:', e);
+  }
+}
+function loadCreatorsFromStorage() {
+  try {
+    var _uid = window._session?.user?.id || 'anonymous';
+    var raw = localStorage.getItem('tps_' + _uid);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    saved.forEach(s => {
+      if (window._creators.find(c => c.id === s.id)) return;
+      const hasData = s.products && s.products.length > 0;
+      if (hasData) {
+        // Restore _matchedProd for videos
+        s.videos = (s.videos||[]).map(v => ({...v, _matchedProd: null}));
+        // Re-match videos to products
+        s.videos.forEach(v => {
+          const titleLower = (v.title||'').toLowerCase();
+          const words = titleLower.split(/\s+/).filter(w=>w.length>4);
+          let best=null, bestScore=0;
+          for(const p of s.products.filter(x=>x.units>0)){
+            const pWords=p.name.toLowerCase().split(/[\s\-|,]+/);
+            let score=0;
+            for(const w of words){if(pWords.some(pw=>pw.length>3&&(pw.includes(w)||w.includes(pw))))score++;}
+            if(score>bestScore){bestScore=score;best=p;}
+          }
+          v._matchedProd = bestScore>=1?best:null;
+        });
+      }
+      window._creators.push({...s, _metaOnly: !hasData});
+    });
+    renderSidebar();
+    // Auto-load first creator with data
+    const first = window._creators.find(c => !c._metaOnly);
+    if (first) setActiveCreator(first.id);
+  } catch(e) { console.warn('Load error:', e); }
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────
+window._creators = [];
+window._activeCreatorId = null;
+window._compareIds = [];
+window._compareMode = false;
+const CHARTS = {};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function parseGMV(v){
+  if(!v)return 0;
+  var s=String(v).replace(/[$,]/g,'').trim();
+  if(/mill[oó]n/i.test(s))return parseFloat(s.replace(/mill[oó]n/i,'').trim())*1e6;
+  if(/millon/i.test(s))return parseFloat(s.replace(/millon/i,'').trim())*1e6;
+  if(/mill/i.test(s))return parseFloat(s.replace(/mill/i,'').trim())*1e6;
+  if(/mil/i.test(s))return parseFloat(s.replace(/mil/i,'').trim())*1000;
+  if(/k$/i.test(s))return parseFloat(s.replace(/k$/i,'').trim())*1000;
+  if(/m$/i.test(s))return parseFloat(s.replace(/m$/i,'').trim())*1e6;
+  return parseFloat(s)||0;
+}
+function parsePrice(v){if(!v)return 0;const s=String(v).replace('$','').replace(',','').trim();if(s.includes('-')){const p=s.split('-').map(x=>parseFloat(x.trim())).filter(Boolean);return p.length?p.reduce((a,b)=>a+b)/p.length:0;}return parseFloat(s)||0;}
+function parsePct(v){if(!v)return 0;return parseFloat(String(v).replace('%','').trim())||0;}
+function fmtNum(n){if(!n)return '$0';if(n>=1000000)return '$'+(n/1000000).toFixed(2)+'M';if(n>=1000)return '$'+(n/1000).toFixed(1)+'K';return '$'+n.toFixed(2);}
+function fmtInt(n){return(n||0).toLocaleString();}
+function fmtPct(n,d=3){return(n||0).toFixed(d)+'%';}
+function getQuarter(d){if(!d)return null;const dt=new Date(d);if(isNaN(dt))return null;return dt.getFullYear()+'-Q'+Math.ceil((dt.getMonth()+1)/3);}
+function getMonthKey(d){if(!d)return '';const dt=new Date(d);if(isNaN(dt))return '';return dt.toISOString().substring(0,7);}
+function getMonthLabel(d){if(!d)return '—';const dt=new Date(d);if(isNaN(dt))return '—';return dt.toLocaleString('es',{month:'long',year:'numeric'});}
+function sortQ(arr){return[...new Set(arr)].sort();}
+function convClass(r){return r>=0.30?'conv-great':r>=0.15?'conv-good':r>=0.05?'conv-avg':r>0?'conv-low':'conv-zero';}
+function rendLabel(r){
+  if(r>=0.30)return{label:'🔥 Viral',color:'#00E5A0',bg:'rgba(0,229,160,.1)',border:'rgba(0,229,160,.25)'};
+  if(r>=0.15)return{label:'✅ Bueno',color:'#4A8FFF',bg:'rgba(74,143,255,.1)',border:'rgba(74,143,255,.2)'};
+  if(r>=0.05)return{label:'⚡ Normal',color:'#FFB547',bg:'rgba(255,181,71,.1)',border:'rgba(255,181,71,.2)'};
+  return{label:'❄️ Frío',color:'#5A5A78',bg:'rgba(90,90,120,.1)',border:'rgba(90,90,120,.2)'};
+}
+function rendBadge(r){const l=rendLabel(r);return '<span style="display:inline-block;font-size:10px;padding:3px 10px;border-radius:99px;font-weight:700;background:'+l.bg+';color:'+l.color+';border:1px solid '+l.border+'">'+l.label+'</span>';}
+function rendimiento(r){
+  var p=Math.round(r*10);
+  if(r===0)return '<span class="conv-badge conv-zero">— Sin ventas</span>';
+  if(r>=0.30)return `<span class="conv-badge conv-great">🔥 Excelente <span style="opacity:.6;font-weight:400;font-size:9px">${p} vtas/1K</span></span>`;
+  if(r>=0.15)return `<span class="conv-badge conv-good">✅ Bueno <span style="opacity:.6;font-weight:400;font-size:9px">${p} vtas/1K</span></span>`;
+  if(r>=0.05)return `<span class="conv-badge conv-avg">⚡ Regular <span style="opacity:.6;font-weight:400;font-size:9px">${p} vtas/1K</span></span>`;
+  return `<span class="conv-badge conv-low">⚠️ Bajo <span style="opacity:.6;font-weight:400;font-size:9px">${p} vtas/1K</span></span>`;
+}
+function inferNiche(title){
+  const t=(title||'').toLowerCase();
+  if(/jeans|ropa|jumpsuit|legging|fashion|outfit|pantalon|cargo|ootd/.test(t))return 'Ropa / Moda';
+  if(/beauty|skin|collagen|serum|cream|skincare|glow|facial|saffron|deodorant/.test(t))return 'Belleza / Skincare';
+  if(/health|creatine|supplement|vitamin|gym|fitness|workout|sport|protein|activewear/.test(t))return 'Salud / Fitness';
+  if(/bag|purse|bolso|accessories|jewelry|joyeria|tote/.test(t))return 'Accesorios';
+  return 'Otros';
+}
+
+// ── SCORE ─────────────────────────────────────────────────────────────────
+function calcScore(creator) {
+  const prods = creator.products.filter(p => p.units > 0);
+  const vids = creator.videos;
+  if (!prods.length && !vids.length) return 0;
+
+  let score = 0;
+  // Conv rate (40 pts)
+  if (vids.length) {
+    const avgConv = vids.reduce((s,v) => s + v.convRate, 0) / vids.length;
+    score += Math.min(40, avgConv / 0.30 * 40);
+  } else score += 10;
+
+  // GMV (30 pts)
+  const totalGMV = prods.reduce((s,p) => s + p.gmv, 0);
+  score += Math.min(30, totalGMV / 100000 * 30);
+
+  // Active products ratio (15 pts)
+  if (creator.products.length) {
+    const ratio = prods.length / creator.products.length;
+    score += ratio * 15;
+  }
+
+  // Consistency — videos with sales (15 pts)
+  if (vids.length) {
+    const withSales = vids.filter(v => v.units > 0).length / vids.length;
+    score += withSales * 15;
+  }
+
+  return Math.round(Math.min(100, score));
+}
+
+function scoreClass(s) { return s >= 75 ? 'a' : s >= 50 ? 'b' : s >= 25 ? 'c' : 'd'; }
+function scoreColor(s) { return s >= 75 ? 'var(--green)' : s >= 50 ? 'var(--gold)' : s >= 25 ? 'var(--orange)' : 'var(--red)'; }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────
+let rawProducts = null, rawVideos = null;
+
+function openAddModal() {
+  // Check limit for free users
+  const realCreators = window._creators.filter(c => !c._metaOnly);
+  if (window._userPlan !== 'pro' && realCreators.length >= 1) {
+    showUpgradeModal();
+    return;
+  }
+  if (window._userPlan === 'pro' && realCreators.length >= 5) {
+    alert('Has alcanzado el límite de 5 creadores en el plan Pro.');
+    return;
+  }
+  rawProducts = null; rawVideos = null;
+  document.getElementById('dz-products').classList.remove('has-file');
+  document.getElementById('dz-videos').classList.remove('has-file');
+  document.getElementById('fn-products').style.display = 'none';
+  document.getElementById('fn-videos').style.display = 'none';
+  document.getElementById('inp-products').value = '';
+  document.getElementById('inp-videos').value = '';
+  document.getElementById('creator-name-input').value = '';
+  document.getElementById('btn-analyze').disabled = true;
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function closeAddModal() { document.getElementById('add-modal').classList.remove('open'); }
+
+document.getElementById('inp-products').addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0], 'products'); });
+document.getElementById('inp-videos').addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0], 'videos'); });
+
+['dz-products','dz-videos'].forEach(id => {
+  const dz = document.getElementById(id);
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('active'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('active'); const f = e.dataTransfer.files[0]; if(f) loadFile(f, id.includes('products') ? 'products' : 'videos'); });
+});
+
+function loadFile(file, type) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws);
+      if (type === 'products') {
+        rawProducts = data;
+        document.getElementById('dz-products').classList.add('has-file');
+        const fn = document.getElementById('fn-products');
+        fn.textContent = file.name; fn.style.display = 'block';
+        // Auto-detect creator name from store
+        if (!document.getElementById('creator-name-input').value && data.length) {
+          const store = data[0]['Owned Store Name'] || '';
+          if (store) document.getElementById('creator-name-input').value = store;
+        }
+      } else {
+        rawVideos = data;
+        document.getElementById('dz-videos').classList.add('has-file');
+        const fn = document.getElementById('fn-videos');
+        fn.textContent = file.name; fn.style.display = 'block';
+      }
+      document.getElementById('btn-analyze').disabled = !(rawProducts || rawVideos);
+    } catch(err) { alert('Error al leer archivo: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── ANALYSIS ──────────────────────────────────────────────────────────────
+function runAnalysis() {
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true; btn.textContent = 'Analizando…';
+
+  setTimeout(() => {
+    const creator = processCreator(rawProducts, rawVideos);
+    creator.name = document.getElementById('creator-name-input').value || creator.name || 'Creador ' + (window._creators.length + 1);
+
+    // Remove meta-only version if exists
+    window._creators = window._creators.filter(c => c.name !== creator.name || !c._metaOnly);
+    window._creators.push(creator);
+    saveCreatorsToStorage();
+    closeAddModal();
+    setActiveCreator(creator.id);
+    renderSidebar();
+    btn.disabled = false; btn.textContent = 'Analizar creador →';
+  }, 100);
+}
+
+function processCreator(rawProds, rawVids) {
+  const id = 'c_' + Date.now();
+  const products = [], videos = [];
+  let name = '';
+
+  if (rawProds) {
+    for (const r of rawProds) {
+      const units = parseInt(r['Units Sold']) || 0;
+      const gmv = parseGMV(r['Total GMV'] || r['Total Facturación'] || '0');
+      const price = parsePrice(r['Price']);
+      const launchDate = r['Launch Date'] || '';
+      if (!name && r['Owned Store Name']) name = r['Owned Store Name'];
+      products.push({
+        name: r['Product Name'] || '',
+        category: r['Product Category'] || 'Sin categoría',
+        store: r['Owned Store Name'] || '',
+        price, units, gmv,
+        commission: parsePct(r['Commission Rate']),
+        launchDate,
+        quarter: getQuarter(launchDate),
+        monthKey: getMonthKey(launchDate),
+        month: getMonthLabel(launchDate),
+        tiktokLink: r['Link to TikTok Product Detail Page'] || '',
+        fastmossLink: r['Link to FastMoss Product Detail Page'] || '',
+        cover: r['Product Cover'] || '',
+        storeGMV: parseGMV(r['Total Sales Volume of the Store It Belongs To']),
+      });
+    }
+  }
+
+  if (rawVids) {
+    for (const r of rawVids) {
+      const units = parseInt(r['Units Sold']) || 0;
+      const views = parseInt(r['Views']) || 0;
+      const gmv = parseGMV(r['Video GMV'] || r['Video Facturación'] || '0');
+      const convRate = views > 0 ? (units / views * 100) : 0;
+      const title = r['Video Title'] || '';
+      videos.push({
+        title, publishDate: r['Publish Date'] || '',
+        quarter: getQuarter(r['Publish Date']),
+        duration: r['Video Duration'] || '',
+        type: r['Video Type'] || '',
+        units, views, gmv,
+        likes: parseInt(r['Likes']) || 0,
+        convRate,
+        interRate: parsePct(r['Interaction Rate']),
+        fastmossLink: r['FastMoss Video Detail Page Link'] || '',
+        tiktokLink: r['TikTok Video Detail Page Link'] || '',
+        cover: r['Video Cover'] || '',
+        niche: inferNiche(title),
+        _matchedProd: null,
+      });
+    }
+    // Match videos to products
+    for (const v of videos) {
+      const titleLower = (v.title || '').toLowerCase();
+      const words = titleLower.split(/\s+/).filter(w => w.length > 4);
+      let best = null, bestScore = 0;
+      for (const p of products.filter(x => x.units > 0)) {
+        const pWords = p.name.toLowerCase().split(/[\s\-|,]+/);
+        let score = 0;
+        for (const w of words) { if (pWords.some(pw => pw.length > 3 && (pw.includes(w) || w.includes(pw)))) score++; }
+        if (score > bestScore) { bestScore = score; best = p; }
+      }
+      v._matchedProd = bestScore >= 1 ? best : null;
+    }
+  }
+
+  const prods = products.filter(p => p.units > 0);
+  const totalGMV = prods.reduce((s,p) => s + p.gmv, 0);
+  const totalUnits = prods.reduce((s,p) => s + p.units, 0);
+  const avgConv = videos.length ? videos.reduce((s,v) => s + v.convRate, 0) / videos.length : 0;
+
+  const creator = { id, name, products, videos, analyzedAt: new Date().toISOString(),
+    gmv: totalGMV, units: totalUnits, convRate: avgConv,
+    prodCount: products.length, vidCount: videos.length, score: 0 };
+  creator.score = calcScore(creator);
+  return creator;
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('creator-list');
+  const realCreators = window._creators.filter(c => !c._metaOnly);
+  const hasReal = realCreators.length > 0;
+
+  // Show compare button if 2+ real creators
+  document.getElementById('btn-compare-mode').style.display = realCreators.length >= 2 ? 'block' : 'none';
+
+  if (!window._creators.length) {
+    list.innerHTML = '<div class="sidebar-empty"><div class="icon">👤</div>Aún no has añadido ningún creador.<br>Clic en "Añadir creador" para empezar.</div>';
+    return;
+  }
+
+  list.innerHTML = window._creators.map(c => {
+    const sc = c.score || 0;
+    const cls = scoreClass(sc);
+    const isActive = c.id === window._activeCreatorId;
+    const isMeta = c._metaOnly;
+    const inCompare = window._compareIds.includes(c.id);
+    return `<div class="creator-item ${isActive ? 'active' : ''}" onclick="${isMeta ? `reloadCreator('${c.id}')` : `setActiveCreator('${c.id}')`}" id="ci_${c.id}">
+      <div class="creator-avatar">${isMeta ? '🔄' : '👤'}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="creator-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
+        <div class="creator-meta">${isMeta ? 'Clic para recargar' : `${fmtInt(c.prodCount)} prods · ${fmtInt(c.vidCount)} videos`}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div class="score-ring ${cls}" style="width:36px;height:36px;font-size:12px;">${sc}</div>
+        ${window._compareMode && !isMeta ? `<input type="checkbox" ${inCompare ? 'checked' : ''} onclick="toggleCompareCreator('${c.id}',event)" style="cursor:pointer;">` : ''}
+      </div>
+      ${!isMeta ? `<button class="creator-del" onclick="deleteCreator('${c.id}',event)">✕</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function setActiveCreator(id) {
+  window._activeCreatorId = id;
+  const creator = window._creators.find(c => c.id === id);
+  if (!creator || creator._metaOnly) return;
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('dashboard-content').style.display = 'block';
+  renderSidebar();
+  renderAllTabs(creator);
+  // Re-apply plan restrictions
+  applyPlanRestrictions(window._userPlan || 'free');
+}
+
+function reloadCreator(id) {
+  // Remove meta-only and prompt to re-upload
+  window._creators = window._creators.filter(c => c.id !== id);
+  saveCreatorsToStorage();
+  renderSidebar();
+  openAddModal();
+}
+
+function deleteCreator(id, e) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar este creador?')) return;
+  window._creators = window._creators.filter(c => c.id !== id);
+  window._compareIds = window._compareIds.filter(x => x !== id);
+  saveCreatorsToStorage();
+  if (window._activeCreatorId === id) {
+    window._activeCreatorId = null;
+    const next = window._creators.find(c => !c._metaOnly);
+    if (next) setActiveCreator(next.id);
+    else { document.getElementById('empty-state').style.display = 'flex'; document.getElementById('dashboard-content').style.display = 'none'; }
+  }
+  renderSidebar();
+}
+
+// ── COMPARE MODE ──────────────────────────────────────────────────────────
+function toggleCompareMode() {
+  if (window._userPlan !== 'pro') { showUpgradeModal(); return; }
+  window._compareMode = !window._compareMode;
+  window._compareIds = [];
+  document.getElementById('btn-compare-mode').textContent = window._compareMode ? '✕ Cancelar' : '⚡ Comparar';
+  document.getElementById('compare-bar').classList.toggle('show', window._compareMode);
+  renderSidebar();
+}
+
+function toggleCompareCreator(id, e) {
+  e.stopPropagation();
+  if (window._compareIds.includes(id)) window._compareIds = window._compareIds.filter(x => x !== id);
+  else if (window._compareIds.length < 3) window._compareIds.push(id);
+  else { alert('Máximo 3 creadores para comparar'); return; }
+  renderCompareBar();
+  renderSidebar();
+}
+
+function renderCompareBar() {
+  const chips = window._compareIds.map(id => {
+    const c = window._creators.find(x => x.id === id);
+    return c ? `<span class="compare-chip">${c.name}</span>` : '';
+  }).join('');
+  document.getElementById('compare-selected').innerHTML = chips;
+}
+
+function runCompare() {
+  if (window._compareIds.length < 2) { alert('Selecciona al menos 2 creadores'); return; }
+  document.getElementById('tab-btn-compare').style.display = 'block';
+  showTab('compare', document.getElementById('tab-btn-compare'));
+  renderCompareTab();
+  window._compareMode = false;
+  document.getElementById('btn-compare-mode').textContent = '⚡ Comparar';
+  document.getElementById('compare-bar').classList.remove('show');
+  renderSidebar();
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────
+const CHT = {
+  baseOpts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#13131A',borderColor:'#1F1F2E',borderWidth:1,titleColor:'#E8E8F0',bodyColor:'#5A5A78',titleFont:{family:'Clash Display',weight:'700',size:12},bodyFont:{family:'Cabinet Grotesk',size:11},padding:12,cornerRadius:8}},scales:{x:{grid:{color:'#1F1F2E'},ticks:{color:'#5A5A78',font:{family:'Cabinet Grotesk',size:10}}},y:{grid:{color:'#1F1F2E'},ticks:{color:'#5A5A78',font:{family:'Cabinet Grotesk',size:10}}}}};},
+  bar(id,labels,data,color,fmtFn,itemsData){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();if(fmtFn)o.plugins.tooltip.callbacks={label:ctx=>fmtFn(ctx.parsed.y)};if(itemsData&&window._userPlan==='pro'){o.onClick=(evt,els)=>{if(els.length&&itemsData[els[0].index]){const item=itemsData[els[0].index];const url=item.tiktokLink||item.fastmossLink;if(url)window.open(url,'_blank');}};o.plugins.tooltip.callbacks={label:ctx=>{const item=itemsData[ctx.dataIndex];if(item){const name=(item.title||item.name||'').substring(0,50);return[fmtFn?fmtFn(ctx.parsed.y):ctx.parsed.y,name];}return fmtFn?fmtFn(ctx.parsed.y):ctx.parsed.y;}};}CHARTS[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data,backgroundColor:color+'33',borderColor:color,borderWidth:1.5,borderRadius:6}]},options:o});},
+  hbar(id,labels,data,colors){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();o.indexAxis='y';CHARTS[id]=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors||data.map(()=>'#4A8FFF33'),borderColor:colors||data.map(()=>'#4A8FFF'),borderWidth:1.5,borderRadius:4}]},options:o});},
+  scatter(id,points){if(CHARTS[id])CHARTS[id].destroy();const o=this.baseOpts();o.scales.x.title={display:true,text:'Vistas',color:'#5A5A78',font:{size:10}};o.scales.y.title={display:true,text:'Unidades',color:'#5A5A78',font:{size:10}};o.plugins.tooltip.callbacks={label:ctx=>`${fmtInt(ctx.parsed.x)} vistas → ${ctx.parsed.y} uds`};CHARTS[id]=new Chart(document.getElementById(id),{type:'scatter',data:{datasets:[{data:points,backgroundColor:'rgba(0,229,160,0.35)',borderColor:'#00E5A0',borderWidth:1,pointRadius:5,pointHoverRadius:7}]},options:o});},
+};
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────
+function renderAllTabs(creator) {
+  renderOverview(creator);
+  renderConversion(creator);
+  renderVideos(creator);
+  renderProducts(creator);
+  renderNiches(creator);
+  renderTimeline(creator);
+  renderAI(creator);
+  renderRecommendations(creator);
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────
+function renderOverview(creator) {
+  const prods = creator.products.filter(p => p.units > 0);
+  const totalUnits = prods.reduce((s,p) => s + p.units, 0);
+  const totalGMV = prods.reduce((s,p) => s + p.gmv, 0);
+  const avgComm = prods.length ? prods.reduce((s,p) => s + p.commission, 0) / prods.length : 0;
+  const avgPrice = prods.length ? prods.reduce((s,p) => s + p.price, 0) / prods.length : 0;
+  const vids = creator.videos;
+  const totalVidViews = vids.reduce((s,v) => s + v.views, 0);
+  const totalVidUnits = vids.reduce((s,v) => s + v.units, 0);
+  const overallConv = totalVidViews > 0 ? totalVidUnits / totalVidViews * 100 : 0;
+  const sc = creator.score;
+
+  const scoreHTML = `<div style="display:flex;align-items:center;gap:16px;background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:20px;">
+    <div class="score-ring ${scoreClass(sc)}" style="width:60px;height:60px;font-size:22px;">${sc}</div>
+    <div>
+      <div style="font-family:'Clash Display',sans-serif;font-size:16px;font-weight:700;">${creator.name}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px;">Score ${sc}/100 · ${sc>=75?'Creador de alto rendimiento':sc>=50?'Creador en crecimiento':sc>=25?'Potencial moderado':'Bajo rendimiento'}</div>
+      <div style="margin-top:8px;height:6px;border-radius:99px;background:var(--s3);width:200px;"><div style="height:100%;width:${sc}%;background:${scoreColor(sc)};border-radius:99px;transition:width .6s;"></div></div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Analizado</div>
+      <div style="font-size:11px;">${new Date(creator.analyzedAt).toLocaleDateString('es')}</div>
+    </div>
+  </div>`;
+
+  const kpis = [
+    {l:'Productos con ventas',v:fmtInt(prods.length),s:`de ${creator.products.length} totales`},
+    {l:'Unidades vendidas',v:fmtInt(totalUnits),s:vids.length?`+${fmtInt(totalVidUnits)} via video`:''},
+    {l:'Facturación Total',v:fmtNum(totalGMV),s:vids.length?`+${fmtNum(vids.reduce((s,v)=>s+v.gmv,0))} video`:''},
+    {l:'Comisión promedio',v:avgComm.toFixed(1)+'%',s:'sobre facturación total'},
+    {l:'Precio promedio',v:'$'+avgPrice.toFixed(2),s:'por producto'},
+    vids.length?{l:'Rendimiento general',v:rendLabel(overallConv).label,s:`conv. ${fmtPct(overallConv)} · ${fmtInt(totalVidViews)} vistas`}:{l:'Categorías activas',v:fmtInt(new Set(prods.map(p=>p.category)).size),s:'con ventas'},
+  ].map((k,i) => `<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  const ins = [];
+  if (prods.length) {
+    const top1 = [...prods].sort((a,b) => b.units - a.units)[0];
+    const catMap = {};
+    for (const p of prods) { if(!catMap[p.category])catMap[p.category]={n:0,u:0,g:0}; catMap[p.category].n++;catMap[p.category].u+=p.units;catMap[p.category].g+=p.gmv; }
+    const topCat = Object.entries(catMap).sort((a,b) => b[1].u - a[1].u)[0];
+    ins.push({type:'good',icon:'🏆',title:`Top: ${top1.name.split('|')[0].trim().substring(0,40)}`,text:`${fmtInt(top1.units)} uds · ${fmtNum(top1.gmv)} · ${top1.commission}% comisión`});
+    ins.push({type:'info',icon:'🎯',title:`Nicho: ${topCat[0]}`,text:`${topCat[1].n} prods · ${fmtInt(topCat[1].u)} uds · ${fmtNum(topCat[1].g)}`});
+    const zero = creator.products.filter(p => p.units === 0).length;
+    if (zero > 5) ins.push({type:'warn',icon:'📊',title:`${zero} productos sin ventas`,text:`${Math.round(zero/creator.products.length*100)}% del catálogo inactivo`});
+  }
+  if (vids.length) {
+    const best = [...vids].sort((a,b) => b.convRate - a.convRate)[0];
+    ins.push({type:'good',icon:'📹',title:`Mejor video: ${fmtPct(best.convRate)} conv.`,text:`${best.title.substring(0,60)} — ${fmtInt(best.views)} vistas`});
+  }
+
+  const quarters = sortQ(creator.products.map(p => p.quarter).filter(Boolean));
+  const top10 = [...prods].sort((a,b) => b.units - a.units).slice(0,10);
+  const cols = '40px 44px 1fr 120px 70px 90px 80px 90px';
+
+  document.getElementById('tab-overview').innerHTML = scoreHTML +
+    `<div class="sec-label">KPIs Generales</div><div class="kpi-grid">${kpis}</div>` +
+    `<div class="sec-label">Insights Automáticos</div><div class="insights-row">${ins.map(({type,icon,title,text})=>`<div class="insight insight-${type}"><div class="insight-icon">${icon}</div><div class="insight-title">${title}</div><div class="insight-text">${text}</div></div>`).join('')}</div>` +
+    `<div class="charts-2"><div class="chart-box"><div class="chart-ttl">Unidades por período</div><div class="chart-wrap"><canvas id="ch-units"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Facturación por período</div><div class="chart-wrap"><canvas id="ch-gmv"></canvas></div></div></div>` +
+    `<div class="sec-label">Top 10 Productos</div><div class="card"><div class="card-head"><div class="card-title">Top 10 Productos</div></div><div class="tbl-head" style="grid-template-columns:${cols}"><span class="th">#</span><span class="th"></span><span class="th">Producto</span><span class="th">Categoría</span><span class="th">Precio</span><span class="th">Unidades</span><span class="th">Facturación</span><span class="th">Comisión</span></div>${top10.map((p,i)=>`<div class="tbl-row" style="grid-template-columns:${cols}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div style="width:40px;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border2);">🛍️</div><div><div class="td-name">${p.name.substring(0,55)}${p.name.length>55?'…':''}</div><div class="td-sub">${p.store}</div></div><div><span class="chip chip-cat">${p.category.substring(0,18)}</span></div><div class="td td-blue">$${p.price.toFixed(2)}</div><div class="td td-gold td-num">${fmtInt(p.units)}</div><div class="td td-green">${fmtNum(p.gmv)}</div><div class="td"><span class="conv-badge ${p.commission>=20?'conv-great':p.commission>=15?'conv-good':p.commission>=10?'conv-avg':'conv-low'}">${p.commission}%</span></div></div>`).join('')}</div>`;
+
+  setTimeout(() => {
+    const quarterProds = quarters.map(q => {const qp=creator.products.filter(p=>p.quarter===q);const top=qp.sort((a,b)=>b.units-a.units)[0];return top||null;});
+    CHT.bar('ch-units', quarters, quarters.map(q => creator.products.filter(p=>p.quarter===q).reduce((s,p)=>s+p.units,0)), '#00E5A0', v=>` ${fmtInt(v)} uds`, quarterProds);
+    CHT.bar('ch-gmv', quarters, quarters.map(q => creator.products.filter(p=>p.quarter===q).reduce((s,p)=>s+p.gmv,0)), '#FFB547', v=>` ${fmtNum(v)}`, quarterProds);
+  }, 50);
+}
+
+// ── CONVERSION ────────────────────────────────────────────────────────────
+function renderConversion(creator) {
+  const vids = creator.videos;
+  if (!vids.length) {
+    document.getElementById('tab-conversion').innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px;margin-bottom:12px">🎬</div>Sube el archivo de creativos para ver conversión.</div>';
+    return;
+  }
+  const totalViews = vids.reduce((s,v)=>s+v.views,0);
+  const totalUnits = vids.reduce((s,v)=>s+v.units,0);
+  const totalGMV = vids.reduce((s,v)=>s+v.gmv,0);
+  const overallConv = totalViews > 0 ? totalUnits/totalViews*100 : 0;
+  // Quality filter: mínimo 1000 vistas Y 10 unidades para señal real de conversión
+  // Score combinado: convRate * log(units+1) para balancear % vs volumen real
+  const qualityVids = vids.filter(v => v.views >= 1000 && v.units >= 10);
+  const fallbackVids = vids.filter(v => v.views >= 300 && v.units >= 3);
+  const sortSource = qualityVids.length >= 5 ? qualityVids : (fallbackVids.length >= 3 ? fallbackVids : vids.filter(v=>v.units>0&&v.views>0));
+  // Sort by convRate but weighted by volume
+  const weightedSort = (a,b) => {
+    const scoreA = a.convRate * Math.log10(a.units + 1);
+    const scoreB = b.convRate * Math.log10(b.units + 1);
+    return scoreB - scoreA;
+  };
+  const sorted = [...sortSource].sort(weightedSort);
+  const vidWithSales = vids.filter(v=>v.units>0).length;
+  const top20 = [...sortSource].sort(weightedSort).slice(0,20);
+  const cols7 = '40px 1fr 90px 75px 75px 90px 100px';
+
+  document.getElementById('tab-conversion').innerHTML =
+    `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:16px;"><span style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:4px;">Escala:</span><span style="font-size:11px;color:var(--green);">🔥 <strong>Viral</strong> &gt;0.30%</span><span style="font-size:11px;color:var(--blue);">✅ <strong>Bueno</strong> 0.15–0.30%</span><span style="font-size:11px;color:var(--gold);">⚡ <strong>Normal</strong> 0.05–0.15%</span><span style="font-size:11px;color:var(--muted);">❄️ <strong>Frío</strong> &lt;0.05%</span></div>` +
+    `<div class="sec-label">Métricas</div><div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);">${[
+      {l:'Rendimiento General',v:rendLabel(overallConv).label,s:'conv. '+fmtPct(overallConv)},
+      {l:'Mejor Creativo',v:rendLabel(sorted[0]?.convRate||0).label,s:(sorted[0]?.title||'').substring(0,28)+'…'},
+      {l:'Videos con ventas',v:`${vidWithSales}/${vids.length}`,s:fmtPct(vidWithSales/vids.length*100)+' efectivos'},
+      {l:'Facturación via Creativo',v:fmtNum(totalGMV),s:`${fmtInt(totalViews)} vistas totales`},
+    ].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('')}</div>` +
+    `<div class="charts-2"><div class="chart-box"><div class="chart-ttl">Conv. Rate Top 20</div><div class="chart-wrap"><canvas id="ch-conv-bar"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Vistas vs Unidades</div><div class="chart-wrap"><canvas id="ch-scatter"></canvas></div></div></div>` +
+    `<div class="sec-label">Ranking por Conversión</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta" style="display:flex;gap:8px;align-items:center;"><span>top 20</span><span style="font-size:9px;color:var(--muted);background:var(--s2);padding:2px 8px;border-radius:5px;">mín. 500 vistas · 5 ventas</span></div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div>`;
+
+  setTimeout(() => {
+    if(CHARTS['ch-conv-bar'])CHARTS['ch-conv-bar'].destroy();
+    const cbOpts = CHT.baseOpts();
+    cbOpts.plugins.tooltip.callbacks = {label:ctx=>{const v=top20[ctx.dataIndex];return `${fmtPct(v.convRate)} · ${v.units} uds`;}};
+    if(window._userPlan==='pro'){cbOpts.onClick=(evt,els)=>{if(els.length&&top20[els[0].index]){const v=top20[els[0].index];const url=v.tiktokLink||v.fastmossLink;if(url)window.open(url,'_blank');}};cbOpts.plugins.tooltip.callbacks={label:ctx=>{const v=top20[ctx.dataIndex];return[`Conv: ${fmtPct(v.convRate)}`,`${v.title.substring(0,45)}…`,`${fmtInt(v.views)} vistas · ${v.units} uds`];}};}
+    CHARTS['ch-conv-bar'] = new Chart(document.getElementById('ch-conv-bar'),{type:'bar',data:{labels:top20.map((_,i)=>`V${i+1}`),datasets:[{data:top20.map(v=>v.convRate),backgroundColor:top20.map(v=>v.convRate>=0.30?'#00E5A050':v.convRate>=0.15?'#4A8FFF50':'#FFB54750'),borderColor:top20.map(v=>v.convRate>=0.30?'#00E5A0':v.convRate>=0.15?'#4A8FFF':'#FFB547'),borderWidth:1.5,borderRadius:4}]},options:cbOpts});
+    CHT.scatter('ch-scatter', vids.map(v=>({x:v.views,y:v.units})));
+  }, 50);
+}
+
+// ── VIDEOS ────────────────────────────────────────────────────────────────
+let vidSort='conv', vidNiche='Todos', vidResult='todos', vidPeriod='todos';
+
+// video filter state
+let vidDateFilter = 'todos'; // todos | 7 | 14 | 28 | mes | custom
+let vidDateFrom = '';
+let vidDateTo = '';
+let vidProductFilter = 'todos';
+
+function renderVideos(creator) {
+  const vids = creator.videos;
+  if (!vids.length) { document.getElementById('tab-videos').innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px">🎬</div><br>Sin creativos cargados.</div>'; return; }
+
+  // Build product options from products that have videos linked (match by product in vids niche/title or just show all products)
+  const productNames = ['todos', ...new Set(creator.products.filter(p=>p.units>0).map(p=>p.name))];
+
+  const sortOpts=[{v:'conv',l:'🔥 Conv.'},{v:'units',l:'📦 Unidades'},{v:'gmv',l:'💰 GMV'},{v:'views',l:'👁 Vistas'}];
+  const niches=['Todos',...new Set(vids.map(v=>v.niche))];
+  const resultOpts=[{v:'todos',l:'Todos'},{v:'con_ventas',l:'✅ Con ventas'},{v:'top',l:'🔥 Top'},{v:'sin_conv',l:'⚠️ Sin conv.'}];
+  const dateOpts=[{v:'todos',l:'Todos'},{v:'7',l:'7 días'},{v:'14',l:'14 días'},{v:'28',l:'28 días'},{v:'mes',l:'Por mes'},{v:'custom',l:'📅 Fecha'}];
+
+  // KPIs computed from filtered set
+  const filtered = getFilteredVideos(creator);
+  const totalViews=filtered.reduce((s,v)=>s+v.views,0);
+  const totalUnits=filtered.reduce((s,v)=>s+v.units,0);
+  const totalLikes=filtered.reduce((s,v)=>s+v.likes,0);
+  const kpis = [
+    {l:'Videos',v:fmtInt(filtered.length),s:`de ${vids.length} totales`},
+    {l:'Vistas',v:fmtInt(totalViews),s:'acumuladas'},
+    {l:'Unidades',v:fmtInt(totalUnits),s:`${fmtNum(filtered.reduce((s,v)=>s+v.gmv,0))}`},
+    {l:'Conv. Prom.',v:fmtPct(filtered.length?filtered.reduce((s,v)=>s+v.convRate,0)/filtered.length:0),s:'tasa promedio'}
+  ].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
+
+  // Build month options for mes filter
+  const months = [...new Set(vids.map(v=>{
+    if(!v.publishDate)return null;
+    const d=new Date(v.publishDate); return isNaN(d)?null:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  }).filter(Boolean))].sort().reverse();
+
+  document.getElementById('tab-videos').innerHTML =
+    `<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">${kpis}</div>` +
+    `<div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:20px;">` +
+    // Row 1: Sort + Result
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--green);font-weight:600;white-space:nowrap;">Ordenar</span>${sortOpts.map(o=>`<button class="tag${vidSort===o.v?' active':''}" onclick="setVidFilter('sort','${o.v}')">${o.l}</button>`).join('')}</div>` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Resultado</span>${resultOpts.map(o=>`<button class="tag${vidResult===o.v?' active':''}" onclick="setVidFilter('result','${o.v}')">${o.l}</button>`).join('')}</div>` +
+    `</div>` +
+    // Row 2: Date filter
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Período</span>${dateOpts.map(o=>`<button class="tag${vidDateFilter===o.v?' active':''}" onclick="setVidFilter('date','${o.v}')">${o.l}</button>`).join('')}` +
+    `<div id="vid-month-sel" style="display:${vidDateFilter==='mes'?'flex':'none'};gap:4px;align-items:center;"><select onchange="setVidFilter('month',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;">${months.map(m=>`<option value="${m}" ${vidDateFilter==='mes'&&vidDateFrom===m?'selected':''}>${m}</option>`).join('')}</select></div>` +
+    `<div id="vid-custom-sel" style="display:${vidDateFilter==='custom'?'flex':'none'};gap:4px;align-items:center;"><input type="date" value="${vidDateFrom}" onchange="setVidFilter('from',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;color-scheme:dark;"><span style="color:var(--muted);font-size:11px;">→</span><input type="date" value="${vidDateTo}" onchange="setVidFilter('to',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:4px 8px;font-size:11px;outline:none;color-scheme:dark;"></div>` +
+    `</div>` +
+    // Row 3: Nicho + Producto
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Nicho</span>${niches.map(n=>`<button class="tag${vidNiche===n?' active':''}" onclick="setVidFilter('niche','${n}')">${n}</button>`).join('')}</div>` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"><span style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap;">Producto</span><select onchange="setVidFilter('product',this.value)" style="background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:5px 10px;font-size:11px;outline:none;max-width:280px;"><option value="todos">Todos los productos</option>${creator.products.filter(p=>p.units>0).map(p=>`<option value="${p.name.replace(/"/g,'&quot;')}" ${vidProductFilter===p.name?'selected':''}>${p.name.substring(0,50)}</option>`).join('')}</select></div>` +
+    `</div>` +
+    `</div>` +
+    `<div id="vid-grid-container"></div>`;
+
+  renderVideoGrid(creator);
+}
+
+function getFilteredVideos(creator) {
+  let vids = [...creator.videos];
+  // Date filter
+  if (vidDateFilter !== 'todos') {
+    const now = new Date();
+    if (['7','14','28'].includes(vidDateFilter)) {
+      const days = parseInt(vidDateFilter);
+      const cutoff = new Date(now - days * 86400000);
+      vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); return !isNaN(d)&&d>=cutoff; });
+    } else if (vidDateFilter === 'mes' && vidDateFrom) {
+      vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); if(isNaN(d))return false; const mk=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; return mk===vidDateFrom; });
+    } else if (vidDateFilter === 'custom' && vidDateFrom && vidDateTo) {
+      const from = new Date(vidDateFrom); const to = new Date(vidDateTo + 'T23:59:59');
+      vids = vids.filter(v => { if(!v.publishDate)return false; const d=new Date(v.publishDate); return !isNaN(d)&&d>=from&&d<=to; });
+    }
+  }
+  // Product filter removed — FastMoss doesn't link videos to products
+  // Filtering by niche instead when vidProductFilter is set
+  if (vidProductFilter !== 'todos') {
+    const prod = creator.products.find(p=>p.name===vidProductFilter);
+    if (prod) {
+      // Use inferred niche as best approximation
+      const inferredNiche = prod.category;
+      vids = vids.filter(v => v.niche && (
+        inferredNiche.toLowerCase().includes(v.niche.toLowerCase()) ||
+        v.niche.toLowerCase().includes(inferredNiche.toLowerCase().split('/')[0].trim())
+      ));
+      if (!vids.length) vids = creator.videos; // fallback: show all if no match
+    }
+  }
+  // Result filter
+  if(vidResult==='con_ventas')vids=vids.filter(v=>v.units>0);
+  else if(vidResult==='top')vids=vids.filter(v=>v.convRate>=0.15);
+  else if(vidResult==='sin_conv')vids=vids.filter(v=>v.units===0);
+  // Niche filter
+  if(vidNiche!=='Todos')vids=vids.filter(v=>v.niche===vidNiche);
+  return vids;
+}
+
+function setVidFilter(type, val) {
+  if(type==='sort')vidSort=val;
+  if(type==='niche')vidNiche=val;
+  if(type==='result')vidResult=val;
+  if(type==='date'){ vidDateFilter=val; if(val==='mes'){ const now=new Date(); vidDateFrom=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; } }
+  if(type==='month'){ vidDateFrom=val; vidDateFilter='mes'; }
+  if(type==='from')vidDateFrom=val;
+  if(type==='to')vidDateTo=val;
+  if(type==='product')vidProductFilter=val;
+  const creator = window._creators.find(c=>c.id===window._activeCreatorId);
+  if(creator) renderVideos(creator);
+}
+
+function renderVideoGrid(creator) {
+  let vids = getFilteredVideos(creator);
+  const sortFns={conv:(a,b)=>b.convRate-a.convRate,units:(a,b)=>b.units-a.units,gmv:(a,b)=>b.gmv-a.gmv,views:(a,b)=>b.views-a.views};
+  vids.sort(sortFns[vidSort]||sortFns.conv);
+
+  const container = document.getElementById('vid-grid-container');
+  if(!container)return;
+  container.innerHTML = '<div class="video-grid">' + vids.map((v,idx)=>{
+    const id='v'+idx;
+    const isTop=v.convRate>=0.15;
+    const thumbBg=`background:var(--s3);display:flex;align-items:center;justify-content:center;`;
+    // No product-video link in FastMoss data — show niche tag instead (honest)
+    const nicheLabel = v.niche || '';
+
+    return `<div class="vid-card ${isTop?'top-performer':''}">
+      <div style="position:relative;border-radius:10px;overflow:hidden;margin-bottom:10px;height:140px;cursor:pointer;${thumbBg}" onclick="toggleVidStats('${id}')">
+        <span style="font-size:28px">🎬</span>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(7,7,9,.88) 0%,transparent 50%);"></div>
+        <div style="position:absolute;bottom:8px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-end;">
+          <span class="conv-badge ${convClass(v.convRate)}" style="font-size:11px;padding:3px 9px;font-weight:800">${fmtPct(v.convRate)} conv.</span>
+        </div>
+        ${isTop?'<div style="position:absolute;top:8px;right:8px;font-size:15px">🔥</div>':''}
+      </div>
+      ${nicheLabel?`<div style="font-size:9px;font-weight:700;color:var(--muted);background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;margin-bottom:6px;display:inline-block;letter-spacing:.05em;text-transform:uppercase;">${nicheLabel}</div>`:''}
       <div class="vid-title" onclick="toggleVidStats('${id}')" style="cursor:pointer">${v.title.substring(0,88)}${v.title.length>88?'…':''}</div>
       <div class="vid-stats-panel" id="vsp_${id}">
         <div class="vsp-grid">
@@ -1180,16 +2363,20 @@ function renderProductTable(prods, creator) {
   if(!el)return;
   el.innerHTML = sorted.map((p,i) => {
     const uid='p'+i;
-    // Find top 3 videos for this product by matching niche/category or name keywords
+    // Top videos for this product: quality-weighted sort (min 500 views, 5 units)
+    // FastMoss doesn't directly link videos to products — showing top performers
     const allVids = creator.videos || [];
-    const matchVids = allVids.filter(v =>
-      v.niche === p.category ||
-      (p.name.split(' ').slice(0,3).some(w=>w.length>3&&v.title&&v.title.toLowerCase().includes(w.toLowerCase())))
-    ).sort((a,b)=>b.convRate-a.convRate).slice(0,3);
+    const qualVids2 = allVids.filter(v => v.views >= 500 && v.units >= 5);
+    const vidPool = qualVids2.length >= 3 ? qualVids2 : allVids.filter(v=>v.units>=3&&v.views>=200);
+    const matchVids = [...vidPool].sort((a,b)=>{
+      const sA = a.convRate * Math.log10(a.units+1);
+      const sB = b.convRate * Math.log10(b.units+1);
+      return sB - sA;
+    }).slice(0,3);
 
     const top3html = matchVids.length ? `
       <div style="padding:12px 18px 14px;background:var(--s2);border-bottom:1px solid var(--border);">
-        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">🎬 Top 3 Videos por Conversión</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">🎬 Top Videos del Creador · Mayor Conversión</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
           ${matchVids.map((v,vi)=>`
             <div style="display:grid;grid-template-columns:22px 1fr 70px 70px 80px 80px auto;gap:8px;align-items:center;padding:8px 12px;background:var(--s1);border-radius:8px;border:1px solid var(--border);">

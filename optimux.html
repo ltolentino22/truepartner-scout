@@ -1758,7 +1758,10 @@ function fmtAtK(n) {
 // ── DB ──────────────────────────────────────────────────
 async function loadAtFromDB() {
   try {
-    const { data, error } = await _sb.from('ant_track_dias').select('*').order('fecha', { ascending: true });
+    const uid = window._currentUserId;
+    let query = _sb.from('ant_track_dias').select('*').order('fecha', { ascending: true });
+    if (uid) query = query.eq('user_id', uid);
+    const { data, error } = await query;
     if (error) { console.warn('AT load error:', error.message); return; }
     atData = (data||[]).map(r => ({
       id: r.id, fecha: r.fecha,
@@ -1790,7 +1793,11 @@ async function upsertAtDay(row) {
       shopify_pct: row.shopifyPct, shopify_fee: row.shopifyFee,
       utilidad: row.utilidad, cpa_real: row.cpaReal, roas: row.roas
     };
-    const { data: existing } = await _sb.from('ant_track_dias').select('id').eq('user_id',uid).eq('fecha',row.fecha).maybeSingle();
+    // Match by fecha + producto (allows multiple products per day)
+    const prod = row.producto || '';
+    let query = _sb.from('ant_track_dias').select('id').eq('user_id',uid).eq('fecha',row.fecha);
+    if (prod) { query = query.eq('producto', prod); } else { query = query.or('producto.is.null,producto.eq.'); }
+    const { data: existing } = await query.maybeSingle();
     let dbErr;
     if (existing) {
       ({error:dbErr} = await _sb.from('ant_track_dias').update(payload).eq('id',existing.id));
@@ -1841,9 +1848,16 @@ async function addAtRow() {
   const { fact, shopFee, utilidad, cpaReal, roas } = calcAtEntry();
   const precio = ventas > 0 ? factShopify / ventas : 0;
   const row = { id: Date.now(), fecha, producto, curr, ventas, precio, fact, pub, costo, shopifyPct: shopPct, shopifyFee: shopFee, utilidad, cpaReal, roas };
-  const existing = atData.findIndex(r => r.fecha === fecha);
-  if (existing >= 0) atData[existing] = row; else atData.push(row);
+  const existing = atData.findIndex(r => r.fecha === fecha && (r.producto||'') === producto);
+  if (existing >= 0) {
+    if (!confirm(`Ya existe un registro para "${producto || 'Sin producto'}" en ${fecha}. ¿Deseas reemplazarlo?`)) return;
+    row.id = atData[existing].id;
+    atData[existing] = row;
+  } else {
+    atData.push(row);
+  }
   atData.sort((a,b) => a.fecha.localeCompare(b.fecha));
+  console.log('[AT] Guardando día:', fecha, '| Total días:', atData.length, '| Modo:', existing>=0?'UPDATE':'INSERT');
   const btn = document.getElementById('at-save-btn');
   if (btn) { btn.disabled=true; btn.textContent='⏳ Guardando...'; }
   const ok = await upsertAtDay(row);

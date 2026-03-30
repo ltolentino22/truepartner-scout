@@ -1119,7 +1119,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let session = null;
   try { const r = await _sb.auth.getSession(); session = r.data.session; } catch(e) { return; }
-  if (!session) { window.location.replace(window.location.origin + '/login.html'); return; }
+  if (!session) { const l=document.getElementById('tps-loading');if(l)l.style.display='none'; window.location.replace(window.location.origin + '/login.html'); return; }
   // Store that user accessed dashboard directly — fine to stay here
   window._sb = _sb;
   window._session = session;
@@ -1129,6 +1129,10 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     if (profile && profile.plan) window._userPlan = profile.plan;
   } catch(e) {}
   const applyWhenReady = () => {
+    // Hide loading screen
+    const loading = document.getElementById('tps-loading');
+    if (loading) loading.style.display = 'none';
+
     const el = document.getElementById('hdr-account-name');
     if (el) el.textContent = session.user.email;
     const badge = document.getElementById('plan-badge');

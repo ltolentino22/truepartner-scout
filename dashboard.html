@@ -1338,9 +1338,7 @@ body::after {
   </div>
 </div>
 
-<script>
-
-const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
+<script>const SUPABASE_URL = 'https://npzkyhlvesqbshvtjafu.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wemt5aGx2ZXNxYnNodnRqYWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNDU2MDMsImV4cCI6MjA4ODkyMTYwM30.26sBeb91blYS5UVte195oI__WTPhEcNaSVxOdgCrnik';
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
@@ -1349,7 +1347,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
   const { createClient } = supabase;
   const _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let session = null;
-  try { const r = await _sb.auth.getSession(); session = r.data.session; } catch(e) { return; }
+  try { const r = await _sb.auth.getSession(); session = r.data.session; } catch(e) { const l=document.getElementById('tps-loading');if(l)l.style.display='none'; return; }
   if (!session) { const l=document.getElementById('tps-loading');if(l)l.style.display='none'; window.location.replace(window.location.origin + '/login.html'); return; }
   // Store that user accessed dashboard directly — fine to stay here
   window._sb = _sb;
@@ -1359,6 +1357,9 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     const { data: profile } = await _sb.from('profiles').select('plan').eq('id', session.user.id).single();
     if (profile && profile.plan) window._userPlan = profile.plan;
   } catch(e) {}
+  // Failsafe: hide loading after 8s regardless
+  setTimeout(() => { const l = document.getElementById('tps-loading'); if(l) l.style.display='none'; }, 8000);
+
   const applyWhenReady = () => {
     // Hide loading screen
     const loading = document.getElementById('tps-loading');
@@ -1983,7 +1984,8 @@ function renderConversion(creator) {
       {l:'Facturación via Creativo',v:fmtNum(totalGMV),s:`${fmtInt(totalViews)} vistas totales`},
     ].map((k,i)=>`<div class="kpi" style="animation-delay:${i*0.07}s"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('')}</div>` +
     `<div class="charts-2"><div class="chart-box"><div class="chart-ttl">Conv. Rate Top 20</div><div class="chart-wrap"><canvas id="ch-conv-bar"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Vistas vs Unidades</div><div class="chart-wrap"><canvas id="ch-scatter"></canvas></div></div></div>` +
-    `<div id="conv-vid-section" style="display:${convView==='products' ? 'none' : 'block'}"><div class="sec-label">Ranking por Conversión · Creativos</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta" style="display:flex;gap:8px;align-items:center;"><span>top 20</span><span style="font-size:9px;color:var(--muted);background:var(--s2);padding:2px 8px;border-radius:5px;">mín. 500 vistas · 5 ventas</span></div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div>`;
+    `<div id="conv-vid-section" style="display:${convView==='products' ? 'none' : 'block'}"><div class="sec-label">Ranking por Conversión · Creativos</div><div class="card"><div class="card-head"><div class="card-title">Ranking</div><div class="card-meta" style="display:flex;gap:8px;align-items:center;"><span>top 20</span><span style="font-size:9px;color:var(--muted);background:var(--s2);padding:2px 8px;border-radius:5px;">mín. 500 vistas · 5 ventas</span></div></div><div class="tbl-head" style="grid-template-columns:${cols7}"><span class="th">#</span><span class="th">Video</span><span class="th">Fecha</span><span class="th">Vistas</span><span class="th">Uds</span><span class="th">Facturación</span><span class="th">Conv.</span></div>${sorted.slice(0,20).map((v,i)=>`<div class="tbl-row" style="grid-template-columns:${cols7}"><div class="rank ${i<3?'rank-'+(i+1):'rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div><div><div class="td-name" style="font-size:11px">${v.title.substring(0,65)}${v.title.length>65?'…':''}</div><div style="display:flex;gap:5px;margin-top:3px;">${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:rgba(255,69,103,.1);color:var(--red);border:1px solid rgba(255,69,103,.2);text-decoration:none;font-weight:600">▶ TikTok</a>`:''}${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" style="font-size:9px;padding:2px 6px;border-radius:5px;background:var(--s3);color:var(--dim);border:1px solid var(--border);text-decoration:none;font-weight:600">📊 Stats</a>`:''}</div></div><div class="td">${(v.publishDate||'').toString().substring(0,10)}</div><div class="td td-num">${fmtInt(v.views)}</div><div class="td td-gold td-num">${v.units}</div><div class="td td-green">${fmtNum(v.gmv)}</div><div class="td">${rendimiento(v.convRate)}</div></div>`).join('')}</div></div>
+    <div id="conv-prod-section" style="display:none;"></div>`;
 
   setTimeout(() => {
     if(CHARTS['ch-conv-bar'])CHARTS['ch-conv-bar'].destroy();
@@ -2007,13 +2009,7 @@ function renderConversion(creator) {
 
 
 // ── VIDEO FILTER STATE ────────────────────────────────────────────────────
-let vidSort = 'conv';
-let vidNiche = 'Todos';
-let vidResult = 'todos';
-let vidDateFilter = 'todos';
-let vidDateFrom = '';
-let vidDateTo = '';
-let vidProductFilter = 'todos';
+
 
 function renderVideos(creator) {
   const vids = creator.videos;
@@ -2332,7 +2328,7 @@ function renderProducts(creator) {
   const monthLabels=months.map(m=>{const d=new Date(m+'-01');return d.toLocaleString('es',{month:'short',year:'2-digit'});});
 
   document.getElementById('tab-products').innerHTML =
-    `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;background:var(--s1);border:1px solid var(--border);border-radius:12px;" id="cat-filter">${cats.map(cat=>{const active=cat===activeFilter;const emoji=cat==='Todos'?'🔢':getCatEmoji(cat);return `<button onclick="filterCat('${cat.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',this)" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all .15s;border:1px solid ${active?'rgba(0,255,179,.3)':'var(--border2)'};background:${active?'var(--gdim)':'var(--s2)'};color:${active?'var(--green)':'var(--dim)'}">${emoji} ${cat}</button>`;}).join('')}</div>` +
+    `<div class="tag-scroll" id="cat-filter" style="margin-bottom:16px;">${cats.map(cat=>`<button class="tag${cat===activeFilter?' active':''}" onclick="filterCat('${cat.replace(/'/g,"\\'")}',this)">${cat}</button>`).join('')}</div>` +
     `<div class="charts-2" style="margin-bottom:24px;"><div class="chart-box"><div class="chart-ttl">Unidades por mes</div><div class="chart-wrap"><canvas id="ch-monthly-units"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Facturación por mes</div><div class="chart-wrap"><canvas id="ch-monthly-gmv"></canvas></div></div></div>` +
     `<div class="sec-label">Todos los Productos</div>
      <div class="card">
@@ -2763,6 +2759,7 @@ function openAddFavManual(type) {
   };
   modal.classList.add('open');
 }
+
 
 </script>
 </body>

@@ -501,14 +501,15 @@ async function handleLogout() {
 let currentWeekOffset = 0;
 
 function getWeekDates(offset = 0) {
-  const today = new Date();
-  const day = today.getDay(); // 0=Sun, 1=Mon...
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday
-  const monday = new Date(today.setDate(diff + offset * 7));
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun,1=Mon...
+  // Get Monday: use local date math to avoid UTC timezone issues
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysFromMonday = (day === 0 ? 6 : day - 1);
+  monday.setDate(monday.getDate() - daysFromMonday + (offset * 7));
   const dates = [];
-  for (let i = 0; i < 6; i++) { // Mon-Sat
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
     dates.push(d);
   }
   return dates;
@@ -516,14 +517,23 @@ function getWeekDates(offset = 0) {
 
 function changeWeek(dir) {
   currentWeekOffset += dir;
-  renderWeek();
-  renderKpis();
-  renderTaskList();
+  // Reload from DB to pick up tasks added in other sessions
+  loadTasks().then(() => {
+    renderWeek();
+    renderKpis();
+    renderTaskList();
+    renderActivity();
+  });
 }
 
 function getWeekKey(offset = currentWeekOffset) {
   const dates = getWeekDates(offset);
-  return dates[0].toISOString().split('T')[0];
+  const d = dates[0];
+  // Use local date string to avoid UTC timezone shift
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
 }
 
 // ── DATA ──────────────────────────────────────────────────
@@ -533,7 +543,8 @@ async function loadTasks() {
   try {
     const { data, error } = await _sb.from('creative_tasks').select('*').order('created_at', { ascending: false });
     if (error) { console.warn('Load error:', error.message); return; }
-    tasks = data || [];
+    // Normalize IDs to numbers to avoid string/number strict equality failures
+    tasks = (data || []).map(t => ({ ...t, id: Number(t.id) }));
   } catch(e) { console.warn('DB error:', e); }
 }
 
@@ -582,7 +593,10 @@ const HOUR_LABELS = ['9 AM','10 AM','11 AM','12 PM','1 PM','2 PM','3 PM','4 PM',
 function renderWeek() {
   const dates = getWeekDates(currentWeekOffset);
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  // Use local date to avoid UTC timezone mismatch
+  const todayStr = today.getFullYear() + '-' +
+    String(today.getMonth()+1).padStart(2,'0') + '-' +
+    String(today.getDate()).padStart(2,'0');
   const weekTasks = getWeekTasks();
 
   // Update labels
@@ -596,7 +610,7 @@ function renderWeek() {
     `Semana ${currentWeekOffset > 0 ? '+' : ''}${currentWeekOffset}`;
 
   // Today indicator
-  const todayIdx = dates.findIndex(d => d.toISOString().split('T')[0] === todayStr);
+  const todayIdx = dates.findIndex(d => (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')) === todayStr);
   const todayEl = document.getElementById('today-indicator');
   if (todayEl) todayEl.textContent = todayIdx >= 0 ? `Hoy: ${DAYS[todayIdx]}` : '';
 
@@ -608,7 +622,8 @@ function renderWeek() {
   // Header row
   html += '<div class="wg-time-label" style="background:var(--s2);border-bottom:1px solid var(--border);"></div>';
   dates.forEach((d, i) => {
-    const isToday = d.toISOString().split('T')[0] === todayStr;
+    const dStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const isToday = dStr === todayStr;
     const dateLabel = d.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
     html += `<div class="wg-day-header${isToday?' today':''}">
       <div>${DAYS[i]}</div>
@@ -620,7 +635,8 @@ function renderWeek() {
   HOURS.forEach((hour, hi) => {
     html += `<div class="wg-time-label">${HOUR_LABELS[hi]}</div>`;
     dates.forEach((d, di) => {
-      const isToday = d.toISOString().split('T')[0] === todayStr;
+      const dStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const isToday = dStr === todayStr;
       const task = weekTasks.find(t => t.day_index === di && t.hour === hour);
       const typeClass = task ? task.type : 'empty';
       const typeLabel = task ? getTypeLabel(task.type) : '+';
@@ -775,6 +791,7 @@ function openAddTask() {
 }
 
 function editTask(id) {
+  id = Number(id);
   const task = tasks.find(t => t.id === id);
   if (!task) return;
   if (!isAdmin) {
@@ -1050,7 +1067,7 @@ async function saveStatusUpdate() {
     document.getElementById('sm-link')?.focus();
     return;
   }
-  const task = tasks.find(t => t.id === statusUpdateTaskId);
+  const task = tasks.find(t => t.id === Number(statusUpdateTaskId));
   if (!task) return;
 
   const btn = document.querySelector('#status-modal .modal-btn');
@@ -1059,14 +1076,14 @@ async function saveStatusUpdate() {
   const payload = { status };
   if (link) payload.link = link;
 
-  const { error } = await _sb.from('creative_tasks').update(payload).eq('id', statusUpdateTaskId);
+  const { error } = await _sb.from('creative_tasks').update(payload).eq('id', Number(statusUpdateTaskId));
 
   if (btn) { btn.disabled = false; btn.textContent = 'Guardar estado'; }
 
   if (error) { alert('Error: ' + error.message); return; }
 
   // Update local
-  const idx = tasks.findIndex(t => t.id === statusUpdateTaskId);
+  const idx = tasks.findIndex(t => t.id === Number(statusUpdateTaskId));
   if (idx >= 0) { tasks[idx].status = status; if (link) tasks[idx].link = link; }
 
   document.getElementById('status-modal').classList.remove('open');

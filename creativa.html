@@ -482,6 +482,7 @@ let isAdmin = false;
   renderActivity();
   await initPresence();
   await initNotifications();
+  initTasksRealtime();
 })();
 
 async function handleLogout() {
@@ -907,6 +908,7 @@ document.getElementById('task-modal').addEventListener('click', e => {
 
 // ── PRESENCE ─────────────────────────────────────────────
 let presenceChannel = null;
+let tasksChannel = null;
 
 async function initPresence() {
   if (isAdmin) {
@@ -991,6 +993,51 @@ async function initNotifications() {
       const n = payload.new;
       showBrowserNotification(n.title, n.body);
       showInAppNotification(n.title, n.body);
+    })
+    .subscribe();
+}
+
+// ── TASKS REALTIME ────────────────────────────────────
+function initTasksRealtime() {
+  if (tasksChannel) {
+    _sb.removeChannel(tasksChannel);
+    tasksChannel = null;
+  }
+
+  tasksChannel = _sb
+    .channel('tasks-realtime')
+    .on('postgres_changes', {
+      event: '*',  // INSERT, UPDATE, DELETE
+      schema: 'public',
+      table: 'creative_tasks'
+    }, payload => {
+      const { eventType, new: newRow, old: oldRow } = payload;
+
+      if (eventType === 'INSERT') {
+        const t = { ...newRow, id: Number(newRow.id) };
+        // Only add if not already in local array (avoid duplicates from own saves)
+        if (!tasks.find(x => x.id === t.id)) {
+          tasks.unshift(t);
+        }
+      }
+
+      else if (eventType === 'UPDATE') {
+        const t = { ...newRow, id: Number(newRow.id) };
+        const idx = tasks.findIndex(x => x.id === t.id);
+        if (idx >= 0) tasks[idx] = t;
+        else tasks.unshift(t);
+      }
+
+      else if (eventType === 'DELETE') {
+        const deletedId = Number(oldRow.id);
+        tasks = tasks.filter(x => x.id !== deletedId);
+      }
+
+      // Re-render immediately
+      renderWeek();
+      renderKpis();
+      renderTaskList();
+      renderActivity();
     })
     .subscribe();
 }

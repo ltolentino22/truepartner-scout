@@ -2250,17 +2250,18 @@ function renderVideoGrid(creator) {
       ${nicheLabel?`<div style="font-size:9px;font-weight:700;color:var(--muted);background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;margin-bottom:6px;display:inline-block;letter-spacing:.05em;text-transform:uppercase;">${nicheLabel}</div>`:''}
       <div class="vid-title" onclick="toggleVidStats('${id}')" style="cursor:pointer">${v.title.substring(0,88)}${v.title.length>88?'…':''}</div>
       <div class="vsp" id="vsp_${id}">
-        <div class="vsp-inner"><div class="vsp-grid">
-          <div class="vsp-cell"><div class="vsp-lbl">Vistas</div><div class="vsp-val">${fmtInt(v.views)}</div></div>
-          <div class="vsp-cell"><div class="vsp-lbl">Likes</div><div class="vsp-val">${fmtInt(v.likes)}</div></div>
-          <div class="vsp-cell"><div class="vsp-lbl">Unidades</div><div class="vsp-val" style="color:var(--gold)">${v.units}</div></div>
-          <div class="vsp-cell"><div class="vsp-lbl">Facturación</div><div class="vsp-val" style="color:var(--green);font-size:14px">${fmtNum(v.gmv)}</div></div>
-        </div>
-        
-        <div class="vsp-row"><span class="vsp-row-lbl">Conv. Rate</span>${rendimiento(v.convRate)}</div>
-        <div class="vsp-links">
-          ${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" class="vsp-link vsp-link-tt">▶ TikTok</a>`:''}
-          ${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" class="vsp-link vsp-link-fm">📊 FastMoss</a>`:''}
+        <div class="vsp-inner">
+          <div class="vsp-grid">
+            <div class="vsp-cell"><div class="vsp-lbl">Vistas</div><div class="vsp-val">${fmtInt(v.views)}</div></div>
+            <div class="vsp-cell"><div class="vsp-lbl">Likes</div><div class="vsp-val">${fmtInt(v.likes)}</div></div>
+            <div class="vsp-cell"><div class="vsp-lbl">Unidades</div><div class="vsp-val" style="color:var(--gold)">${v.units}</div></div>
+            <div class="vsp-cell"><div class="vsp-lbl">Facturación</div><div class="vsp-val" style="color:var(--green);font-size:14px">${fmtNum(v.gmv)}</div></div>
+          </div>
+          <div class="vsp-row"><span class="vsp-row-lbl">Conv. Rate</span>${rendimiento(v.convRate)}</div>
+          <div class="vsp-links">
+            ${v.tiktokLink?`<a href="${v.tiktokLink}" target="_blank" class="vsp-link vsp-link-tt">▶ TikTok</a>`:''}
+            ${v.fastmossLink?`<a href="${v.fastmossLink}" target="_blank" class="vsp-link vsp-link-fm">📊 FastMoss</a>`:''}
+          </div>
         </div>
       </div>
       <div class="vid-footer">

@@ -1150,6 +1150,22 @@ body::after {
   font-size: 12px; line-height: 1.8;
 }
 .render-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .5; }
+
+/* ═══ PRODUCT ROW WRAPPER ═══ */
+.prod-row-wrap {
+  display: block;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.prod-row-wrap:last-child { border-bottom: none; }
+.prod-row-wrap .prod-data-row { border-bottom: none; }
+
+/* ═══ MONTHLY PANEL EXPANDED ═══ */
+.monthly-panel.open { max-height: 600px; }
+.monthly-panel > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
 </style>
 </head>
 <body>
@@ -1976,9 +1992,12 @@ function renderConversion(creator) {
     if(window._userPlan==='pro'){cbOpts.onClick=(evt,els)=>{if(els.length&&top20[els[0].index]){const v=top20[els[0].index];const url=v.tiktokLink||v.fastmossLink;if(url)window.open(url,'_blank');}};cbOpts.plugins.tooltip.callbacks={label:ctx=>{const v=top20[ctx.dataIndex];return[`Conv: ${fmtPct(v.convRate)}`,`${v.title.substring(0,45)}…`,`${fmtInt(v.views)} vistas · ${v.units} uds`];}};}
     CHARTS['ch-conv-bar'] = new Chart(document.getElementById('ch-conv-bar'),{type:'bar',data:{labels:top20.map((_,i)=>`V${i+1}`),datasets:[{data:top20.map(v=>v.convRate),backgroundColor:top20.map(v=>v.convRate>=0.30?'#00E5A050':v.convRate>=0.15?'#4A8FFF50':'#FFB54750'),borderColor:top20.map(v=>v.convRate>=0.30?'#00E5A0':v.convRate>=0.15?'#4A8FFF':'#FFB547'),borderWidth:1.5,borderRadius:4}]},options:cbOpts});
     CHT.scatter('ch-scatter', vids.map(v=>({x:v.views,y:v.units})));
-    // Add top products by volume to conversion view
-    const convProdHTML = buildConvProducts(creator);
-    const cpEl = document.getElementById('conv-prod-section'); if(cpEl) cpEl.innerHTML = convProdHTML;
+    // Always populate products section (hidden by default, shown via toggle)
+    const cpEl = document.getElementById('conv-prod-section');
+    if (cpEl) {
+      cpEl.innerHTML = buildConvProducts(creator);
+      cpEl.style.display = (convView === 'videos') ? 'none' : 'block';
+    }
   }, 50);
   } catch(err) {
     console.error('renderConversion:', err);
@@ -2139,7 +2158,7 @@ function goToCreativeWithProduct(productName) {
 }
 function buildConvProducts(creator) {
   const prods = creator.products.filter(p=>p.units>0).sort((a,b)=>b.units-a.units).slice(0,10);
-  if (!prods.length) return '<div style="padding:24px;text-align:center;color:var(--muted);">Sin datos de productos</div>';
+  if (!prods.length) return '<div style="padding:48px;text-align:center;"><div style="font-size:36px;margin-bottom:12px;opacity:.5;">🛍️</div><div style="font-family:var(--font-display);font-size:14px;color:var(--muted);">Sin productos con ventas</div><div style="font-size:11px;color:var(--muted);margin-top:6px;">Sube el archivo Goods for Sale de FastMoss</div></div>';
   const cols = '40px 46px 1fr 90px 90px 100px';
   return `<div class="sec-label" style="margin-top:20px;">Ranking · Productos</div>
   <div class="card">
@@ -2194,17 +2213,26 @@ let convView = 'videos'; // videos | products | both
 
 function setConvView(view, btn) {
   convView = view;
-  // Update buttons
   document.querySelectorAll('.conv-toggle-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  // Re-render relevant sections
-  const creator = window._creators?.find(c=>c.id===window._activeCreatorId);
-  if (!creator) return;
-  // Show/hide ranking sections
-  const vidSection = document.getElementById('conv-vid-section');
+  const vidSection  = document.getElementById('conv-vid-section');
   const prodSection = document.getElementById('conv-prod-section');
-  if (vidSection) vidSection.style.display = (view === 'products') ? 'none' : 'block';
-  if (prodSection) prodSection.style.display = (view === 'videos') ? 'none' : 'block';
+  // If sections not in DOM, re-render full tab
+  if (!vidSection) {
+    const creator = window._creators?.find(cr=>cr.id===window._activeCreatorId);
+    if (creator) renderConversion(creator);
+    return;
+  }
+  // Show/hide
+  if (vidSection)  vidSection.style.display  = (view === 'products') ? 'none' : 'block';
+  if (prodSection) {
+    prodSection.style.display = (view === 'videos') ? 'none' : 'block';
+    // Lazy-populate if empty
+    if (view !== 'videos' && prodSection.innerHTML.trim() === '') {
+      const creator = window._creators?.find(cr=>cr.id===window._activeCreatorId);
+      if (creator) prodSection.innerHTML = buildConvProducts(creator);
+    }
+  }
 }
 function toggleVidFilters() {
   const panel = document.getElementById('vid-filter-panel');
@@ -2297,14 +2325,14 @@ function renderProducts(creator) {
   if (!creator || !creator.products) { safeRenderEmpty('products', 'Sin datos'); return; }
   try {
   const prods = creator.products.filter(p => p.units > 0);
-  const cats = ['Todos', ...new Set(prods.map(p=>p.category))];
+  const cats = ['Todos', ...[...new Set(prods.map(p=>p.category))].sort((a,b)=>a.localeCompare(b))];
   const monthMap={};
   for(const p of prods){if(!p.monthKey)continue;if(!monthMap[p.monthKey])monthMap[p.monthKey]={units:0,gmv:0};monthMap[p.monthKey].units+=p.units;monthMap[p.monthKey].gmv+=p.gmv;}
   const months=Object.keys(monthMap).sort();
   const monthLabels=months.map(m=>{const d=new Date(m+'-01');return d.toLocaleString('es',{month:'short',year:'2-digit'});});
 
   document.getElementById('tab-products').innerHTML =
-    `<div class="tag-scroll" id="cat-filter">${cats.map(c=>`<span class="tag${c===activeFilter?' active':''}" onclick="filterCat('${c.replace(/'/g,"\\'")}',this)">${c}</span>`).join('')}</div>` +
+    `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:12px 14px;background:var(--s1);border:1px solid var(--border);border-radius:12px;" id="cat-filter">${cats.map(cat=>{const active=cat===activeFilter;const emoji=cat==='Todos'?'🔢':getCatEmoji(cat);return `<button onclick="filterCat('${cat.replace(/'/g,"\\'").replace(/"/g,"&quot;")}',this)" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:99px;font-size:10px;font-weight:700;font-family:var(--font-display);cursor:pointer;transition:all .15s;border:1px solid ${active?'rgba(0,255,179,.3)':'var(--border2)'};background:${active?'var(--gdim)':'var(--s2)'};color:${active?'var(--green)':'var(--dim)'}">${emoji} ${cat}</button>`;}).join('')}</div>` +
     `<div class="charts-2" style="margin-bottom:24px;"><div class="chart-box"><div class="chart-ttl">Unidades por mes</div><div class="chart-wrap"><canvas id="ch-monthly-units"></canvas></div></div><div class="chart-box"><div class="chart-ttl">Facturación por mes</div><div class="chart-wrap"><canvas id="ch-monthly-gmv"></canvas></div></div></div>` +
     `<div class="sec-label">Todos los Productos</div>
      <div class="card">
@@ -2380,7 +2408,7 @@ function renderProductTable(prods, creator) {
 
     const catClass = getCatClass(p.category);
     const catEmoji = getCatEmoji(p.category);
-    return `<div>
+    return `<div class="prod-row-wrap">
       <div class="prod-data-row">
         <div class="rank-${i<3?i+1:'n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
         <div class="prod-visual-thumb ${catClass}">${catEmoji}</div>

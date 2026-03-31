@@ -1987,6 +1987,15 @@ function renderConversion(creator) {
 }
 
 
+// ── VIDEO FILTER STATE ────────────────────────────────────────────────────
+let vidSort = 'conv';
+let vidNiche = 'Todos';
+let vidResult = 'todos';
+let vidDateFilter = 'todos';
+let vidDateFrom = '';
+let vidDateTo = '';
+let vidProductFilter = 'todos';
+
 function renderVideos(creator) {
   const vids = creator.videos;
   if (!vids.length) { document.getElementById('tab-videos').innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted)"><div style="font-size:36px">🎬</div><br>Sin creativos cargados.</div>'; return; }

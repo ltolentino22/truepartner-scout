@@ -851,6 +851,15 @@ function editTask(id) {
 function closeModal() {
   document.getElementById('task-modal').classList.remove('open');
   preSelectedDay = null; preSelectedHour = null;
+  // Reset imported-from-favorites reference fields
+  const refFields = document.getElementById('fav-ref-fields');
+  if (refFields) refFields.style.display = 'none';
+  const prodRef = document.getElementById('fav-product-ref');
+  if (prodRef) prodRef.value = '';
+  const fastRef = document.getElementById('fav-fastmoss-ref');
+  if (fastRef) fastRef.value = '';
+  const landRef = document.getElementById('fav-landing-ref');
+  if (landRef) landRef.value = '';
 }
 
 function selectType(type) {
@@ -859,6 +868,8 @@ function selectType(type) {
     el.className = 'type-opt';
     if (el.id === 'type-' + type) el.classList.add('sel-' + type);
   });
+  // Show/hide import-from-favorites button
+  if (typeof updateImportFavBtn === 'function') updateImportFavBtn();
 }
 
 function onStatusChange(status) {
@@ -1199,12 +1210,7 @@ function updateImportFavBtn() {
   btn.style.display = (isAdmin && showForTypes.includes(selectedType)) ? 'block' : 'none';
 }
 
-// Called whenever type changes — hook into selectType
-const _origSelectType = selectType;
-function selectType(type) {
-  _origSelectType(type);
-  updateImportFavBtn();
-}
+// updateImportFavBtn called directly from selectType (see below)
 
 // ── OPEN FAV PICKER ──────────────────────────────────────
 async function openFavPicker() {
@@ -1306,19 +1312,7 @@ function applyFavToTask(fav) {
   }
 }
 
-// ── RESET REF FIELDS ON MODAL CLOSE ─────────────────────
-const _origCloseModal = closeModal;
-function closeModal() {
-  _origCloseModal();
-  const refFields = document.getElementById('fav-ref-fields');
-  if (refFields) refFields.style.display = 'none';
-  const prodRef = document.getElementById('fav-product-ref');
-  if (prodRef) prodRef.value = '';
-  const fastRef = document.getElementById('fav-fastmoss-ref');
-  if (fastRef) fastRef.value = '';
-  const landRef = document.getElementById('fav-landing-ref');
-  if (landRef) landRef.value = '';
-}
+// ref fields reset handled directly in closeModal (see below)
 
 // ── CLOSE PICKER ON BACKDROP ─────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {

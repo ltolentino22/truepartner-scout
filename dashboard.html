@@ -1316,13 +1316,24 @@ body::after {
 
 <!-- FAV NOTE MODAL -->
 <div class="modal-overlay" id="fav-note-modal">
-  <div class="modal" style="max-width:380px;">
+  <div class="modal" style="max-width:440px;">
     <button class="modal-close" onclick="document.getElementById('fav-note-modal').classList.remove('open')">✕</button>
     <div class="modal-title">Guardar en Favoritos</div>
-    <div class="modal-sub" id="fav-note-title-display">—</div>
+    <div class="modal-sub" id="fav-note-title-display" style="margin-bottom:16px;font-size:12px;color:var(--muted);">—</div>
+
     <div class="field">
-      <label>Nota rápida (opcional)</label>
-      <textarea id="fav-note-input" placeholder="Ej: Ángulo para creatina, buen hook..."></textarea>
+      <label>📦 Producto asociado</label>
+      <select id="fav-product-select">
+        <option value="">Sin producto</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>🔗 URL FastMoss / TikTok</label>
+      <input type="url" id="fav-fastmoss-url" placeholder="https://fastmoss.com/...">
+    </div>
+    <div class="field">
+      <label>🛒 Landing URL (manual)</label>
+      <input type="url" id="fav-landing-url" placeholder="https://mi-tienda.com/producto">
     </div>
     <div class="field">
       <label>Etiqueta</label>
@@ -1333,6 +1344,10 @@ body::after {
         <option value="referencia">📌 Referencia</option>
         <option value="competencia">👀 Competencia</option>
       </select>
+    </div>
+    <div class="field">
+      <label>📝 Notas</label>
+      <textarea id="fav-note-input" placeholder="Ángulo de copy, hook usado, observaciones..."></textarea>
     </div>
     <button class="modal-btn" onclick="confirmSaveFav()">⭐ Guardar</button>
   </div>
@@ -1371,6 +1386,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     if (badge) { badge.textContent = window._userPlan.toUpperCase(); badge.className = 'plan-badge ' + window._userPlan; }
     applyPlanRestrictions(window._userPlan);
     loadCreatorsFromStorage();
+    loadFavsFromDB(); // load favorites from Supabase on startup
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyWhenReady);
   else applyWhenReady();
@@ -2614,6 +2630,14 @@ function showTab(id, el) {
   const panel = document.getElementById('tab-'+id);
   if(panel) panel.classList.add('active');
   if(el) el.classList.add('active');
+  // Reload favorites from DB when switching to favorites tab
+  if (id === 'favorites') {
+    loadFavsFromDB().then(() => {
+      const creator = window._creators?.find(c=>c.id===window._activeCreatorId);
+      if (creator) renderFavorites(creator);
+      updateFavBtns();
+    });
+  }
 }
 
 async function handleLogout() {
@@ -2630,144 +2654,334 @@ async function handleLogout() {
 // ══════════════════════════════════════════════════════════
 // FAVORITES SYSTEM
 // ══════════════════════════════════════════════════════════
-let favorites = JSON.parse(localStorage.getItem('tps_favs') || '[]');
+// favorites now in Supabase — see sbFavorites
+// ══════════════════════════════════════════════════════════
+// FAVORITES SYSTEM — Supabase-backed
+// Tables: scout_favorites (id, user_id, type, title, 
+//         fastmoss_url, landing_url, product_name, 
+//         product_category, notes, tag, conv_rate, 
+//         units, gmv, saved_at)
+// ══════════════════════════════════════════════════════════
+
 let pendingFav = null;
+let sbFavorites = []; // in-memory cache, loaded from Supabase
 
-function saveFavs() {
-  localStorage.setItem('tps_favs', JSON.stringify(favorites));
+// ── DB OPERATIONS ──────────────────────────────────────
+async function loadFavsFromDB() {
+  if (!window._sb || !window._session) return;
+  try {
+    const { data, error } = await window._sb
+      .from('scout_favorites')
+      .select('*')
+      .eq('user_id', window._session.user.id)
+      .order('saved_at', { ascending: false });
+    if (error) { console.warn('Favs load error:', error.message); return; }
+    sbFavorites = data || [];
+  } catch(e) { console.warn('Favs load exception:', e); }
 }
 
-function openFavModal(item) {
-  pendingFav = item;
-  const titleEl = document.getElementById('fav-note-title-display');
-  if (titleEl) titleEl.textContent = item.title.substring(0,60) + (item.title.length>60?'…':'');
-  const noteEl = document.getElementById('fav-note-input');
-  if (noteEl) noteEl.value = '';
-  const tagEl = document.getElementById('fav-note-tag');
-  if (tagEl) tagEl.value = '';
-  document.getElementById('fav-note-modal').classList.add('open');
+async function saveFavToDB(fav) {
+  if (!window._sb || !window._session) return null;
+  try {
+    const payload = {
+      user_id: window._session.user.id,
+      type: fav.type,
+      title: fav.title,
+      fastmoss_url: fav.fastmoss_url || fav.link || '',
+      landing_url: fav.landing_url || '',
+      product_name: fav.product_name || '',
+      product_category: fav.product_category || '',
+      notes: fav.note || '',
+      tag: fav.tag || '',
+      conv_rate: fav.convRate || 0,
+      units: fav.units || 0,
+      gmv: fav.gmv || 0,
+      saved_at: new Date().toISOString()
+    };
+    const { data, error } = await window._sb
+      .from('scout_favorites')
+      .insert(payload)
+      .select()
+      .single();
+    if (error) { console.warn('Fav save error:', error.message); return null; }
+    return data;
+  } catch(e) { console.warn('Fav save exception:', e); return null; }
 }
 
-function confirmSaveFav() {
-  if (!pendingFav) return;
-  const note = document.getElementById('fav-note-input')?.value.trim() || '';
-  const tag = document.getElementById('fav-note-tag')?.value || '';
-  const fav = {
-    id: Date.now(),
-    ...pendingFav,
-    note, tag,
-    savedAt: new Date().toISOString(),
-  };
-  // Remove if already exists
-  favorites = favorites.filter(f => f.title !== fav.title || f.type !== fav.type);
-  favorites.unshift(fav);
-  saveFavs();
-  document.getElementById('fav-note-modal').classList.remove('open');
-  pendingFav = null;
-  updateFavBtns();
-  // Re-render favorites tab if active
-  const creator = window._creators?.find(c=>c.id===window._activeCreatorId);
-  if (creator) renderFavorites(creator);
-  // Flash confirm
-  showToast('⭐ Guardado en Favoritos');
+async function updateFavInDB(id, updates) {
+  if (!window._sb) return false;
+  try {
+    const { error } = await window._sb
+      .from('scout_favorites')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', window._session.user.id);
+    if (error) { console.warn('Fav update error:', error.message); return false; }
+    return true;
+  } catch(e) { return false; }
 }
 
-function removeFav(id) {
-  favorites = favorites.filter(f => f.id !== id);
-  saveFavs();
-  const creator = window._creators?.find(c=>c.id===window._activeCreatorId);
-  if (creator) renderFavorites(creator);
-  updateFavBtns();
+async function deleteFavFromDB(id) {
+  if (!window._sb) return false;
+  try {
+    const { error } = await window._sb
+      .from('scout_favorites')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', window._session.user.id);
+    if (error) { console.warn('Fav delete error:', error.message); return false; }
+    return true;
+  } catch(e) { return false; }
 }
 
+// ── LOCAL HELPERS ───────────────────────────────────────
 function isFavorited(title, type) {
-  return favorites.some(f => f.title === title && f.type === type);
+  return sbFavorites.some(f => f.title === title && f.type === type);
 }
 
-function updateFavBtns() {
-  document.querySelectorAll('.fav-btn[data-title]').forEach(btn => {
-    const title = btn.dataset.title;
-    const type = btn.dataset.type;
-    const saved = isFavorited(title, type);
-    btn.classList.toggle('saved', saved);
-    btn.textContent = saved ? '★' : '☆';
-  });
+function getFavByTitle(title, type) {
+  return sbFavorites.find(f => f.title === title && f.type === type) || null;
 }
 
 function showToast(msg) {
   const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--s1);border:1px solid rgba(0,255,179,.3);border-radius:12px;padding:12px 18px;font-size:12px;font-weight:600;color:var(--green);font-family:var(--font-display);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeUp .25s ease;';
+  el.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;background:var(--s1);border:1px solid rgba(0,255,179,.3);border-radius:12px;padding:12px 18px;font-size:12px;font-weight:600;color:var(--green);font-family:var(--font-display);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .25s ease;';
   el.textContent = msg;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2500);
 }
 
+// ── MODAL: open to save a fav ───────────────────────────
+function openFavModal(item) {
+  pendingFav = item;
+
+  // Title display
+  const titleEl = document.getElementById('fav-note-title-display');
+  if (titleEl) titleEl.textContent = (item.title || '').substring(0,60) + ((item.title||'').length>60?'…':'');
+
+  // Pre-fill if already favorited
+  const existing = getFavByTitle(item.title, item.type);
+
+  const noteEl = document.getElementById('fav-note-input');
+  if (noteEl) noteEl.value = existing?.notes || '';
+
+  const tagEl = document.getElementById('fav-note-tag');
+  if (tagEl) tagEl.value = existing?.tag || '';
+
+  const fastmossEl = document.getElementById('fav-fastmoss-url');
+  if (fastmossEl) fastmossEl.value = existing?.fastmoss_url || item.link || item.fastmossLink || item.tiktokLink || '';
+
+  const landingEl = document.getElementById('fav-landing-url');
+  if (landingEl) landingEl.value = existing?.landing_url || '';
+
+  // Product selector — populate from creator products
+  const prodSel = document.getElementById('fav-product-select');
+  if (prodSel) {
+    const creator = window._creators?.find(c => c.id === window._activeCreatorId);
+    const prods = creator?.products?.filter(p => p.units > 0) || [];
+    prodSel.innerHTML = '<option value="">Sin producto</option>' +
+      prods.map(p => `<option value="${p.name.replace(/"/g,'&quot;')}" ${existing?.product_name===p.name?'selected':''}>${p.name.substring(0,45)}</option>`).join('');
+  }
+
+  // Change button text if editing
+  const saveBtn = document.querySelector('#fav-note-modal .modal-btn');
+  if (saveBtn) saveBtn.textContent = existing ? '💾 Actualizar favorito' : '⭐ Guardar';
+
+  document.getElementById('fav-note-modal').classList.add('open');
+}
+
+// ── CONFIRM SAVE ────────────────────────────────────────
+async function confirmSaveFav() {
+  if (!pendingFav) return;
+
+  const note = document.getElementById('fav-note-input')?.value.trim() || '';
+  const tag  = document.getElementById('fav-note-tag')?.value || '';
+  const fastmossUrl = document.getElementById('fav-fastmoss-url')?.value.trim() || '';
+  const landingUrl  = document.getElementById('fav-landing-url')?.value.trim() || '';
+  const productName = document.getElementById('fav-product-select')?.value || '';
+
+  // Get product category from current creator
+  let productCategory = '';
+  if (productName) {
+    const creator = window._creators?.find(c => c.id === window._activeCreatorId);
+    const prod = creator?.products?.find(p => p.name === productName);
+    productCategory = prod?.category || '';
+  }
+
+  const saveBtn = document.querySelector('#fav-note-modal .modal-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳ Guardando...'; }
+
+  const existing = getFavByTitle(pendingFav.title, pendingFav.type);
+
+  if (existing) {
+    // UPDATE
+    const ok = await updateFavInDB(existing.id, {
+      notes: note, tag, fastmoss_url: fastmossUrl,
+      landing_url: landingUrl, product_name: productName,
+      product_category: productCategory
+    });
+    if (ok) {
+      const idx = sbFavorites.findIndex(f => f.id === existing.id);
+      if (idx >= 0) sbFavorites[idx] = { ...sbFavorites[idx], notes: note, tag, fastmoss_url: fastmossUrl, landing_url: landingUrl, product_name: productName, product_category: productCategory };
+      showToast('✅ Favorito actualizado');
+    }
+  } else {
+    // INSERT
+    const saved = await saveFavToDB({
+      ...pendingFav,
+      note, tag, fastmoss_url: fastmossUrl, landing_url: landingUrl,
+      product_name: productName, product_category: productCategory
+    });
+    if (saved) {
+      sbFavorites.unshift(saved);
+      showToast('⭐ Guardado en Favoritos');
+    }
+  }
+
+  if (saveBtn) { saveBtn.disabled = false; }
+  document.getElementById('fav-note-modal').classList.remove('open');
+  pendingFav = null;
+
+  // Re-render
+  updateFavBtns();
+  const creator = window._creators?.find(c => c.id === window._activeCreatorId);
+  if (creator) renderFavorites(creator);
+}
+
+// ── REMOVE ──────────────────────────────────────────────
+async function removeFav(id) {
+  const ok = await deleteFavFromDB(id);
+  if (ok) {
+    sbFavorites = sbFavorites.filter(f => f.id !== id);
+    updateFavBtns();
+    const creator = window._creators?.find(c => c.id === window._activeCreatorId);
+    if (creator) renderFavorites(creator);
+    showToast('🗑 Eliminado');
+  }
+}
+
+// ── UPDATE FAV BUTTONS ──────────────────────────────────
+function updateFavBtns() {
+  document.querySelectorAll('.fav-btn[data-title]').forEach(btn => {
+    const title = btn.dataset.title;
+    const type  = btn.dataset.type;
+    const saved = isFavorited(title, type);
+    btn.classList.toggle('saved', saved);
+    btn.textContent = saved ? '★' : '☆';
+    // Show product badge if favorited with product
+    const fav = saved ? getFavByTitle(title, type) : null;
+    const badge = btn.parentElement?.querySelector('.fav-prod-badge');
+    if (fav?.product_name) {
+      if (!badge) {
+        const b = document.createElement('span');
+        b.className = 'fav-prod-badge';
+        b.style.cssText = 'font-size:8px;font-weight:700;background:var(--bdim);color:var(--blue);border:1px solid rgba(77,158,255,.2);border-radius:99px;padding:1px 6px;font-family:var(--font-display);';
+        b.textContent = fav.product_name.substring(0,20);
+        btn.parentElement.insertBefore(b, btn);
+      }
+    } else if (badge) badge.remove();
+  });
+}
+
+// ── RENDER FAVORITES TAB ────────────────────────────────
 function renderFavorites(creator) {
   const el = document.getElementById('tab-favorites');
   if (!el) return;
 
-  const hasFavs = favorites.length > 0;
+  const videos   = sbFavorites.filter(f => f.type === 'video');
+  const products = sbFavorites.filter(f => f.type === 'product');
+
+  const tagLabels = { winner:'🏆 Winner', testear:'🧪 Testear', referencia:'📌 Ref.', competencia:'👀 Comp.' };
+
+  const favCard = f => {
+    const isVideo = f.type === 'video';
+    return `<div class="fav-card">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+        <span class="fav-type-badge ${isVideo?'fav-type-video':'fav-type-product'}">${isVideo?'🎬 Creativo':'🛍️ Producto'}</span>
+        ${f.tag ? `<span style="font-size:8px;font-weight:700;background:var(--adim);color:var(--gold);border:1px solid rgba(255,208,96,.2);border-radius:99px;padding:1px 7px;font-family:var(--font-display);">${tagLabels[f.tag]||f.tag}</span>` : ''}
+        ${f.product_name ? `<span style="font-size:8px;font-weight:700;background:var(--bdim);color:var(--blue);border:1px solid rgba(77,158,255,.2);border-radius:99px;padding:1px 7px;font-family:var(--font-display);">📦 ${f.product_name.substring(0,22)}</span>` : ''}
+      </div>
+      <div class="fav-title">${f.title}</div>
+      ${isVideo ? `<div class="fav-meta">${f.conv_rate?(fmtPct(f.conv_rate)+' conv · '):''}${f.units||0} uds${f.gmv?(' · '+fmtNum(f.gmv)):''}</div>` : `<div class="fav-meta">${f.units||0} uds</div>`}
+      ${f.notes ? `<div class="fav-note">${f.notes}</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:5px;margin:8px 0;">
+        ${f.fastmoss_url ? `<a href="${f.fastmoss_url}" target="_blank" style="font-size:10px;color:var(--blue);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔗 FastMoss/TikTok</a>` : ''}
+        ${f.landing_url  ? `<a href="${f.landing_url}"  target="_blank" style="font-size:10px;color:var(--green);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🛒 Landing</a>` : ''}
+      </div>
+      <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);margin-bottom:8px;">${new Date(f.saved_at).toLocaleDateString('es-CO')}</div>
+      <div class="fav-actions">
+        <button class="fav-action-btn" onclick="openFavModal({type:'${f.type}',title:${JSON.stringify(f.title)},convRate:${f.conv_rate||0},units:${f.units||0},gmv:${f.gmv||0},link:'${(f.fastmoss_url||'').replace(/'/g,"\\'")}'})" style="flex:1;">✏️ Editar</button>
+        <button class="fav-action-btn del" onclick="removeFav(${f.id})">🗑</button>
+      </div>
+    </div>`;
+  };
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
       <div>
         <div style="font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:4px;">⭐ Favoritos & Winners</div>
-        <div style="font-size:12px;color:var(--muted);">Guarda creativos y productos destacados para referencia rápida</div>
+        <div style="font-size:12px;color:var(--muted);">Creativos y productos guardados con asignación de producto, links y notas</div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="openAddFavManual('video')" style="background:var(--bdim);border:1px solid rgba(77,158,255,.25);color:var(--blue);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-display);">＋ Video manual</button>
-        <button onclick="openAddFavManual('product')" style="background:var(--gdim);border:1px solid rgba(0,255,179,.25);color:var(--green);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-display);">＋ Producto manual</button>
-      </div>
+      <button onclick="openAddFavManual('video')" style="background:var(--bdim);border:1px solid rgba(77,158,255,.25);color:var(--blue);border-radius:8px;padding:8px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-display);">＋ Agregar manual</button>
     </div>
-    ${!hasFavs ? `
+
+    ${sbFavorites.length === 0 ? `
       <div style="text-align:center;padding:60px;color:var(--muted);">
         <div style="font-size:48px;margin-bottom:16px;opacity:.4;">⭐</div>
         <div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text2);margin-bottom:8px;">Sin favoritos aún</div>
-        <div style="font-size:12px;line-height:1.7;">Haz clic en ☆ en cualquier creativo o producto<br>para guardarlo aquí como referencia.</div>
+        <div style="font-size:12px;line-height:1.7;">Haz clic en ☆ en cualquier creativo o producto para guardarlo.<br>Puedes asignar producto, link de FastMoss, landing y notas.</div>
       </div>` : `
-      <div class="fav-grid">
-        ${favorites.map(f => {
-          const isVideo = f.type === 'video';
-          const tagLabels = {winner:'🏆 Winner',testear:'🧪 Testear',referencia:'📌 Ref.',competencia:'👀 Comp.'};
-          return `<div class="fav-card">
-            <span class="fav-type-badge ${isVideo?'fav-type-video':'fav-type-product'}">${isVideo?'🎬 Creativo':'🛍️ Producto'}</span>
-            ${f.tag?`<span style="font-size:8px;font-weight:700;background:var(--adim);color:var(--gold);border:1px solid rgba(255,208,96,.2);border-radius:99px;padding:1px 7px;margin-left:4px;font-family:var(--font-display);">${tagLabels[f.tag]||f.tag}</span>`:''}
-            <div class="fav-title">${f.title}</div>
-            <div class="fav-meta">${isVideo?(f.convRate?(fmtPct(f.convRate)+' conv · '):'')+(f.units||0)+' uds':(f.units||0)+' uds · $'+(f.price||0)}</div>
-            ${f.note?`<div class="fav-note">${f.note}</div>`:''}
-            <div style="font-size:9px;color:var(--muted);font-family:var(--font-mono);margin-bottom:8px;">${new Date(f.savedAt).toLocaleDateString('es-CO')}</div>
-            <div class="fav-actions">
-              ${f.link?`<a href="${f.link}" target="_blank" style="flex:1;text-align:center;padding:5px;border-radius:6px;background:var(--bdim);color:var(--blue);border:1px solid rgba(77,158,255,.2);font-size:9px;font-weight:700;text-decoration:none;font-family:var(--font-display);">🔗 Ver</a>`:''}
-              <button class="fav-action-btn del" onclick="removeFav(${f.id})">🗑 Eliminar</button>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>`
-    }
+      ${videos.length ? `
+        <div class="sec-label">🎬 Creativos (${videos.length})</div>
+        <div class="fav-grid" style="margin-bottom:24px;">${videos.map(favCard).join('')}</div>` : ''}
+      ${products.length ? `
+        <div class="sec-label">🛍️ Productos (${products.length})</div>
+        <div class="fav-grid">${products.map(favCard).join('')}</div>` : ''}
+    `}
   `;
 }
 
-let pendingFavManual = null;
+// ── MANUAL ADD ──────────────────────────────────────────
 function openAddFavManual(type) {
-  pendingFavManual = type;
-  const note = document.getElementById('fav-note-input');
-  const tag = document.getElementById('fav-note-tag');
   const titleEl = document.getElementById('fav-note-title-display');
-  if (note) note.value = '';
-  if (tag) tag.value = '';
   if (titleEl) {
     titleEl.innerHTML = `<input id="fav-manual-title" placeholder="${type==='video'?'Título o URL del video':'Nombre del producto'}" style="width:100%;background:var(--s2);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:7px 10px;font-size:12px;outline:none;font-family:var(--font-body);">`;
   }
+
+  const noteEl = document.getElementById('fav-note-input');
+  if (noteEl) noteEl.value = '';
+  const tagEl = document.getElementById('fav-note-tag');
+  if (tagEl) tagEl.value = '';
+  const fastEl = document.getElementById('fav-fastmoss-url');
+  if (fastEl) fastEl.value = '';
+  const landEl = document.getElementById('fav-landing-url');
+  if (landEl) landEl.value = '';
+
+  // Products from current creator
+  const prodSel = document.getElementById('fav-product-select');
+  if (prodSel) {
+    const creator = window._creators?.find(c => c.id === window._activeCreatorId);
+    const prods = creator?.products?.filter(p => p.units > 0) || [];
+    prodSel.innerHTML = '<option value="">Sin producto</option>' +
+      prods.map(p => `<option value="${p.name.replace(/"/g,'&quot;')}">${p.name.substring(0,45)}</option>`).join('');
+  }
+
   pendingFav = null;
+
   const modal = document.getElementById('fav-note-modal');
-  modal.querySelector('.modal-title').textContent = type==='video'?'Guardar Video':'Guardar Producto';
-  modal.querySelector('.modal-btn').onclick = () => {
-    const title = document.getElementById('fav-manual-title')?.value.trim() || 'Sin título';
-    pendingFav = { type, title, link: title.startsWith('http')?title:'', units:0, price:0 };
-    confirmSaveFav();
-  };
+  modal.querySelector('.modal-title').textContent = type==='video' ? 'Guardar Creativo' : 'Guardar Producto';
+  const saveBtn = modal.querySelector('.modal-btn');
+  if (saveBtn) {
+    saveBtn.textContent = '⭐ Guardar';
+    saveBtn.onclick = async () => {
+      const title = document.getElementById('fav-manual-title')?.value.trim() || 'Sin título';
+      pendingFav = { type, title, convRate:0, units:0, gmv:0, link: title.startsWith('http')?title:'' };
+      await confirmSaveFav();
+    };
+  }
   modal.classList.add('open');
 }
+
 
 
 </script>

@@ -362,7 +362,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-title" id="modal-title">Nueva Tarea</div>
-    <div class="modal-sub" id="modal-sub">Agrega una tarea al horario semanal</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+      <div class="modal-sub" id="modal-sub" style="margin:0;">Agrega una tarea al horario semanal</div>
+      <button id="btn-import-fav" onclick="openFavPicker()" style="display:none;font-size:10px;font-weight:700;padding:5px 11px;border-radius:7px;background:rgba(255,208,96,.1);border:1px solid rgba(255,208,96,.25);color:#FFBA3B;cursor:pointer;white-space:nowrap;font-family:'Space Grotesk',sans-serif;flex-shrink:0;">⭐ Desde Favoritos</button>
+    </div>
 
     <div class="field">
       <label>Tipo de tarea</label>
@@ -429,12 +432,41 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <textarea id="task-notes" placeholder="Detalles adicionales, referencias..."></textarea>
     </div>
 
+    <!-- Fav reference fields — shown when imported from favorites -->
+    <div id="fav-ref-fields" style="display:none;background:rgba(255,208,96,.06);border:1px solid rgba(255,208,96,.2);border-radius:10px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#FFBA3B;margin-bottom:10px;font-family:'Space Grotesk',sans-serif;">📌 Referencia del Favorito</div>
+      <div class="field" style="margin-bottom:8px;">
+        <label>Producto</label>
+        <input type="text" id="fav-product-ref" placeholder="—" readonly style="background:rgba(255,255,255,.04);color:var(--dim);">
+      </div>
+      <div class="field" style="margin-bottom:8px;">
+        <label>🔗 FastMoss / TikTok</label>
+        <input type="url" id="fav-fastmoss-ref" placeholder="—">
+      </div>
+      <div class="field" style="margin:0;">
+        <label>🛒 Landing URL</label>
+        <input type="url" id="fav-landing-ref" placeholder="—">
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:4px;">
       <button class="modal-btn" onclick="saveTask()">Guardar tarea</button>
       <button class="modal-btn danger" id="delete-btn" onclick="deleteCurrentTask()" style="display:none;width:auto;padding:11px 16px;">🗑</button>
     </div>
   </div>
 </div>
+
+<!-- FAV PICKER MODAL -->
+<div class="modal-overlay" id="fav-picker-modal" style="z-index:1100;">
+  <div class="modal" style="max-width:520px;max-height:80vh;display:flex;flex-direction:column;">
+    <button class="modal-close" onclick="document.getElementById('fav-picker-modal').classList.remove('open')">✕</button>
+    <div class="modal-title" style="margin-bottom:4px;">⭐ Importar desde Favoritos</div>
+    <div class="modal-sub" style="margin-bottom:16px;">Selecciona un creativo guardado para autocompletar la tarea</div>
+    <div id="fav-picker-loading" style="text-align:center;padding:24px;color:var(--muted);font-size:12px;">Cargando favoritos...</div>
+    <div id="fav-picker-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px;"></div>
+  </div>
+</div>
+
 
 <script>
 // ── SUPABASE ──────────────────────────────────────────────
@@ -1157,6 +1189,147 @@ function initUI() {
 const notifStyle = document.createElement('style');
 notifStyle.textContent = '@keyframes slideInNotif{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}';
 document.head.appendChild(notifStyle);
+// ── FAVORITES INTEGRATION ─────────────────────────────────
+
+// Show import button only for admin and only for creativo/landing types
+function updateImportFavBtn() {
+  const btn = document.getElementById('btn-import-fav');
+  if (!btn) return;
+  const showForTypes = ['creativo','creativo-nuevo','landing','mejora'];
+  btn.style.display = (isAdmin && showForTypes.includes(selectedType)) ? 'block' : 'none';
+}
+
+// Called whenever type changes — hook into selectType
+const _origSelectType = selectType;
+function selectType(type) {
+  _origSelectType(type);
+  updateImportFavBtn();
+}
+
+// ── OPEN FAV PICKER ──────────────────────────────────────
+async function openFavPicker() {
+  const modal = document.getElementById('fav-picker-modal');
+  const listEl = document.getElementById('fav-picker-list');
+  const loadingEl = document.getElementById('fav-picker-loading');
+
+  modal.classList.add('open');
+  listEl.innerHTML = '';
+  if (loadingEl) loadingEl.style.display = 'block';
+
+  // Query: SELECT * FROM scout_favorites WHERE type = 'video' ORDER BY saved_at DESC
+  const { data, error } = await _sb
+    .from('scout_favorites')
+    .select('*')
+    .eq('type', 'video')
+    .order('saved_at', { ascending: false });
+
+  if (loadingEl) loadingEl.style.display = 'none';
+
+  if (error || !data || data.length === 0) {
+    listEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);">
+      <div style="font-size:36px;margin-bottom:12px;opacity:.5;">⭐</div>
+      <div style="font-size:13px;font-weight:600;color:var(--dim);margin-bottom:6px;">Sin favoritos guardados</div>
+      <div style="font-size:11px;line-height:1.7;">Guarda creativos en TruePartner Scout<br>para poder importarlos aquí.</div>
+    </div>`;
+    return;
+  }
+
+  // Render each favorite as a selectable card
+  listEl.innerHTML = data.map(f => `
+    <div onclick="applyFavToTask(${JSON.stringify(f).replace(/"/g,'&quot;')})"
+      style="background:var(--s2);border:1px solid var(--border2);border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;"
+      onmouseover="this.style.borderColor='rgba(255,208,96,.35)';this.style.background='rgba(255,208,96,.04)'"
+      onmouseout="this.style.borderColor='var(--border2)';this.style.background='var(--s2)'">
+      <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="font-size:24px;flex-shrink:0;">🎬</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${f.title}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+            ${f.product_name ? `<span style="font-size:9px;font-weight:700;background:rgba(77,158,255,.1);color:#4A8FFF;border:1px solid rgba(77,158,255,.2);border-radius:99px;padding:1px 8px;">📦 ${f.product_name.substring(0,25)}</span>` : ''}
+            ${f.tag ? `<span style="font-size:9px;font-weight:700;background:rgba(255,208,96,.1);color:#FFBA3B;border:1px solid rgba(255,208,96,.2);border-radius:99px;padding:1px 8px;">${f.tag}</span>` : ''}
+            ${f.conv_rate > 0 ? `<span style="font-size:9px;color:var(--muted);">${parseFloat(f.conv_rate).toFixed(2)}% conv</span>` : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            ${f.fastmoss_url ? `<div style="font-size:10px;color:var(--blue);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🔗 ${f.fastmoss_url}</div>` : ''}
+            ${f.landing_url  ? `<div style="font-size:10px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🛒 ${f.landing_url}</div>` : ''}
+          </div>
+        </div>
+        <div style="font-size:20px;color:var(--muted);flex-shrink:0;">→</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── APPLY FAV TO TASK ────────────────────────────────────
+function applyFavToTask(fav) {
+  // Close picker
+  document.getElementById('fav-picker-modal').classList.remove('open');
+
+  // Fill title if empty
+  const titleEl = document.getElementById('task-title');
+  if (titleEl && !titleEl.value.trim()) {
+    titleEl.value = fav.product_name
+      ? `Creativo ${fav.product_name.substring(0,40)}`
+      : fav.title.substring(0,60);
+  }
+
+  // Fill notes with context
+  const notesEl = document.getElementById('task-notes');
+  if (notesEl) {
+    const existing = notesEl.value.trim();
+    const refNote = fav.notes ? `Ref: ${fav.notes}` : '';
+    if (!existing && refNote) notesEl.value = refNote;
+  }
+
+  // Show and fill reference fields
+  const refFields = document.getElementById('fav-ref-fields');
+  if (refFields) refFields.style.display = 'block';
+
+  const prodRef = document.getElementById('fav-product-ref');
+  if (prodRef) prodRef.value = fav.product_name || '—';
+
+  const fastRef = document.getElementById('fav-fastmoss-ref');
+  if (fastRef) fastRef.value = fav.fastmoss_url || '';
+
+  const landRef = document.getElementById('fav-landing-ref');
+  if (landRef) landRef.value = fav.landing_url || '';
+
+  // Store fav data in task notes if links exist, so they persist via upsertTask
+  const notesSuffix = [
+    fav.product_name ? `Producto: ${fav.product_name}` : '',
+    fav.fastmoss_url ? `FastMoss: ${fav.fastmoss_url}` : '',
+    fav.landing_url  ? `Landing: ${fav.landing_url}` : '',
+  ].filter(Boolean).join(' | ');
+
+  if (notesSuffix && notesEl) {
+    const existing = notesEl.value.trim();
+    notesEl.value = existing ? existing + '\n' + notesSuffix : notesSuffix;
+  }
+}
+
+// ── RESET REF FIELDS ON MODAL CLOSE ─────────────────────
+const _origCloseModal = closeModal;
+function closeModal() {
+  _origCloseModal();
+  const refFields = document.getElementById('fav-ref-fields');
+  if (refFields) refFields.style.display = 'none';
+  const prodRef = document.getElementById('fav-product-ref');
+  if (prodRef) prodRef.value = '';
+  const fastRef = document.getElementById('fav-fastmoss-ref');
+  if (fastRef) fastRef.value = '';
+  const landRef = document.getElementById('fav-landing-ref');
+  if (landRef) landRef.value = '';
+}
+
+// ── CLOSE PICKER ON BACKDROP ─────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const pickerModal = document.getElementById('fav-picker-modal');
+  if (pickerModal) {
+    pickerModal.addEventListener('click', e => {
+      if (e.target === pickerModal) pickerModal.classList.remove('open');
+    });
+  }
+});
+
 </script>
 </body>
 </html>
